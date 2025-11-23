@@ -1,4 +1,7 @@
-package tsp;
+package domain.service;
+
+import domain.model.Graphe;
+import domain.model.GrapheComplet;
 
 public class RunTSP {
 	

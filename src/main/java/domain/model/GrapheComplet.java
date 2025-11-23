@@ -1,4 +1,4 @@
-package tsp;
+package domain.model;
 
 public class GrapheComplet implements Graphe {
 	

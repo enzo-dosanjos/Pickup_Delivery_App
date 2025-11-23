@@ -1,4 +1,6 @@
-package tsp;
+package domain.service;
+
+import domain.model.Graphe;
 
 public interface TSP {
 	
