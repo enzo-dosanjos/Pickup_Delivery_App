@@ -1,0 +1,27 @@
+@startuml
+title UC10 - Modifier l’ordre de la livraison
+
+actor User
+participant "TourController" as TC
+participant "TourService" as TS
+participant "TSP1" as TSP1
+
+User -> TC : updateRequestOrder(requestBeforeId, requestAfterId, courierId)
+activate TC
+
+TC -> TS : updateRequestOrder(requestBeforeId, requestAfterId, courierId)
+activate TS
+
+TS -> TS : apply precedence constraint(requestBeforeId, requestAfterId, courierId)
+TS -> TS : computeTourForCourier(courierId)
+TS -> TSP1 : chercheSolution(...)
+activate TSP1
+TSP1 --> TS : bestTour
+deactivate TSP1
+
+TS --> TC : updatedTour
+deactivate TS
+
+TC --> User : "Ordre modifié et tournée recalculée"
+deactivate TC
+@enduml

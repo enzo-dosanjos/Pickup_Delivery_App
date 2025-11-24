@@ -1,0 +1,31 @@
+@startuml
+title UC12 - Consulter les détails d'une étape
+
+actor User
+participant "UI (MapView)" as UI
+participant "TourController" as TC
+participant "TourService" as TS
+participant "MapService" as MS
+
+User -> UI : hoverPoint(requestId, type)
+activate UI
+
+UI -> TC : showRequestDetails(requestId, type)
+activate TC
+
+TC -> TS : getStopDetails(requestId, type)
+activate TS
+TS --> TC : TourStop (arrivalTime, departureTime, intersectionId, type)
+deactivate TS
+
+TC -> MS : getRoadSegment(prevId, intersectionId)
+activate MS
+MS --> TC : RoadSegment
+deactivate MS
+
+TC --> UI : display(details: TourStop + RoadSegment + courier info)
+deactivate TC
+
+UI --> User : show popup with details
+deactivate UI
+@enduml
