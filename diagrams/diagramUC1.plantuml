@@ -1,0 +1,24 @@
+@startuml
+title UC1 - Sauvegarder plan
+
+actor User
+participant "MapController" as MC
+participant "MapService" as MS
+participant "XMLWriters" as XW
+
+User -> MC : saveMap(filepath)
+activate MC
+
+MC -> MS : getCurrentMap()
+activate MS
+MS --> MC : Map
+deactivate MS
+
+MC -> XW : writeMap(Map, filepath)
+activate XW
+XW --> MC : confirmation
+deactivate XW
+
+MC --> User : "Plan sauvegardé"
+deactivate MC
+@enduml

@@ -1,0 +1,28 @@
+@startuml
+title UC5 - Gérer une demande de livraison
+
+actor User
+participant "RequestController" as RC
+participant "RequestService" as RS
+participant "TourService" as TS
+
+User -> RC : addRequest(warehouseId, pickupId, pickupDuration, deliveryId, deliveryDuration, courierId)
+activate RC
+
+RC -> RS : addRequest(warehouseId, pickupId, pickupDuration, deliveryId, deliveryDuration, courierId)
+activate RS
+RS --> RC : requestId
+deactivate RS
+
+RC -> TS : computeTourForCourier(courierId)
+activate TS
+TS -> TSP1 : chercheSolution(...)  // TSP
+activate TSP1
+TSP1 --> TS : bestTour
+deactivate TSP1
+TS --> RC : updatedTour
+deactivate TS
+
+RC --> User : "Demande ajoutée et tournée mise à jour"
+deactivate RC
+@enduml

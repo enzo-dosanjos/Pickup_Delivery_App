@@ -1,0 +1,32 @@
+@startuml
+title UC3 - Importer programme depuis un fichier
+
+actor User
+participant "RequestController" as RC
+participant "RequestService" as RS
+participant "XMLParsers" as XP
+participant "TourService" as TS
+
+User -> RC : loadRequests(filepath)
+activate RC
+
+RC -> RS : loadRequests(filepath)
+activate RS
+
+RS -> XP : parseRequests(filepath)
+activate XP
+XP --> RS : PickupDelivery
+deactivate XP
+
+RS --> RC : requestsLoaded
+deactivate RS
+
+RC -> TS : assignRequestsToCouriers()
+activate TS
+TS -> TS : assignRequestsToCouriers()  // internal assignment
+TS --> RC : toursUpdated
+deactivate TS
+
+RC --> User : "Programme chargé et tournées recalculées"
+deactivate RC
+@enduml

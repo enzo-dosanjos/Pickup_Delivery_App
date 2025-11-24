@@ -1,0 +1,28 @@
+@startuml
+title UC2 - Sauvegarder Tournée dans un fichier
+
+actor User
+participant "TourController" as TC
+participant "TourService" as TS
+participant "XMLWriters" as XW
+participant "Tour" as T
+
+User -> TC : saveTours(filepath)
+activate TC
+
+TC -> TS : saveTours(filepath)
+activate TS
+
+alt pour tous les tours disponibles
+    TS -> XW : writeTour(tour, filepath) 
+    activate XW
+    XW --> TS : confirmation
+    deactivate XW
+end
+
+TS --> TC : confirmation
+deactivate TS
+
+TC --> User : "Tournées sauvegardées"
+deactivate TC
+@enduml
