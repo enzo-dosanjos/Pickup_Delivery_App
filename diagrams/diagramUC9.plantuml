@@ -1,0 +1,25 @@
+@startuml
+title UC9 - Importer un plan
+
+actor User
+participant "MapController" as MC
+participant "MapService" as MS
+participant "XMLParsers" as XP
+
+User -> MC : loadMap(filepath)
+activate MC
+
+MC -> MS : loadMap(filepath)
+activate MS
+
+MS -> XP : parseGraph(filepath)
+activate XP
+XP --> MS : Map
+deactivate XP
+
+MS --> MC : Map
+deactivate MS
+
+MC --> User : "Plan chargé"
+deactivate MC
+@enduml
