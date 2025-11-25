@@ -10,7 +10,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 
 public class XMLParsers {
-    public Map parseMap(String filePath) {
+    public static Map parseMap(String filePath) {
         Map map = new Map();
 
         try {
@@ -64,12 +64,7 @@ public class XMLParsers {
         return map;
     }
 
-    public PickupDelivery parseRequests(String filePath) throws JDOMException, IOException {
-        SAXBuilder saxBuilder = new SAXBuilder();
-        File inputFile = new File(filePath);
-        Document document = saxBuilder.build(inputFile);
-        Element rootElement = document.getRootElement(); // planningRequest
-
+    public static PickupDelivery parseRequests(String filePath) {
         PickupDelivery pickupDelivery = new PickupDelivery();
 
         try {
