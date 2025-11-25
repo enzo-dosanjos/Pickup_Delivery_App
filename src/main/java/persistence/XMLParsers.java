@@ -65,4 +65,39 @@ public class XMLParsers {
 
         return map;
     }
+
+    public PickupDelivery parseRequests(String filePath) throws JDOMException, IOException {
+        SAXBuilder saxBuilder = new SAXBuilder();
+        File inputFile = new File(filePath);
+        Document document = saxBuilder.build(inputFile);
+        Element rootElement = document.getRootElement(); // planningRequest
+
+        PickupDelivery pickupDelivery = new PickupDelivery();
+        long requestIdCounter = 1L; // To generate sequential IDs for requests
+
+        // Parse depot information
+        Element depotElement = rootElement.getChild("depot");
+        if (depotElement != null) {
+            long warehouseAddress = Long.parseLong(depotElement.getAttributeValue("address"));
+            pickupDelivery.setWarehouseAddress(warehouseAddress);
+            // Ignore departureTime for now as it's not in the Request model
+        }
+
+        // Parse requests
+        List<Element> requestElements = rootElement.getChildren("request");
+        for (Element requestElement : requestElements) {
+            long pickupIntersectionId = Long.parseLong(requestElement.getAttributeValue("pickupAddress"));
+            long deliveryIntersectionId = Long.parseLong(requestElement.getAttributeValue("deliveryAddress"));
+            int pickupDuration = Integer.parseInt(requestElement.getAttributeValue("pickupDuration"));
+            int deliveryDuration = Integer.parseInt(requestElement.getAttributeValue("deliveryDuration"));
+
+            // Use a default courierId as it's not in the XML
+            long defaultCourierId = 1L;
+
+            Request request = new Request(requestIdCounter++, pickupIntersectionId, pickupDuration, deliveryIntersectionId, deliveryDuration);
+            pickupDelivery.addRequest(defaultCourierId, request);
+        }
+
+        return pickupDelivery;
+    }
 }
