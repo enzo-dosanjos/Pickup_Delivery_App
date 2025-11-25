@@ -1,0 +1,49 @@
+@startuml usecase
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Utilisateur" as User
+database "Base de données" as DB
+
+
+package "Application optimisation tournée" {
+
+  usecase "Sauvegarder plan" as UC1
+  usecase "Calculer le meilleur tournée" as UC6
+  usecase "Sauvegarder tournée" as UC3
+  usecase "Importer tournée" as UC4
+  usecase "Modifier le nombre de livreurs pour la livraison" as UC5
+  usecase "Gérer une demande de livraison" as UC2
+  usecase "choisir un livreur" as UC7
+  usecase "choisir un pickup" as UC8
+  usecase "choisir un delivery" as UC9
+  usecase "Importer plan" as UC10
+  usecase "Modifier ordre des livraisons" as UC11
+  usecase "Sauvegarder la liste des requests" as UC12
+  usecase "Afficher details d'une livraison" as UC13
+  usecase "Afficher tournée" as UC14
+  UC2 .> UC7 : <<include>>
+  UC2 .> UC8 : <<include>>
+  UC2 .> UC9 : <<include>>
+  UC9 .> UC14 : <<extend>>
+  UC14 .> UC6 : <<include>>
+
+  User -- UC1
+  User -- UC3
+  User -- UC4
+  User -- UC5
+  User -- UC2
+  User -- UC10
+  User -- UC11
+  User -- UC12
+  User -- UC13
+
+  UC10 -- DB
+  UC1 -- DB
+  UC3 -- DB
+  UC4 -- DB
+  UC12 -- DB
+
+
+}
+@enduml
