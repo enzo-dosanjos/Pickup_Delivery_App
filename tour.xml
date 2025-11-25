@@ -1,0 +1,6 @@
+<tour courierId="1">
+    <tourStop stopType="pickup" requestId="1" intersectionId="123" arrivalTime="08:30:00" departureTime="08:35:00"/>
+    <tourStop stopType="delivery" requestId="1" intersectionId="456" arrivalTime="09:00:00" departureTime="09:05:00"/>
+    <tourStop stopType="pickup" requestId="2" intersectionId="789" arrivalTime="09:30:00" departureTime="09:35:00"/>
+    <tourStop stopType="delivery" requestId="2" intersectionId="101" arrivalTime="10:00:00" departureTime="10:05:00"/>
+</tour>
