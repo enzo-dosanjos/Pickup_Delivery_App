@@ -11,9 +11,7 @@ public class MapService {
     }
 
     public void loadMap(String filePath) {
-        XMLParsers parser = new XMLParsers();
-
-        map = parser.parseMap(filePath);
+        map = XMLParsers.parseMap(filePath);
     }
 
     public Map getMap() {
