@@ -13,7 +13,7 @@ activate TC
 TC -> TS : saveTours(filepath)
 activate TS
 
-alt pour tous les tours disponibles
+loop pour tous les tours disponibles
     TS -> XW : writeTour(tour, filepath) 
     activate XW
     XW --> TS : confirmation
