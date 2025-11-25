@@ -1,5 +1,5 @@
 @startuml
-title UC5 - Gérer une demande de livraison
+title UC5 - Gérer une demande de livraison (échoue)
 
 actor User
 participant "RequestController" as RC
