@@ -4,7 +4,7 @@ title UC7 - Choisir lieu de collecte
 actor User
 participant "RequestController" as RC
 
-User -> RC : choosePickup(intersectionId) (soit dans la carte, un liste ou par nom de rue)
+User -> RC : choosePickup(intersectionId) (soit dans la carte, un liste)
 activate RC
 
 RC --> User : pickupSelected (UI updated)

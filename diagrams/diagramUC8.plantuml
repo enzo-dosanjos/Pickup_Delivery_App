@@ -5,7 +5,7 @@ actor User
 participant "RequestController" as RC
 
 
-User -> RC : chooseDelivery(intersectionId) (soit dans la carte, un liste ou par nom de rue)
+User -> RC : chooseDelivery(intersectionId) (soit dans la carte, un liste)
 activate RC
 
 
