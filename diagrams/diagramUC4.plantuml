@@ -5,14 +5,14 @@ actor User
 participant "TourController" as TC
 participant "TourService" as TS
 
-User -> TC : updateNumCouriers(num)
+User -> TC : updateNumCouriers(num, list<NewCourierID>)
 activate TC
 
-TC -> TS : updateNumCouriers(num)
+TC -> TS : updateNumCouriers(num, list<NewCourierID>)
 activate TS
 
 TS -> TS : numCouriers = num
-TS -> TS : assignRequestsToCouriers() 
+TS -> TS : assignRequestsToCouriers(List<courierID>) 
 TS --> TC : updatedTours
 deactivate TS
 

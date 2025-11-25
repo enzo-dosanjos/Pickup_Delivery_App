@@ -2,7 +2,7 @@
 
 package "Persistence" {
     class XMLParsers {
-        + parseGraph(filePath: string) : Graph
+        + parseMap(filePath: string) : Map
         + parseRequests(filePath: string) : PickupDelivery
         + parseTours(filePath: string) : Tour
     }
@@ -32,7 +32,9 @@ package "Domain" {
         class Map {
             - intersections : TreeMap<long, Intersection>  (key: intersection id)
             - adjencyList : HashMap<long, vector<RoadSegment>>  (key: starting intersection id)
-            + getOutgoingRoadSegments(id: long) : vector<RoadSegment>
+            + addIntersection(intersection: Intersection) : boolean
+            + addRoadSegment(intersectionId: Long, roadSegment: RoadSegment) : boolean
+            + getRoadSegment(startId: long, endId: long) : RoadSegment
         }
 
         class Tour {
@@ -97,16 +99,23 @@ package "Domain" {
         class MapService {
             - map : Map
             + loadMap(filePath: string) : Map
-            + getRoadSegment(startId: long, endId: long) : RoadSegment
+            + getIntersectionsPerName(name: string) : vector<Intersection>  (can give partial name)
             + getCurrentMap() : Map
         }
 
         class RequestService {
             - pickupDelivery : PickupDelivery
-            + addRequest(warehouseId, pickupId, pickupDuration, deliveryId, deliveryDuration, courierId)
+            + addRequest(warehouseId, pickupIntersectionId, pickupDuration, deliveryIntersectionId, deliveryDuration, courierId)
             + getRequestsForCourier(id) : vector<Request>
+            + assignRequestsToCouriers(list<CourierID>): void
             + loadRequests(filepath: String) : void
             + saveRequests(filepath: String) : void
+        }
+
+        class DijkstraService {
+            + compareTo(map: Map, startId: long, endId: long) : double
+            + computeShortestPath(map: Map, requestsPerCourier: vector<long>) : pair<GrapheComplet, vector<vector<long>>>  (pair of graph and matrix of predecessors)
+            + dijkstra(map: Map, requestsPerCourier: vector<long>, startId: long) : void
         }
 
         class TourService {
@@ -114,15 +123,18 @@ package "Domain" {
             - numCouriers : int
             - graph : GrapheComplet
             - tours : TreeMap<long, Tour>  (key: courier id)
+            - requestOrder : TreeMap<long, vector<pair<Long, Long>>  (key: courier id, value: pair of ids of stop that should be before the other)
+            + computeAllTours() : void
             + computeTourForCourier(id) : Tour
             + saveTours(filepath: String) : void
             + computeDistance(startId, endId): double
             + computeDuration(startId, endId): time.Duration
-            + assignRequestsToCouriers() : void
-            + updateNumCouriers(numCouriers: int, list<CourierID>) : void
+            + assignRequestsToCouriers(List<courierID>) : void
+            + updateNumCouriers(numCouriers: int, List<courierID>) : void
             + updateRequestOrder(requestBeforeId: long, requestAfterId: long, courierId: long) : void
             + getStopDetails(requestId: long, type: StopType) : TourStop
 
+           
         }
 
         class IteratorSeq {
@@ -173,7 +185,7 @@ package "Presentation" {
     }
 
     class RequestController {
-        + addRequest(courierId: String, pickupId: String, deliveryId: String)
+        + addRequest(courierId: String, pickupIntersectionId: String, deliveryIntersectionId: String)
         + loadRequests(filepath: String)
         + saveRequests(filepath: String)
         + chooseCourier(courierId: long) : void
@@ -183,7 +195,7 @@ package "Presentation" {
 
     class TourController {
         + saveTours(filepath: String)
-        + updateNumCouriers(numCouriers: int)
+        + updateNumCouriers(numCouriers: int, list<CourierID>)
         + updateRequestOrder(requestBeforeId: long, requestAfterId: long)
         + showRequestDetails(requestId: long, deliveryOrPickup: StopType)
     }

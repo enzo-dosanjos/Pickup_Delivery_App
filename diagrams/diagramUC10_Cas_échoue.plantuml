@@ -16,6 +16,24 @@ TS -> TS : apply precedence constraint(requestBeforeId, requestAfterId, courierI
 TS -> TS : computeTourForCourier(courierId)
 TS -> TSP1 : chercheSolution(...)
 activate TSP1
+TSP1 --> TS : errour
+deactivate TSP1
+
+TS --> TC : errour
+deactivate TS
+
+TC --> User : "tournée imposible, choisir outre ourier"
+
+User -> TC : updateRequestOrder(requestBeforeId, requestAfterId)
+
+
+TC -> TS : updateRequestOrder(requestBeforeId, requestAfterId)
+activate TS
+
+TS -> TS : apply precedence constraint(requestBeforeId, requestAfterId, courierId)
+TS -> TS : computeTourForCourier(courierId)
+TS -> TSP1 : chercheSolution(...)
+activate TSP1
 TSP1 --> TS : bestTour
 deactivate TSP1
 

@@ -18,6 +18,24 @@ RC -> TS : computeTourForCourier(courierId)
 activate TS
 TS -> TSP1 : chercheSolution(...)  // TSP
 activate TSP1
+TSP1 --> TS : erreur pas posible de trouver une solution
+deactivate TSP1
+TS --> RC : erreour
+deactivate TS
+
+RC --> User : "Demande de changer les couriers"
+User -> RC : addRequest(courierId: String, pickupIntersectionId: String, deliveryIntersectionId: String)
+
+
+RC -> RS : addRequest(courierId: String, pickupIntersectionId: String, deliveryIntersectionId: String)
+activate RS
+RS --> RC : requestId
+deactivate RS
+
+RC -> TS : computeTourForCourier(courierId)
+activate TS
+TS -> TSP1 : chercheSolution(...)  // TSP
+activate TSP1
 TSP1 --> TS : bestTour
 deactivate TSP1
 TS --> RC : updatedTour

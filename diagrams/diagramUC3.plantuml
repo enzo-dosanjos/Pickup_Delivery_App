@@ -7,7 +7,7 @@ participant "RequestService" as RS
 participant "XMLParsers" as XP
 participant "TourService" as TS
 
-User -> RC : loadRequests(filepath)
+User -> RC : loadRequests(filepath), optional: List<NewCourrierID>
 activate RC
 
 RC -> RS : loadRequests(filepath)
@@ -21,9 +21,9 @@ deactivate XP
 RS --> RC : requestsLoaded
 deactivate RS
 
-RC -> TS : assignRequestsToCouriers()
+RC -> TS : assignRequestsToCouriers(list<CourierID>)
 activate TS
-TS -> TS : assignRequestsToCouriers()  // internal assignment
+TS -> TS : assignRequestsToCouriers(list<CourierID>)
 TS --> RC : toursUpdated
 deactivate TS
 

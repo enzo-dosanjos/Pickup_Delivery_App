@@ -3,15 +3,9 @@ title UC7 - Choisir lieu de collecte
 
 actor User
 participant "RequestController" as RC
-participant "MapService" as MS
 
-User -> RC : choosePickup(intersectionId)
+User -> RC : choosePickup(intersectionId) (soit dans la carte, un liste ou par nom de rue)
 activate RC
-
-RC -> MS : getOutgoingRoadSegments(intersectionId)  // valida existencia
-activate MS
-MS --> RC : vector<RoadSegment> (o vacío si inválido)
-deactivate MS
 
 RC --> User : pickupSelected (UI updated)
 deactivate RC
