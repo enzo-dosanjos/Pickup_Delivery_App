@@ -8,27 +8,26 @@ import domain.model.RoadSegment;
 import domain.model.PickupDelivery;
 import domain.model.Request;
 
-
+import java.util.Arrays;
 
 public class DijkstraService {
-    public double compareTo(Map map, int startId, int endId) {
+    private static double compareTo(Map map, int startId, int endId) {
     // Not yet implemented
         return 0;
     }
 
-    public pair<GrapheComplet, long[][]> computeShortestPath(Map map, long[] requests) {
+    public static void computeShortestPath(Map map, GrapheComplet g, long[][] predecesseurs) {
     // Calculate the shortest paths between all intersections that need to be visited using Dijkstra's algorithm
-        GrapheComplet g = grapheComplet(requests);
-        predecesseurs = new long[map.getIntersections.size()][map.getIntersections.size()];
+        long[][] etatNoeuds = new long[g.getNbSommets()][g.getNbSommets()];
+        for (int i = 0; i < g.getNbSommets(); i++) { Arrays.fill(etatNoeuds[i], -1); }
 
-
-        return null;
+        for (long i: g.getSommets()) {
+            Dijkstra(map, g, i, predecesseurs, etatNoeuds);
+        }
     }
 
-    public void Dijkstra(Map map,GrapheComplet grapheComplet, int start, long[][] predecesseurs) {
+    private static void Dijkstra(Map map, GrapheComplet grapheComplet, long start, long[][] predecesseurs, long[][] etatNoeuds) {
         // Calculate the shortest paths using Dijkstra's algorithm
-
-
 
     }
 }
