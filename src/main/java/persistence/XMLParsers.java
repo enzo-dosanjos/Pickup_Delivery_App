@@ -10,6 +10,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeMap;
@@ -129,7 +130,7 @@ public class XMLParsers {
             for (int i = 0; i < tourNodes.getLength(); i++) {
                 Element tourElement = (Element) tourNodes.item(i);
                 long courierId = Long.parseLong(tourElement.getAttribute("courierId"));
-                
+
                 List<TourStop> stops = new ArrayList<>();
                 NodeList stopNodes = tourElement.getElementsByTagName("stop");
                 for (int j = 0; j < stopNodes.getLength(); j++) {
@@ -137,15 +138,26 @@ public class XMLParsers {
                     StopType type = StopType.valueOf(stopElement.getAttribute("type"));
                     long requestId = Long.parseLong(stopElement.getAttribute("requestId"));
                     long intersectionId = Long.parseLong(stopElement.getAttribute("intersectionId"));
-                    long arrivalTime = 0; // Simplified
-                    long departureTime = 0; // Simplified
+                    long arrivalTime = LocalDateTime.parse(stopElement.getAttribute("arrivalTime")).atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli();
+                    long departureTime = LocalDateTime.parse(stopElement.getAttribute("departureTime")).atZone(java.time.ZoneId.systemDefault()).toInstant().toEpochMilli();
                     stops.add(new TourStop(type, requestId, intersectionId, arrivalTime, departureTime));
                 }
-                
-                long totalDistance = Long.parseLong(tourElement.getElementsByTagName("totalDistance").item(0).getTextContent());
+
+                List<RoadSegment> roadSegments = new ArrayList<>();
+                NodeList roadSegmentNodes = tourElement.getElementsByTagName("segment");
+                for (int j = 0; j < roadSegmentNodes.getLength(); j++) {
+                    Element roadSegmentElement = (Element) roadSegmentNodes.item(j);
+                    String name = roadSegmentElement.getAttribute("name");
+                    double length = Double.parseDouble(roadSegmentElement.getAttribute("length"));
+                    long startId = Long.parseLong(roadSegmentElement.getAttribute("startId"));
+                    long endId = Long.parseLong(roadSegmentElement.getAttribute("endId"));
+                    roadSegments.add(new RoadSegment(name, length, startId, endId));
+                }
+
+                long totalDistance = (long) Double.parseDouble(tourElement.getElementsByTagName("totalDistance").item(0).getTextContent());
                 long totalDuration = Duration.parse(tourElement.getElementsByTagName("totalDuration").item(0).getTextContent()).toMillis();
-                
-                Tour tour = new Tour(courierId, stops, totalDistance, totalDuration);
+
+                Tour tour = new Tour(courierId, stops, roadSegments, totalDistance, totalDuration);
                 tours.put(courierId, tour);
             }
         } catch (Exception e) {

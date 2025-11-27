@@ -64,7 +64,7 @@ public class TourService {
                         stops.add(new TourStop(StopType.PICKUP, req.getId(), req.getPickupIntersectionId(), 0L, 0L));
                         stops.add(new TourStop(StopType.DELIVERY, req.getId(), req.getDeliveryIntersectionId(), 0L, 0L));
                     }
-                    Tour dummyTour = new Tour(courierId, stops, 0, 0); // distance and duration are 0 for dummy
+                    Tour dummyTour = new Tour(courierId, stops, new java.util.Vector<>(), 0, 0); // distance and duration are 0 for dummy
                     tours.put(courierId, dummyTour);
                 }
             }

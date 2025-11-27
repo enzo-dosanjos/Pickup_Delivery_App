@@ -66,25 +66,30 @@ export function Map(props: { intersections: Intersection[], roadSegments: L.LatL
                 <Polyline key={id} positions={segment} />
             ))}
             {props.tours.map(tour => (
-                tour.stops.map((stop, index) => {
-                    const intersection = props.intersections.find(i => i.id === stop.intersectionId);
-                    if (intersection) {
-                        const icon = stop.type === StopType.PICKUP ? startIcon : endIcon;
-                        return (
-                            <Marker key={`${tour.courierId}-${stop.intersectionId}-${index}`} position={intersection.position} icon={icon}>
-                                <Popup>
-                                    <div>
-                                        Courier ID: {tour.courierId} <br />
-                                        Stop Type: {stop.type} <br />
-                                        Request ID: {stop.requestID} <br />
-                                        Intersection ID: {stop.intersectionId} <br />
-                                    </div>
-                                </Popup>
-                            </Marker>
-                        );
-                    }
-                    return null;
-                })
+                <div key={tour.courierId}>
+                    {tour.roadSegmentsTaken.map((segment, index) => (
+                        <Polyline key={index} positions={segment} color="red" />
+                    ))}
+                    {tour.stops.map((stop, index) => {
+                        const intersection = props.intersections.find(i => i.id === stop.intersectionId);
+                        if (intersection) {
+                            const icon = stop.type === StopType.PICKUP ? startIcon : endIcon;
+                            return (
+                                <Marker key={`${tour.courierId}-${stop.intersectionId}-${index}`} position={intersection.position} icon={icon}>
+                                    <Popup>
+                                        <div>
+                                            Courier ID: {tour.courierId} <br />
+                                            Stop Type: {stop.type} <br />
+                                            Request ID: {stop.requestID} <br />
+                                            Intersection ID: {stop.intersectionId} <br />
+                                        </div>
+                                    </Popup>
+                                </Marker>
+                            );
+                        }
+                        return null;
+                    })}
+                </div>
             ))}
             <FitBounds bounds={mapBounds} />
         </MapContainer>

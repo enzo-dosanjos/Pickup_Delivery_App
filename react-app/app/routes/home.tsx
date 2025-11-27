@@ -110,8 +110,8 @@ export default function Home() {
                 }
 
                 if (transformedIntersections.length > 0) {
-                    const latitudes = transformedIntersections.map(i => i.position[0]);
-                    const longitudes = transformedIntersections.map(i => i.position[1]);
+                    const latitudes = transformedIntersections.map(i => (i.position as [number, number])[0]);
+                    const longitudes = transformedIntersections.map(i => (i.position as [number, number])[1]);
                     const minLat = Math.min(...latitudes);
                     const maxLat = Math.max(...latitudes);
                     const minLng = Math.min(...longitudes);
@@ -122,13 +122,34 @@ export default function Home() {
                 setRoadSegments(transformedRoadSegments);
 
                 // Fetch Tour Data
-                const tourResponse = await fetch("http://localhost:8080/api/tour/load?filepath=src/main/resources/grandPlan.xml"); // Assuming a default filepath
+                const tourResponse = await fetch("http://localhost:8080/api/tour/load?filepath=src/test/resources/testTours.xml"); // Assuming a default filepath
                 if (!tourResponse.ok) {
                     throw new Error(`HTTP error! status: ${tourResponse.status}`);
                 }
                 const tourData: ApiTour[] = await tourResponse.json();
                 console.log("Raw tour data from API:", tourData);
-                setTours(tourData);
+
+                // Transform Tour Data
+                const transformedTours = tourData.map(tour => {
+                    const transformedRoadSegments = tour.roadSegmentsTaken.map(segment => {
+                        const startIntersection = intersectionMap.get(segment.startId);
+                        const endIntersection = intersectionMap.get(segment.endId);
+                        if (startIntersection && endIntersection) {
+                            return [
+                                [startIntersection.lat, startIntersection.lng],
+                                [endIntersection.lat, endIntersection.lng]
+                            ];
+                        }
+                        return null;
+                    }).filter((s): s is L.LatLngExpression[] => s !== null);
+
+                    return {
+                        ...tour,
+                        roadSegmentsTaken: transformedRoadSegments
+                    };
+                });
+
+                setTours(transformedTours);
 
             } catch (e: any) {
                 console.error("Caught error object:", e);
