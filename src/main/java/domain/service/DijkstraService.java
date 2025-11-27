@@ -12,7 +12,7 @@ public class DijkstraService {
     private Map map;
     private GrapheComplet g;
 
-    public void computeShortestPath(long[][] predecesseurs) {
+    public void computeShortestPath() {
     // Calculate the shortest paths between all intersections that need to be visited using Dijkstra's algorithm
 
         DijkstraTable dijkstraTable = new DijkstraTable();
@@ -24,9 +24,9 @@ public class DijkstraService {
                 } else {
                     distance = Double.MAX_VALUE;
                 }
-                long precedent = -1;
+                long predecessor = -1;
                 boolean visited = false;
-                dijkstraTable.put(row, col, distance, precedent, visited);
+                dijkstraTable.put(row, col, distance, predecessor, visited);
             }
         }
 
@@ -48,6 +48,7 @@ public class DijkstraService {
             Node currentNode = pq.poll();
             long currentVertex = currentNode.getVertex();
             CellInfo currentCell = dijkstraTable.get(sommets[start], currentVertex);
+            if (currentCell == null) { System.out.println(sommets[start]); System.out.println(currentVertex); System.out.println(g); }
             if (currentCell.isVisited()) continue;
             currentCell.setVisited(true);
             RoadSegment[] neighbors = adjencyList.get(currentVertex);
@@ -59,7 +60,7 @@ public class DijkstraService {
                         double newDist = currentCell.getDistance() + segment.getLength();
                         if (newDist < neighborCell.getDistance()) {
                             neighborCell.setDistance(newDist);
-                            neighborCell.setPrecedent(currentVertex);
+                            neighborCell.setPredecessor(currentVertex);
                             pq.add(new Node(neighborVertex, newDist));
                             dijkstraTable.put(sommets[start], neighborVertex, neighborCell);
                         }
@@ -73,24 +74,24 @@ public class DijkstraService {
                     //compteur++;
                 }
             }
-            // Ajout pour compléter tableUltime avec les degats colatéraux
-            long tempvertex = currentCell.getPrecedent();
+            // Ajout pour compléter dijkstraTable avec les dégâts colatéraux
+            long tempvertex = currentCell.getPredecessor();
             if (tempvertex == -1) continue;
-            long firstPrecedentVertex = tempvertex;
+            long firstPredecessorVertex = tempvertex;
             double laDistance = currentCell.getDistance() - dijkstraTable.get(sommets[start], tempvertex).getDistance();
             while (tempvertex != sommets[start]) {
-                dijkstraTable.put(tempvertex, currentVertex, laDistance + dijkstraTable.get(tempvertex, firstPrecedentVertex).getDistance(), firstPrecedentVertex, true);
+                dijkstraTable.put(tempvertex, currentVertex, laDistance + dijkstraTable.get(tempvertex, firstPredecessorVertex).getDistance(), firstPredecessorVertex, true);
                 // Test pour savoir si le sommet est dans grapheComplet
                 for (int i = 0; i < this.g.getNbSommets(); i++) {
                     if (sommets[i] == tempvertex) {
                         for (int j = 0; j < this.g.getNbSommets(); j++) {
                             if (sommets[j] == currentVertex) {
-                                this.g.setCout(i, j, laDistance + dijkstraTable.get(tempvertex, firstPrecedentVertex).getDistance());
+                                this.g.setCout(i, j, laDistance + dijkstraTable.get(tempvertex, firstPredecessorVertex).getDistance());
                             }
                         }
                     }
                 }
-                tempvertex = dijkstraTable.get(sommets[start], tempvertex).getPrecedent();
+                tempvertex = dijkstraTable.get(sommets[start], tempvertex).getPredecessor();
             }
         }
     }

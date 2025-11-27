@@ -10,9 +10,9 @@ public class DijkstraTable {
     }
 
     // Add or replace a cell with individual values
-    public void put(long row, long col, double distance, long precedent, boolean visited) {
+    public void put(long row, long col, double distance, long predecessor, boolean visited) {
         table.computeIfAbsent(row, r -> new HashMap<>())
-                .put(col, new CellInfo(distance, precedent, visited));
+                .put(col, new CellInfo(distance, predecessor, visited));
     }
 
     // Add or replace a cell with a CellInfo object

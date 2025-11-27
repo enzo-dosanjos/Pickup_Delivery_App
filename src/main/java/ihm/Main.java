@@ -27,12 +27,10 @@ public class Main {
         }
 
         GrapheComplet graph = new GrapheComplet(stops, nbStops);
-        long[][] predecessors = new long[nbStops][nbStops];
-        for (int i = 0; i < nbStops; i++) Arrays.fill(predecessors[i], -1);
 
         // Compute the shortest paths using the Dijkstra algorithm
         DijkstraService dijkstraService = new DijkstraService(map, graph);
-        dijkstraService.computeShortestPath(predecessors);
+        dijkstraService.computeShortestPath();
 
         // Run the SOP algorithm (asymmetrical TSP with precedence constraints) on the graph
     }
