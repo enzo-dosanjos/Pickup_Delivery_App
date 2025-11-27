@@ -1,5 +1,5 @@
 import type { Route } from "./+types/home";
-import { Map, Intersection as MapIntersection } from "../map/map";
+import { Map as MapComponent, type Intersection as MapIntersection } from "../map/map";
 import { useState, useEffect } from "react";
 import L from "leaflet";
 
@@ -43,17 +43,27 @@ export default function Home() {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const data: ApiMapData = await response.json();
+                console.log("Raw data from API:", data);
 
                 // --- Data Transformation ---
 
                 // 1. Transform Intersections
-                const intersectionMap = new Map<number, ApiIntersection>(
-                    Object.values(data.intersections).map(i => [i.id, i])
-                );
-                const transformedIntersections: MapIntersection[] = Array.from(intersectionMap.values()).map(i => ({
-                    id: i.id,
-                    position: [i.lat, i.lng],
-                }));
+                const intersectionMap = new Map<number, ApiIntersection>();
+                for (const key in data.intersections) {
+                    const intersection = data.intersections[key];
+                    if (intersection && typeof intersection.id !== 'undefined') {
+                        intersectionMap.set(intersection.id, intersection);
+                    }
+                }
+                console.log("Constructed intersectionMap:", intersectionMap);
+
+                const transformedIntersections: MapIntersection[] = Array.from(intersectionMap.values()).map(i => {
+                    return {
+                        id: i.id,
+                        position: [i.lat, i.lng],
+                    };
+                });
+
 
                 // 2. Transform Road Segments
                 const transformedRoadSegments: L.LatLngExpression[][] = [];
@@ -69,8 +79,12 @@ export default function Home() {
                                     [startIntersection.lat, startIntersection.lng],
                                     [endIntersection.lat, endIntersection.lng]
                                 ]);
+                            } else {
+                                console.warn(`Could not find endIntersection for id: ${segment.endId}`);
                             }
                         });
+                    } else {
+                        console.warn(`Could not find startIntersection for id: ${startIdStr}`);
                     }
                 }
 
@@ -90,6 +104,7 @@ export default function Home() {
                 setRoadSegments(transformedRoadSegments);
                 
             } catch (e: any) {
+                console.error("Caught error object:", e);
                 setError(`Failed to fetch map data: ${e.message}`);
                 console.error(e);
             } finally {
@@ -113,7 +128,7 @@ export default function Home() {
             <h1>Welcome to our brand new pick-up & delivery app !</h1>
             <br />
             {bounds.length > 0 && (
-                 <Map
+                 <MapComponent
                     intersections={intersections}
                     roadSegments={roadSegments}
                     bounds={bounds}

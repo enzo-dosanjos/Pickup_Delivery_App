@@ -4,16 +4,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3ec058b6-2f7f-4ccb-a9c6-b06a7232f124" name="Changes" comment="added dijkstra service">
+    <list default="true" id="a57357fd-e316-4268-8d2b-b827d25b4723" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_27_11_2025_10_40__Changes_.xml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/react-app/app/map/map.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/react-app/app/map/map.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/react-app/app/routes/home.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/react-app/app/routes/home.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/domain/model/GrapheComplet.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/domain/model/GrapheComplet.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/domain/model/PickupDelivery.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/domain/model/PickupDelivery.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/domain/service/MapService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/domain/service/MapService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/domain/service/RequestService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/domain/service/RequestService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/domain/service/TourService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/domain/service/TourService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/persistence/XMLParsers.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/persistence/XMLParsers.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/react-app/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/react-app/package-lock.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/test/java/domain/service/MapServiceTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/domain/service/MapServiceTest.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -23,43 +20,59 @@
   <component name="Git.Settings">
     <option name="RECENT_BRANCH_BY_REPOSITORY">
       <map>
-        <entry key="$PROJECT_DIR$" value="Plus_court_chemin" />
+        <entry key="$PROJECT_DIR$" value="main" />
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="ProblemsViewState">
-    <option name="selectedTabId" value="CurrentFile" />
-  </component>
-  <component name="PropertiesComponent">{
-  &quot;keyToString&quot;: {
-    &quot;git-widget-placeholder&quot;: &quot;ReactApp&quot;,
-    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;
-  }
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 7
 }</component>
+  <component name="ProjectId" id="363mSYv1LhF6YRIcmdIWyQCBPeo" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1": "true",
+    "git-widget-placeholder": "ReactApp",
+    "ignore.virus.scanning.warn.message": "true",
+    "junie.onboarding.icon.badge.shown": "true",
+    "kotlin-language-version-configured": "true",
+    "node.js.detected.package.eslint": "true",
+    "node.js.detected.package.tslint": "true",
+    "node.js.selected.package.eslint": "(autodetect)",
+    "node.js.selected.package.tslint": "(autodetect)",
+    "nodejs_package_manager_path": "npm",
+    "to.speed.mode.migration.done": "true",
+    "vue.rearranger.settings.migration": "true"
+  }
+}]]></component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-9823dce3aa75-bf35d07a577b-intellij.indexing.shared.core-IU-252.28238.7" />
+        <option value="bundled-js-predefined-d6986cc7102b-a71380e98a7c-JavaScript-IU-252.28238.7" />
+      </set>
+    </attachedChunks>
+  </component>
   <component name="TaskManager">
-    <task id="LOCAL-00001" summary="added dijkstra service">
-      <option name="closed" value="true" />
-      <created>1764237602512</created>
-      <option name="number" value="00001" />
-      <option name="presentableId" value="LOCAL-00001" />
-      <option name="project" value="LOCAL" />
-      <updated>1764237602512</updated>
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="a57357fd-e316-4268-8d2b-b827d25b4723" name="Changes" comment="" />
+      <created>1764243629690</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1764243629690</updated>
+      <workItem from="1764243642637" duration="391000" />
+      <workItem from="1764244047574" duration="5040000" />
     </task>
-    <task id="LOCAL-00002" summary="added dijkstra service">
-      <option name="closed" value="true" />
-      <created>1764237607209</created>
-      <option name="number" value="00002" />
-      <option name="presentableId" value="LOCAL-00002" />
-      <option name="project" value="LOCAL" />
-      <updated>1764237607209</updated>
-    </task>
-    <option name="localTasksCounter" value="3" />
     <servers />
   </component>
-  <component name="VcsManagerConfiguration">
-    <MESSAGE value="added dijkstra folder" />
-    <MESSAGE value="added dijkstra service" />
-    <option name="LAST_COMMIT_MESSAGE" value="added dijkstra service" />
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
   </component>
 </project>

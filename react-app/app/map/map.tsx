@@ -24,7 +24,7 @@ export function Map(props: { intersections: Intersection[], roadSegments: L.LatL
             {props.roadSegments.map((segment, id) => (
                 <Polyline key={id} positions={segment} />
             ))}
-            <FitBounds bounds={L.latLngBounds(props.bounds[0],props.bounds[1])} />
+            <FitBounds bounds={mapBounds} />
         </MapContainer>
     );
 }
