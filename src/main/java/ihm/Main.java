@@ -31,7 +31,8 @@ public class Main {
         for (int i = 0; i < nbStops; i++) Arrays.fill(predecessors[i], -1);
 
         // Compute the shortest paths using the Dijkstra algorithm
-        DijkstraService.computeShortestPath(map, graph, predecessors);
+        DijkstraService dijkstraService = new DijkstraService(map, graph);
+        dijkstraService.computeShortestPath(predecessors);
 
         // Run the SOP algorithm (asymmetrical TSP with precedence constraints) on the graph
     }
