@@ -51,7 +51,7 @@ public class GrapheComplet implements Graphe {
         return "GrapheComplet{" +
                 "sommets=" + Arrays.toString(sommets) +
                 ", nbSommets=" + nbSommets +
-                ", cout=" + Arrays.toString(cout) +
+                ",\ncouts=" + Arrays.deepToString(cout) +
                 '}';
     }
 }
