@@ -1,9 +1,7 @@
 package persistence;
 
-import domain.model.Intersection;
-import domain.model.Map;
-import domain.model.PickupDelivery;
-import domain.model.RoadSegment;
+import domain.model.*;
+import org.springframework.stereotype.Component;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -11,10 +9,57 @@ import org.w3c.dom.NodeList;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
+import java.util.TreeMap;
 
+@Component
 public class XMLParsers {
-    public static PickupDelivery parseRequests(String filepath) {
-        return null;
+
+    // Make parseRequests non-static to use an instance for parsing
+    public PickupDelivery parseRequests(String filepath) {
+        System.out.println("Parsing requests from: " + filepath);
+        // Placeholder implementation: create a dummy PickupDelivery
+        PickupDelivery dummyPickupDelivery = new PickupDelivery();
+        // Add some dummy requests for testing purposes
+        dummyPickupDelivery.addRequest(1L, new Request(101L, 1L, 10L, 2L, 5L)); // courierId, request
+        dummyPickupDelivery.addRequest(1L, new Request(102L, 3L, 12L, 4L, 6L));
+        dummyPickupDelivery.addRequest(2L, new Request(201L, 5L, 8L, 6L, 4L));
+
+        // In a real scenario, this would parse an XML file and populate the PickupDelivery object.
+        // Example parsing logic (simplified):
+        try {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setIgnoringComments(true);
+
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            File xmlFile = new File(filepath);
+            if (!xmlFile.exists()) {
+                System.err.println("Request XML file not found at: " + filepath + ". Returning dummy data.");
+                return dummyPickupDelivery; // Return dummy data if file doesn't exist
+            }
+            Document doc = builder.parse(xmlFile);
+            doc.getDocumentElement().normalize();
+
+            Element root = doc.getDocumentElement();
+            NodeList requestsNodes = root.getElementsByTagName("request"); // Assuming "request" tag
+            for (int i = 0; i < requestsNodes.getLength(); i++) {
+                Element requestElement = (Element) requestsNodes.item(i);
+                // Parse attributes and create Request objects
+                long id = Long.parseLong(requestElement.getAttribute("id"));
+                long pickupIntersectionId = Long.parseLong(requestElement.getAttribute("pickupIntersectionId"));
+                long pickupDuration = Long.parseLong(requestElement.getAttribute("pickupDuration"));
+                long deliveryIntersectionId = Long.parseLong(requestElement.getAttribute("deliveryIntersectionId"));
+                long deliveryDuration = Long.parseLong(requestElement.getAttribute("deliveryDuration"));
+                long courierId = Long.parseLong(requestElement.getAttribute("courierId")); // Assuming courierId is in request XML
+
+                Request request = new Request(id, pickupIntersectionId, pickupDuration, deliveryIntersectionId, deliveryDuration);
+                dummyPickupDelivery.addRequest(courierId, request);
+            }
+        } catch (Exception e) {
+            System.err.println("Error parsing requests from " + filepath + ": " + e.getMessage());
+            // Fallback to dummy data if parsing fails
+        }
+
+        return dummyPickupDelivery;
     }
 
     public Map parseMap(String filePath) {

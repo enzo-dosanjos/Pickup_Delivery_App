@@ -52,4 +52,10 @@ public class GrapheComplet implements Graphe {
 		return i != j;
 	}
 
+    public void setCout(int start, int start1, double l) {
+    }
+
+    public long[] getSommets() {
+        return new long[0];
+    }
 }

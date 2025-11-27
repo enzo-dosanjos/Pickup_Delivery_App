@@ -4,7 +4,15 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3ec058b6-2f7f-4ccb-a9c6-b06a7232f124" name="Changes" comment="modif ApiService.java and PickupDelivery">
+    <list default="true" id="3ec058b6-2f7f-4ccb-a9c6-b06a7232f124" name="Changes" comment="added dijkstra service">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/react-app/app/routes/home.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/react-app/app/routes/home.tsx" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/domain/model/GrapheComplet.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/domain/model/GrapheComplet.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/domain/model/PickupDelivery.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/domain/model/PickupDelivery.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/domain/service/MapService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/domain/service/MapService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/domain/service/RequestService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/domain/service/RequestService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/domain/service/TourService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/domain/service/TourService.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/persistence/XMLParsers.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/persistence/XMLParsers.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -20,13 +28,38 @@
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "git-widget-placeholder": "ReactApp",
-    "node.js.selected.package.tslint": "(autodetect)"
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
+  </component>
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;git-widget-placeholder&quot;: &quot;ReactApp&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;
   }
-}]]></component>
+}</component>
   <component name="TaskManager">
+    <task id="LOCAL-00001" summary="added dijkstra service">
+      <option name="closed" value="true" />
+      <created>1764237602512</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1764237602512</updated>
+    </task>
+    <task id="LOCAL-00002" summary="added dijkstra service">
+      <option name="closed" value="true" />
+      <created>1764237607209</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1764237607209</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="added dijkstra folder" />
+    <MESSAGE value="added dijkstra service" />
+    <option name="LAST_COMMIT_MESSAGE" value="added dijkstra service" />
   </component>
 </project>
