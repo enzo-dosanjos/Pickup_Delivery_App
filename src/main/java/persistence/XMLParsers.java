@@ -9,12 +9,14 @@ import org.w3c.dom.NodeList;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.TreeMap;
 
 @Component
 public class XMLParsers {
 
-    // Make parseRequests non-static to use an instance for parsing
     public PickupDelivery parseRequests(String filepath) {
         System.out.println("Parsing requests from: " + filepath);
         // Placeholder implementation: create a dummy PickupDelivery
@@ -115,4 +117,41 @@ public class XMLParsers {
 
         return map;
     }
+
+    public TreeMap<Long, Tour> parseTours(String filePath) {
+        TreeMap<Long, Tour> tours = new TreeMap<>();
+        try {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            Document document = builder.parse(new File(filePath));
+            document.getDocumentElement().normalize();
+            NodeList tourNodes = document.getElementsByTagName("tour");
+            for (int i = 0; i < tourNodes.getLength(); i++) {
+                Element tourElement = (Element) tourNodes.item(i);
+                long courierId = Long.parseLong(tourElement.getAttribute("courierId"));
+                
+                List<TourStop> stops = new ArrayList<>();
+                NodeList stopNodes = tourElement.getElementsByTagName("stop");
+                for (int j = 0; j < stopNodes.getLength(); j++) {
+                    Element stopElement = (Element) stopNodes.item(j);
+                    StopType type = StopType.valueOf(stopElement.getAttribute("type"));
+                    long requestId = Long.parseLong(stopElement.getAttribute("requestId"));
+                    long intersectionId = Long.parseLong(stopElement.getAttribute("intersectionId"));
+                    long arrivalTime = 0; // Simplified
+                    long departureTime = 0; // Simplified
+                    stops.add(new TourStop(type, requestId, intersectionId, arrivalTime, departureTime));
+                }
+                
+                long totalDistance = Long.parseLong(tourElement.getElementsByTagName("totalDistance").item(0).getTextContent());
+                long totalDuration = Duration.parse(tourElement.getElementsByTagName("totalDuration").item(0).getTextContent()).toMillis();
+                
+                Tour tour = new Tour(courierId, stops, totalDistance, totalDuration);
+                tours.put(courierId, tour);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return tours;
+    }
+
 }

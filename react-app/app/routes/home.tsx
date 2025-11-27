@@ -20,6 +20,28 @@ type ApiMapData = {
     adjencyList: Record<string, ApiRoadSegment[]>;
 };
 
+enum StopType {
+    PICKUP = "PICKUP",
+    DELIVERY = "DELIVERY",
+    INTERMEDIATE_INTERSECTION = "INTERMEDIATE_INTERSECTION",
+    WAREHOUSE = "WAREHOUSE",
+}
+
+type ApiTourStop = {
+    type: StopType;
+    requestID: number;
+    intersectionId: number;
+    arrivalTime: number;
+    departureTime: number;
+};
+
+type ApiTour = {
+    courierId: number;
+    stops: ApiTourStop[];
+    roadSegmentsTaken: ApiRoadSegment[];
+    totalDistance: number;
+    totalDuration: number;
+};
 
 export function meta({}: Route.MetaArgs) {
     return [
@@ -35,22 +57,23 @@ export default function Home() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    const [tours, setTours] = useState<ApiTour[]>([]);
+    const [loadingTours, setLoadingTours] = useState(true);
+
     useEffect(() => {
-        const fetchMapData = async () => {
+        const fetchData = async () => {
             try {
-                const response = await fetch("http://localhost:8080/api/map");
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                // Fetch Map Data
+                const mapResponse = await fetch("http://localhost:8080/api/map");
+                if (!mapResponse.ok) {
+                    throw new Error(`HTTP error! status: ${mapResponse.status}`);
                 }
-                const data: ApiMapData = await response.json();
-                console.log("Raw data from API:", data);
+                const mapData: ApiMapData = await mapResponse.json();
+                console.log("Raw map data from API:", mapData);
 
-                // --- Data Transformation ---
-
-                // 1. Transform Intersections
                 const intersectionMap = new Map<number, ApiIntersection>();
-                for (const key in data.intersections) {
-                    const intersection = data.intersections[key];
+                for (const key in mapData.intersections) {
+                    const intersection = mapData.intersections[key];
                     if (intersection && typeof intersection.id !== 'undefined') {
                         intersectionMap.set(intersection.id, intersection);
                     }
@@ -64,11 +87,9 @@ export default function Home() {
                     };
                 });
 
-
-                // 2. Transform Road Segments
                 const transformedRoadSegments: L.LatLngExpression[][] = [];
-                for (const startIdStr in data.adjencyList) {
-                    const segments = data.adjencyList[startIdStr];
+                for (const startIdStr in mapData.adjencyList) {
+                    const segments = mapData.adjencyList[startIdStr];
                     const startIntersection = intersectionMap.get(parseInt(startIdStr, 10));
 
                     if (startIntersection) {
@@ -88,7 +109,6 @@ export default function Home() {
                     }
                 }
 
-                // 3. Calculate Bounds
                 if (transformedIntersections.length > 0) {
                     const latitudes = transformedIntersections.map(i => i.position[0]);
                     const longitudes = transformedIntersections.map(i => i.position[1]);
@@ -98,25 +118,32 @@ export default function Home() {
                     const maxLng = Math.max(...longitudes);
                     setBounds([[minLat, minLng], [maxLat, maxLng]]);
                 }
-
-                // --- Update State ---
                 setIntersections(transformedIntersections);
                 setRoadSegments(transformedRoadSegments);
-                
+
+                // Fetch Tour Data
+                const tourResponse = await fetch("http://localhost:8080/api/tour/load?filepath=src/main/resources/grandPlan.xml"); // Assuming a default filepath
+                if (!tourResponse.ok) {
+                    throw new Error(`HTTP error! status: ${tourResponse.status}`);
+                }
+                const tourData: ApiTour[] = await tourResponse.json();
+                console.log("Raw tour data from API:", tourData);
+                setTours(tourData);
+
             } catch (e: any) {
                 console.error("Caught error object:", e);
-                setError(`Failed to fetch map data: ${e.message}`);
-                console.error(e);
+                setError(`Failed to fetch data: ${e.message}`);
             } finally {
                 setLoading(false);
+                setLoadingTours(false);
             }
         };
 
-        fetchMapData();
-    }, []); // Empty dependency array means this effect runs once on mount
+        fetchData();
+    }, []);
 
-    if (loading) {
-        return <div>Loading map...</div>;
+    if (loading || loadingTours) {
+        return <div>Loading data...</div>;
     }
 
     if (error) {
@@ -132,6 +159,7 @@ export default function Home() {
                     intersections={intersections}
                     roadSegments={roadSegments}
                     bounds={bounds}
+                    tours={tours}
                 />
             )}
         </div>

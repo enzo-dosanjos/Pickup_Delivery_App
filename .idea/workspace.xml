@@ -4,13 +4,12 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a57357fd-e316-4268-8d2b-b827d25b4723" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Checkout_at_27_11_2025_10_40__Changes_.xml" beforeDir="false" />
+    <list default="true" id="a57357fd-e316-4268-8d2b-b827d25b4723" name="Changes" comment="springboot integration + display map in react">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/react-app/app/map/map.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/react-app/app/map/map.tsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/react-app/app/routes/home.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/react-app/app/routes/home.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/react-app/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/react-app/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/test/java/domain/service/MapServiceTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/test/java/domain/service/MapServiceTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/domain/service/TourService.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/domain/service/TourService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/java/persistence/XMLParsers.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/persistence/XMLParsers.java" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -24,6 +23,9 @@
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="ProblemsViewState">
+    <option name="selectedTabId" value="CurrentFile" />
   </component>
   <component name="ProjectColorInfo">{
   &quot;associatedIndex&quot;: 7
@@ -49,6 +51,7 @@
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
     "to.speed.mode.migration.done": "true",
+    "ts.external.directory.path": "C:\\Users\\Karim\\Documents\\Code\\aGILE\\Pickup_Delivery_App\\react-app\\node_modules\\typescript\\lib",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
@@ -68,11 +71,35 @@
       <option name="presentableId" value="Default" />
       <updated>1764243629690</updated>
       <workItem from="1764243642637" duration="391000" />
-      <workItem from="1764244047574" duration="5040000" />
+      <workItem from="1764244047574" duration="8090000" />
     </task>
+    <task id="LOCAL-00001" summary="springboot integration + display map in react">
+      <option name="closed" value="true" />
+      <created>1764249510472</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1764249510472</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="springboot integration + display map in react" />
+    <option name="LAST_COMMIT_MESSAGE" value="springboot integration + display map in react" />
   </component>
 </project>

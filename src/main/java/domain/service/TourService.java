@@ -4,6 +4,7 @@ import domain.model.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import persistence.XMLWriters;
+import persistence.XMLParsers;
 
 import java.time.Duration;
 import java.util.Collection;
@@ -17,6 +18,7 @@ public class TourService {
     private final MapService mapService;
     private final RequestService requestService;
     private final XMLWriters xmlWriters;
+    private final XMLParsers xmlParsers;
 
     // Fields from the class diagram
     private long[] couriers; // list of courier ids
@@ -26,10 +28,11 @@ public class TourService {
     private TreeMap<Long, Vector<Entry<Long, Long>>> requestOrder; // key: courier id, value: pair of ids of stop that should be before the other
 
     @Autowired
-    public TourService(MapService mapService, RequestService requestService, XMLWriters xmlWriters) {
+    public TourService(MapService mapService, RequestService requestService, XMLWriters xmlWriters, XMLParsers xmlParsers) {
         this.mapService = mapService;
         this.requestService = requestService;
         this.xmlWriters = xmlWriters;
+        this.xmlParsers = xmlParsers;
         this.tours = new TreeMap<>();
         this.requestOrder = new TreeMap<>();
         // Initialize other fields as needed, perhaps with default values or through methods
@@ -88,6 +91,10 @@ public class TourService {
     public void saveTours(String filepath) {
         System.out.println("Saving tours to: " + filepath);
         xmlWriters.writeTours(tours.values(), filepath); // Assuming XMLWriters has a writeTours method
+    }
+
+    public void loadTours(String filepath) {
+        this.tours = xmlParsers.parseTours(filepath);
     }
 
     /**
