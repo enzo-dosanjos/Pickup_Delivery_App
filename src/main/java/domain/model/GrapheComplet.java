@@ -28,6 +28,11 @@ public class GrapheComplet implements Graphe {
 		}
 	}
 
+	public GrapheComplet(int[][] couts){
+		this.nbSommets = couts.length;
+		this.cout = couts;
+	}
+
 	@Override
 	public int getNbSommets() {
 		return nbSommets;

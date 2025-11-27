@@ -6,6 +6,10 @@ import persistence.XMLParsers;
 public class MapService {
     private Map map;
 
+    public MapService() {
+        this.map = new Map();
+    }
+
     public MapService(String filePath) {
         loadMap(filePath);
     }

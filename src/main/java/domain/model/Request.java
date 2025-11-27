@@ -3,11 +3,11 @@ package domain.model;
 public class Request {
     private final long id;
     private final long pickupIntersectionId;
-    private final int pickupDuration;
+    private final long pickupDuration;
     private final long deliveryIntersectionId;
-    private final int deliveryDuration;
+    private final long deliveryDuration;
 
-    public Request(long id, long pickupIntersectionId, int pickupDuration, long deliveryIntersectionId, int deliveryDuration) {
+    public Request(long id, long pickupIntersectionId, long pickupDuration, long deliveryIntersectionId, long deliveryDuration) {
         this.id = id;
         this.pickupIntersectionId = pickupIntersectionId;
         this.pickupDuration = pickupDuration;
@@ -23,7 +23,7 @@ public class Request {
         return pickupIntersectionId;
     }
 
-    public int getPickupDuration() {
+    public long getPickupDuration() {
         return pickupDuration;
     }
 
@@ -31,7 +31,7 @@ public class Request {
         return deliveryIntersectionId;
     }
 
-    public int getDeliveryDuration() {
+    public long getDeliveryDuration() {
         return deliveryDuration;
     }
 }
