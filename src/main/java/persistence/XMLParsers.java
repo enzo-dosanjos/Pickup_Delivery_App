@@ -2,6 +2,7 @@ package persistence;
 
 import domain.model.Intersection;
 import domain.model.Map;
+import domain.model.PickupDelivery;
 import domain.model.RoadSegment;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -12,6 +13,10 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 
 public class XMLParsers {
+    public static PickupDelivery parseRequests(String filepath) {
+        return null;
+    }
+
     public Map parseMap(String filePath) {
         Map map = new Map();
 
