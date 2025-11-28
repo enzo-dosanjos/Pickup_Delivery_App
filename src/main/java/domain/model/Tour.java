@@ -1,18 +1,21 @@
 package domain.model;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
 public class Tour {
-    private final long courierId;
-    private ArrayList<TourStop> stops;
-    private ArrayList<RoadSegment> roadSegmentsTaken;
-    private double totalDistance;
-    private Duration totalDuration;
+    long courrierId;
+    ArrayList<TourStop> stops;
+    ArrayList<RoadSegment> roadSegmentsTaken;
+    double totalDistance;
+    LocalDateTime startTime;
+    Duration totalDuration;
 
-    public Tour(long courierId) {
-        this.courierId = courierId;
+    public Tour(long courrierId, LocalDateTime startTime) {
+        this.courrierId = courrierId;
+        this.startTime = startTime;
         stops = new ArrayList<>();
         roadSegmentsTaken = new ArrayList<>();
         totalDistance = 0.0;
@@ -37,8 +40,8 @@ public class Tour {
         totalDuration = totalDuration.plus(duration);
     }
 
-    public long getCourierId() {
-        return courierId;
+    public long getCourrierId() {
+        return courrierId;
     }
 
     public List<TourStop> getStops() {
@@ -47,6 +50,10 @@ public class Tour {
 
     public double getTotalDistance() {
         return totalDistance;
+    }
+
+    public LocalDateTime getStartTime() {
+        return startTime;
     }
 
     public Duration getTotalDuration() {
@@ -59,7 +66,7 @@ public class Tour {
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("Tour for Courier ID: ").append(courierId).append("\n");
+        sb.append("Tour for Courrier ID: ").append(courrierId).append("\n");
         sb.append("Stops:\n");
         for (TourStop stop : stops) {
             sb.append(" - ").append(stop.toString()).append("\n");
