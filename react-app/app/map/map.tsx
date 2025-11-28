@@ -1,5 +1,6 @@
-import { MapContainer, Marker, Popup, Polyline, useMap } from 'react-leaflet'
+import { MapContainer, Marker, Popup, Polyline, useMap, Circle, Pane } from 'react-leaflet'
 import L from "leaflet";
+import { useEffect } from 'react';
 
 export type Intersection = {
     id: number;
@@ -29,12 +30,6 @@ export type Tour = {
     totalDuration: number;
 };
 
-const emptyIcon = L.icon({
-    iconUrl: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8Xw8AAoMBgQEqXKkAAAAASUVORK5CYII=",
-    iconSize: [0, 0],
-    iconAnchor: [0, 0],
-});
-
 const startIcon = new L.Icon({
     iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
@@ -53,22 +48,65 @@ const endIcon = new L.Icon({
     shadowSize: [41, 41]
 });
 
-export function Map(props: { intersections: Intersection[], roadSegments: L.LatLngExpression[][], bounds: L.LatLngExpression[], tours: Tour[] }) {
+export function Map(props: {
+    intersections: Intersection[],
+    roadSegments: L.LatLngExpression[][],
+    bounds: L.LatLngExpression[],
+    tours: Tour[],
+    onMapClick?: (intersectionId: number) => void,
+    selectionModeActive: boolean,
+    pickupId: number | null,
+    deliveryId: number | null,
+}) {
     const mapBounds = new L.LatLngBounds(props.bounds);
+
+    const tourPoints = props.tours.flatMap(tour => tour.roadSegmentsTaken.flat());
+    const tourBounds = tourPoints.length > 0 ? new L.LatLngBounds(tourPoints) : mapBounds;
+
 
     return (
         <MapContainer center={mapBounds.getCenter()}>
-            {props.intersections.map((intersection) => (
-                <Marker key={intersection.id} position={intersection.position} icon={emptyIcon} />
+            <Pane name="roads-pane" style={{ zIndex: 450 }} />
+            <Pane name="intersections-pane" style={{ zIndex: 500 }} />
+
+            {props.selectionModeActive && props.intersections.map((intersection) => {
+                let color = 'blue';
+                let radius = 8;
+                if (intersection.id === props.pickupId) {
+                    color = 'green';
+                    radius = 12;
+                } else if (intersection.id === props.deliveryId) {
+                    color = 'red';
+                    radius = 12;
+                }
+                return (
+                    <Circle
+                        key={intersection.id}
+                        center={intersection.position}
+                        radius={radius} // Radius in meters, will scale with zoom
+                        pathOptions={{ color: color }}
+                        pane="intersections-pane"
+                        eventHandlers={{
+                            click: () => {
+                                if (props.onMapClick) {
+                                    props.onMapClick(intersection.id);
+                                }
+                            },
+                        }}
+                    />
+                );
+            })}
+
+            <Pane name="road-segments-pane" style={{ zIndex: 400 }} />
+            <Pane name="tour-pane" style={{ zIndex: 470 }} />
+            {props.roadSegments.map((segment, id) => (
+                <Polyline key={id} positions={segment} pane="road-segments-pane" />
             ))}
 
-            {props.roadSegments.map((segment, id) => (
-                <Polyline key={id} positions={segment} />
-            ))}
             {props.tours.map(tour => (
                 <div key={tour.courierId}>
                     {tour.roadSegmentsTaken.map((segment, index) => (
-                        <Polyline key={index} positions={segment} color="red" />
+                        <Polyline key={index} positions={segment} color="red" pane="tour-pane" />
                     ))}
                     {tour.stops.map((stop, index) => {
                         const intersection = props.intersections.find(i => i.id === stop.intersectionId);
@@ -91,13 +129,17 @@ export function Map(props: { intersections: Intersection[], roadSegments: L.LatL
                     })}
                 </div>
             ))}
-            <FitBounds bounds={mapBounds} />
+            <FitBounds bounds={tourBounds} />
         </MapContainer>
     );
 }
 
 function FitBounds({ bounds }: { bounds: L.LatLngBounds }) {
     const map = useMap();
-    map.fitBounds(bounds, { padding: [20, 20] });
+    useEffect(() => {
+        if (bounds.isValid()) {
+            map.fitBounds(bounds, { padding: [50, 50] });
+        }
+    }, [map, bounds]);
     return null;
 }

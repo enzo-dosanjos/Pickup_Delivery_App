@@ -2,6 +2,8 @@ import type { Route } from "./+types/home";
 import { Map as MapComponent, type Intersection as MapIntersection } from "../map/map";
 import { useState, useEffect } from "react";
 import L from "leaflet";
+import { ModificationPanel } from "../components/ModificationPanel";
+import "../components/ModificationPanel.css";
 
 // Define the types for the data we expect from the API
 type ApiIntersection = {
@@ -59,6 +61,12 @@ export default function Home() {
 
     const [tours, setTours] = useState<ApiTour[]>([]);
     const [loadingTours, setLoadingTours] = useState(true);
+
+    const [isPanelOpen, setIsPanelOpen] = useState(false);
+    const [selectionMode, setSelectionMode] = useState<'pickup' | 'delivery' | null>(null);
+    const [pickupId, setPickupId] = useState<number | null>(null);
+    const [deliveryId, setDeliveryId] = useState<number | null>(null);
+
 
     useEffect(() => {
         const fetchData = async () => {
@@ -121,6 +129,20 @@ export default function Home() {
                 setIntersections(transformedIntersections);
                 setRoadSegments(transformedRoadSegments);
 
+                // Load requests
+                const requestParams = new URLSearchParams();
+                requestParams.append('filepath', 'src/main/resources/requestsSmall1.xml');
+                const requestResponse = await fetch("http://localhost:8080/api/request/load", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: requestParams,
+                });
+                if (!requestResponse.ok) {
+                    throw new Error(`HTTP error! status: ${requestResponse.status}`);
+                }
+
                 // Fetch Tour Data
                 const tourResponse = await fetch("http://localhost:8080/api/tour/load?filepath=src/test/resources/testTours.xml"); // Assuming a default filepath
                 if (!tourResponse.ok) {
@@ -163,6 +185,95 @@ export default function Home() {
         fetchData();
     }, []);
 
+    const handleMapClick = (intersectionId: number) => {
+        if (selectionMode === 'pickup') {
+            setPickupId(intersectionId);
+            setSelectionMode(null); // Deactivate selection mode after a point is chosen
+        } else if (selectionMode === 'delivery') {
+            setDeliveryId(intersectionId);
+            setSelectionMode(null); // Deactivate selection mode
+        }
+    };
+
+    const handleAddRequest = async () => {
+        if (pickupId === null || deliveryId === null) {
+            return;
+        }
+
+        try {
+            // First, get the warehouse ID from the backend
+            const warehouseResponse = await fetch('http://localhost:8080/api/request/warehouse');
+            if (!warehouseResponse.ok) {
+                throw new Error(`HTTP error! status: ${warehouseResponse.status}`);
+            }
+            const warehouseId = await warehouseResponse.json();
+
+            // Now, add the request with the fetched warehouse ID
+            const params = new URLSearchParams();
+            params.append('warehouseId', warehouseId.toString());
+            params.append('pickupIntersectionId', pickupId.toString());
+            params.append('pickupDuration', '300'); // Hardcoded duration
+            params.append('deliveryIntersectionId', deliveryId.toString());
+            params.append('deliveryDuration', '300'); // Hardcoded duration
+            params.append('courierId', '1'); // Hardcoded courier ID
+
+            const response = await fetch('http://localhost:8080/api/request/add', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: params,
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            console.log('Request added successfully');
+
+        } catch (e: any) {
+            console.error("Failed to add request:", e);
+            setError(`Failed to add request: ${e.message}`);
+        } finally {
+            handleCancel();
+        }
+    };
+
+    const handleCancel = () => {
+        setIsPanelOpen(false);
+        setSelectionMode(null);
+        setPickupId(null);
+        setDeliveryId(null);
+    };
+
+    const openModificationPanel = () => {
+        setIsPanelOpen(true);
+    };
+
+    const handleSaveRequests = async () => {
+        try {
+            const params = new URLSearchParams();
+            params.append('filepath', 'src/main/resources/requests_updated.xml');
+
+            const response = await fetch('http://localhost:8080/api/request/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: params,
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            console.log('Requests saved successfully');
+        } catch (e: any) {
+            console.error("Failed to save requests:", e);
+            setError(`Failed to save requests: ${e.message}`);
+        }
+    };
+
     if (loading || loadingTours) {
         return <div>Loading data...</div>;
     }
@@ -174,13 +285,35 @@ export default function Home() {
     return (
         <div>
             <h1>Welcome to our brand new pick-up & delivery app !</h1>
+            <div>
+                <button onClick={openModificationPanel} style={{ marginBottom: '10px', padding: '10px', marginRight: '10px' }}>
+                    Add a Request
+                </button>
+                <button onClick={handleSaveRequests} style={{ marginBottom: '10px', padding: '10px' }}>
+                    Save Requests
+                </button>
+            </div>
             <br />
+            {isPanelOpen && (
+                <ModificationPanel
+                    pickupId={pickupId}
+                    deliveryId={deliveryId}
+                    onAddRequest={handleAddRequest}
+                    onCancel={handleCancel}
+                    selectionMode={selectionMode}
+                    setSelectionMode={setSelectionMode}
+                />
+            )}
             {bounds.length > 0 && (
                  <MapComponent
                     intersections={intersections}
                     roadSegments={roadSegments}
                     bounds={bounds}
                     tours={tours}
+                    onMapClick={handleMapClick}
+                    selectionModeActive={isPanelOpen}
+                    pickupId={pickupId}
+                    deliveryId={deliveryId}
                 />
             )}
         </div>

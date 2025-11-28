@@ -38,4 +38,9 @@ public class RequestController {
     public void saveRequests(@RequestParam String filepath) {
         requestService.saveRequests(filepath);
     }
+
+    @GetMapping("/warehouse")
+    public long getWarehouseAddress() {
+        return requestService.getPickupDelivery().getWarehouseAddress();
+    }
 }

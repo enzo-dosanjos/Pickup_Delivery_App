@@ -171,8 +171,9 @@ public class TourService {
     }
 
     /**
-     * Returns the TreeMap of tours, keyed by courier ID.
-     * @return A TreeMap containing all computed tours.
+     * Adds a new request to the system.
+     * @param pickupIntersectionId The intersection ID for pickup.
+     * @param deliveryIntersectionId The intersection ID for delivery.
      */
     public TreeMap<Long, Tour> getTours() {
         return tours;

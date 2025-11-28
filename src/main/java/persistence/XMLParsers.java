@@ -19,50 +19,64 @@ import java.util.TreeMap;
 public class XMLParsers {
 
     public PickupDelivery parseRequests(String filepath) {
-        System.out.println("Parsing requests from: " + filepath);
-        // Placeholder implementation: create a dummy PickupDelivery
-        PickupDelivery dummyPickupDelivery = new PickupDelivery();
-        // Add some dummy requests for testing purposes
-        dummyPickupDelivery.addRequest(1L, new Request(101L, 1L, 10L, 2L, 5L)); // courierId, request
-        dummyPickupDelivery.addRequest(1L, new Request(102L, 3L, 12L, 4L, 6L));
-        dummyPickupDelivery.addRequest(2L, new Request(201L, 5L, 8L, 6L, 4L));
-
-        // In a real scenario, this would parse an XML file and populate the PickupDelivery object.
-        // Example parsing logic (simplified):
+        PickupDelivery pickupDelivery = new PickupDelivery();
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            factory.setIgnoringComments(true);
-
             DocumentBuilder builder = factory.newDocumentBuilder();
             File xmlFile = new File(filepath);
             if (!xmlFile.exists()) {
-                System.err.println("Request XML file not found at: " + filepath + ". Returning dummy data.");
-                return dummyPickupDelivery; // Return dummy data if file doesn't exist
+                System.err.println("Request XML file not found at: " + filepath);
+                return pickupDelivery;
             }
+
             Document doc = builder.parse(xmlFile);
             doc.getDocumentElement().normalize();
-
             Element root = doc.getDocumentElement();
-            NodeList requestsNodes = root.getElementsByTagName("request"); // Assuming "request" tag
-            for (int i = 0; i < requestsNodes.getLength(); i++) {
-                Element requestElement = (Element) requestsNodes.item(i);
-                // Parse attributes and create Request objects
-                long id = Long.parseLong(requestElement.getAttribute("id"));
-                long pickupIntersectionId = Long.parseLong(requestElement.getAttribute("pickupIntersectionId"));
-                long pickupDuration = Long.parseLong(requestElement.getAttribute("pickupDuration"));
-                long deliveryIntersectionId = Long.parseLong(requestElement.getAttribute("deliveryIntersectionId"));
-                long deliveryDuration = Long.parseLong(requestElement.getAttribute("deliveryDuration"));
-                long courierId = Long.parseLong(requestElement.getAttribute("courierId")); // Assuming courierId is in request XML
 
-                Request request = new Request(id, pickupIntersectionId, pickupDuration, deliveryIntersectionId, deliveryDuration);
-                dummyPickupDelivery.addRequest(courierId, request);
+            // Parse depot
+            NodeList depotNodes = root.getElementsByTagName("depot");
+            if (depotNodes.getLength() > 0) {
+                Element depotElement = (Element) depotNodes.item(0);
+                String addressStr = depotElement.getAttribute("address");
+                if (addressStr == null || addressStr.isEmpty()) {
+                    System.err.println("Warning: Depot address is missing.");
+                } else {
+                    long warehouseAddress = Long.parseLong(addressStr);
+                    pickupDelivery.setWarehouseAddress(warehouseAddress);
+                }
+            }
+
+            // Parse requests
+            NodeList requestNodes = root.getElementsByTagName("request");
+            for (int i = 0; i < requestNodes.getLength(); i++) {
+                Element requestElement = (Element) requestNodes.item(i);
+                String pickupAddressStr = requestElement.getAttribute("pickupAddress");
+                String deliveryAddressStr = requestElement.getAttribute("deliveryAddress");
+                String pickupDurationStr = requestElement.getAttribute("pickupDuration");
+                String deliveryDurationStr = requestElement.getAttribute("deliveryDuration");
+
+                if (pickupAddressStr == null || pickupAddressStr.isEmpty() ||
+                    deliveryAddressStr == null || deliveryAddressStr.isEmpty() ||
+                    pickupDurationStr == null || pickupDurationStr.isEmpty() ||
+                    deliveryDurationStr == null || deliveryDurationStr.isEmpty()) {
+                    System.err.println("Warning: Skipping a request due to missing attributes.");
+                    continue;
+                }
+
+                long pickupAddress = Long.parseLong(pickupAddressStr);
+                long deliveryAddress = Long.parseLong(deliveryAddressStr);
+                long pickupDuration = Long.parseLong(pickupDurationStr);
+                long deliveryDuration = Long.parseLong(deliveryDurationStr);
+
+                // courierId is not in the file, so we'll assign a default one.
+                long defaultCourierId = 1L;
+                Request request = new Request(System.currentTimeMillis(), pickupAddress, pickupDuration, deliveryAddress, deliveryDuration);
+                pickupDelivery.addRequest(defaultCourierId, request);
             }
         } catch (Exception e) {
-            System.err.println("Error parsing requests from " + filepath + ": " + e.getMessage());
-            // Fallback to dummy data if parsing fails
+            e.printStackTrace();
         }
-
-        return dummyPickupDelivery;
+        return pickupDelivery;
     }
 
     public Map parseMap(String filePath) {

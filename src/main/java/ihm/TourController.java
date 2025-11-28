@@ -37,6 +37,7 @@ public class TourController {
         tourService.updateRequestOrder(requestBeforeId, requestAfterId, courierId);
     }
 
+
     @GetMapping("/show-request-details")
     public void showRequestDetails(@RequestParam long requestId, @RequestParam StopType deliveryOrPickup) {
         // This method is not implemented in the service layer in the diagram,
