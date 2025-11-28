@@ -3,12 +3,13 @@ package persistence;
 import domain.model.Intersection;
 import domain.model.Map;
 import domain.model.PickupDelivery;
-import domain.model.RoadSegment;
+import domain.model.Request;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.TreeMap;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -31,17 +32,29 @@ class XMLParsersTest {
     }
 
     @Test
-    void checkParseRequestsLoadsWarehouseRequests() throws IOException, ParserConfigurationException, SAXException {
+    void checkParseRequestsLoadsWarehouseRequests() {
         String filePath = "src/test/resources/testRequest.xml";
-        XMLParsers parser = new XMLParsers();
+        PickupDelivery pickupDelivery = new PickupDelivery();
 
-        PickupDelivery pickupDelivery = parser.parseRequests(filePath);
+        XMLParsers.parseRequests(filePath, pickupDelivery);
 
         assertNotNull(pickupDelivery, "The pickupDelivery should not be null after parsing");
-        assertEquals(342873658, pickupDelivery.getWarehouseAddress(), "The warehouse address should match the expected value");
-        assertEquals(208769039, pickupDelivery.getRequestsPerCourier().get(1L).get(0).getPickupIntersectionId(), "The first request address for courier 1 should match the expected value");
-        assertEquals(25173820, pickupDelivery.getRequestsPerCourier().get(1L).get(0).getDeliveryIntersectionId(), "The first request delivery address for courier 1 should match the expected value");
-        assertEquals(180, pickupDelivery.getRequestsPerCourier().get(1L).get(0).getPickupDuration(), "The first request pickup duration for courier 1 should match the expected value");
-        assertEquals(240, pickupDelivery.getRequestsPerCourier().get(1L).get(0).getDeliveryDuration(), "The first request delivery duration for courier 1 should match the expected value");
+        assertEquals(342873658, pickupDelivery.getWarehouseAdressId(), "The warehouse address should match the expected value");
+        assertEquals(208769039, pickupDelivery.getRequests().get(pickupDelivery.getRequestsPerCourier().get(1L)[0]).getPickupIntersectionId(), "The first request address for courier 1 should match the expected value");
+        assertEquals(25173820, pickupDelivery.getRequests().get(pickupDelivery.getRequestsPerCourier().get(1L)[0]).getDeliveryIntersectionId(), "The first request delivery address for courier 1 should match the expected value");
+        assertEquals(180, pickupDelivery.getRequests().get(pickupDelivery.getRequestsPerCourier().get(1L)[0]).getPickupDuration().toMinutes(), "The first request pickup duration for courier 1 should match the expected value");
+        assertEquals(240, pickupDelivery.getRequests().get(pickupDelivery.getRequestsPerCourier().get(1L)[0]).getDeliveryDuration().toMinutes(), "The first request delivery duration for courier 1 should match the expected value");
+    }
+
+    @Test
+    void checkFalseReturnWhenDifferentWarehouseIds() {
+        String filePath = "src/test/resources/testRequest.xml";
+        PickupDelivery pickupDelivery = new PickupDelivery();
+
+        pickupDelivery.setWarehouseAdressId(123456789L); // Set a different warehouse ID
+
+        boolean result = XMLParsers.parseRequests(filePath, pickupDelivery);
+
+        assertFalse(result, "The parsing should return false due to different warehouse IDs");
     }
 }
