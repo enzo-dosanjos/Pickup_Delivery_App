@@ -1,8 +1,6 @@
 package persistence;
 
-import domain.model.Intersection;
-import domain.model.Map;
-import domain.model.RoadSegment;
+import domain.model.*;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
@@ -12,7 +10,7 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 
 public class XMLParsers {
-    public Map parseMap(String filePath) {
+    public static Map parseMap(String filePath) {
         Map map = new Map();
 
         try {
@@ -64,5 +62,55 @@ public class XMLParsers {
         }
 
         return map;
+    }
+
+    public static PickupDelivery parseRequests(String filePath) {
+        PickupDelivery pickupDelivery = new PickupDelivery();
+
+        try {
+            // Initialise XML parser
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setIgnoringComments(true);
+
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            Document doc = builder.parse(new File(filePath));
+            doc.getDocumentElement().normalize();
+
+            Element root = doc.getDocumentElement(); // planningRequest
+
+            long requestIdCounter = 1L; // To generate sequential IDs for requests
+
+            // Parse depot information
+            NodeList depotElements = root.getElementsByTagName("depot");
+            for (int i = 0; i < depotElements.getLength(); i++) {
+                Element depotElement = (Element) depotElements.item(i);
+
+                long warehouseAddress = Long.parseLong(depotElement.getAttribute("address"));
+                pickupDelivery.setWarehouseAddress(warehouseAddress);
+                // Ignore departureTime for now as it's not in the Request model
+            }
+
+            // Parse requests
+            NodeList requestNodes = root.getElementsByTagName("request");
+            for (int i = 0; i < requestNodes.getLength(); i++) {
+                Element requestElement = (Element) requestNodes.item(i);
+
+                long pickupIntersectionId = Long.parseLong(requestElement.getAttribute("pickupAddress"));
+                long deliveryIntersectionId = Long.parseLong(requestElement.getAttribute("deliveryAddress"));
+                int pickupDuration = Integer.parseInt(requestElement.getAttribute("pickupDuration"));
+                int deliveryDuration = Integer.parseInt(requestElement.getAttribute("deliveryDuration"));
+
+                // Use a default courierId as it's not in the XML
+                long defaultCourierId = 1L;
+
+                Request request = new Request(requestIdCounter++, pickupIntersectionId, pickupDuration, deliveryIntersectionId, deliveryDuration);
+                pickupDelivery.addRequest(defaultCourierId, request);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return pickupDelivery;
     }
 }
