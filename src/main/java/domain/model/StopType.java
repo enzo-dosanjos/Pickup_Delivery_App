@@ -3,6 +3,7 @@ package domain.model;
 public enum StopType {
     PICKUP(1),
     DELIVERY(2),
+    INTERMEDIATE(3),
     WAREHOUSE(0);
 
     final int type;
