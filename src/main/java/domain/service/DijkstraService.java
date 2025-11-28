@@ -4,12 +4,13 @@ import domain.model.dijkstra.*;
 import domain.model.GrapheComplet;
 import domain.model.Map;
 import domain.model.RoadSegment;
+import domain.utils.DurationUtil;
 
 import java.util.HashMap;
 import java.util.PriorityQueue;
 
 public class DijkstraService {
-    private Map map;
+    private final Map map;
     private GrapheComplet g;
 
     public void computeShortestPath() {
@@ -18,15 +19,15 @@ public class DijkstraService {
         DijkstraTable dijkstraTable = new DijkstraTable();
         for (Long row : map.getIntersections().keySet()) {
             for (Long col : map.getIntersections().keySet()) {
-                double distance;
+                double duration;
                 if (row.equals(col)) {
-                    distance = 0L;
+                    duration = 0L;
                 } else {
-                    distance = Double.MAX_VALUE;
+                    duration = Double.MAX_VALUE;
                 }
                 long predecessor = -1;
                 boolean visited = false;
-                dijkstraTable.put(row, col, distance, predecessor, visited);
+                dijkstraTable.put(row, col, duration, predecessor, visited);
             }
         }
 
@@ -47,8 +48,7 @@ public class DijkstraService {
             Node currentNode = pq.poll();
             long currentVertex = currentNode.getVertex();
             CellInfo currentCell = dijkstraTable.get(sommets[start], currentVertex);
-            if (currentCell == null) { System.out.println(sommets[start]); System.out.println(currentVertex); System.out.println(g); }
-            if (currentCell.isVisited()) continue;
+            if (currentCell == null || currentCell.isVisited()) continue;
             currentCell.setVisited(true);
             RoadSegment[] neighbors = adjencyList.get(currentVertex);
             if (neighbors != null) {
@@ -56,11 +56,11 @@ public class DijkstraService {
                     long neighborVertex = segment.getEndId();
                     CellInfo neighborCell = dijkstraTable.get(sommets[start], neighborVertex);
                     if (neighborCell != null && !neighborCell.isVisited()) {
-                        double newDist = currentCell.getDistance() + segment.getLength();
-                        if (newDist < neighborCell.getDistance()) {
-                            neighborCell.setDistance(newDist);
+                        double newDur = currentCell.getDuration() + DurationUtil.computeDuration(segment);
+                        if (newDur < neighborCell.getDuration()) {
+                            neighborCell.setDuration(newDur);
                             neighborCell.setPredecessor(currentVertex);
-                            pq.add(new Node(neighborVertex, newDist));
+                            pq.add(new Node(neighborVertex, newDur));
                             dijkstraTable.put(sommets[start], neighborVertex, neighborCell);
                         }
                     }
@@ -69,7 +69,7 @@ public class DijkstraService {
             // Test pour savoir si le sommet est dans grapheComplet
             for (int j = 0; j < this.g.getNbSommets(); j++) {
                 if (sommets[j] == currentVertex) {
-                    this.g.setCout(start, j, currentNode.getDistance());
+                    this.g.setCout(start, j, currentNode.getDuration());
                 }
             }
         }

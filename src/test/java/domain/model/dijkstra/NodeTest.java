@@ -9,17 +9,17 @@ public class NodeTest {
     @Test
     void checkConstructorAndGettersSetters() {
         long vertex = 8L;
-        double distance = 666.666;
+        double duration = 666.666;
 
-        Node node = new Node(vertex, distance);
+        Node node = new Node(vertex, duration);
         assertEquals(vertex, node.getVertex());
-        assertEquals(distance, node.getDistance());
+        assertEquals(duration, node.getDuration());
 
         vertex = 12L;
-        distance = 333.333;
+        duration = 333.333;
         node.setVertex(vertex);
-        node.setDistance(distance);
+        node.setDuration(duration);
         assertEquals(vertex, node.getVertex());
-        assertEquals(distance, node.getDistance());
+        assertEquals(duration, node.getDuration());
     }
 }

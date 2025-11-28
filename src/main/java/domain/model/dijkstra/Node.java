@@ -2,11 +2,11 @@ package domain.model.dijkstra;
 
 public class Node implements Comparable<Node> {
     private long vertex;
-    private double distance;
+    private double duration;
 
     public Node(long v, double d) {
         this.vertex = v;
-        this.distance = d;
+        this.duration = d;
     }
 
     public long getVertex() {
@@ -17,16 +17,16 @@ public class Node implements Comparable<Node> {
         this.vertex = vertex;
     }
 
-    public double getDistance() {
-        return distance;
+    public double getDuration() {
+        return duration;
     }
 
-    public void setDistance(double distance) {
-        this.distance = distance;
+    public void setDuration(double duration) {
+        this.duration = duration;
     }
 
     @Override
     public int compareTo(Node other) {
-        return Double.compare(this.distance, other.distance);
+        return Double.compare(this.duration, other.duration);
     }
 }

@@ -13,7 +13,7 @@ public class DijkstraTableTest {
         CellInfo cellInfo = new CellInfo(333.333, 2L, false);
         dijkstraTable.put(3L, 4L, cellInfo);
 
-        assertEquals(666.666, dijkstraTable.get(1L, 2L).getDistance());
+        assertEquals(666.666, dijkstraTable.get(1L, 2L).getDuration());
         assertEquals(cellInfo, dijkstraTable.get(3L, 4L));
     }
 

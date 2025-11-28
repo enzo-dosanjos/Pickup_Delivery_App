@@ -5,6 +5,7 @@ import domain.model.GrapheComplet;
 import domain.model.Intersection;
 import domain.model.Map;
 import domain.model.RoadSegment;
+import domain.utils.DurationUtil;
 import org.junit.jupiter.api.Test;
 
 import domain.service.DijkstraService;
@@ -78,7 +79,7 @@ class DijkstraServiceTest {
 
         dijkstraService.computeShortestPath();
 
-        assertEquals(5, grapheComplet.getCout(1, 0));
+        assertEquals(5*60.0/15.0/1000.0, grapheComplet.getCout(1, 0));
         assertEquals(Double.MAX_VALUE, grapheComplet.getCout(0, 1));
     }
 
@@ -104,12 +105,12 @@ class DijkstraServiceTest {
 
         dijkstraService.computeShortestPath();
 
-        assertEquals(5, grapheComplet.getCout(0, 1));
-        assertEquals(9, grapheComplet.getCout(0, 2));
-        assertEquals(6, grapheComplet.getCout(1, 0));
-        assertEquals(4, grapheComplet.getCout(1, 2));
-        assertEquals(2, grapheComplet.getCout(2, 0));
-        assertEquals(7, grapheComplet.getCout(2, 1));
+        assertEquals(5*60.0/15.0/1000.0, grapheComplet.getCout(0, 1),0.0001);
+        assertEquals(9*60.0/15.0/1000.0, grapheComplet.getCout(0, 2),0.0001);
+        assertEquals(6*60.0/15.0/1000.0, grapheComplet.getCout(1, 0),0.0001);
+        assertEquals(4*60.0/15.0/1000.0, grapheComplet.getCout(1, 2),0.0001);
+        assertEquals(2*60.0/15.0/1000.0, grapheComplet.getCout(2, 0),0.0001);
+        assertEquals(7*60.0/15.0/1000.0, grapheComplet.getCout(2, 1),0.0001);
     }
 
     @Test
@@ -141,12 +142,12 @@ class DijkstraServiceTest {
 
         dijkstraService.computeShortestPath();
 
-        assertEquals(5, grapheComplet.getCout(0, 1));
-        assertEquals(9, grapheComplet.getCout(0, 2));
-        assertEquals(6, grapheComplet.getCout(1, 0));
-        assertEquals(4, grapheComplet.getCout(1, 2));
-        assertEquals(2, grapheComplet.getCout(2, 0));
-        assertEquals(7, grapheComplet.getCout(2, 1));
+        assertEquals(5*60.0/15.0/1000.0, grapheComplet.getCout(0, 1),0.0001);
+        assertEquals(9*60.0/15.0/1000.0, grapheComplet.getCout(0, 2),0.0001);
+        assertEquals(6*60.0/15.0/1000.0, grapheComplet.getCout(1, 0),0.0001);
+        assertEquals(4*60.0/15.0/1000.0, grapheComplet.getCout(1, 2),0.0001);
+        assertEquals(2*60.0/15.0/1000.0, grapheComplet.getCout(2, 0),0.0001);
+        assertEquals(7*60.0/15.0/1000.0, grapheComplet.getCout(2, 1),0.0001);
     }
 }
 
