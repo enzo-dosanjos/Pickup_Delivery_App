@@ -1,6 +1,6 @@
 import { MapContainer, Marker, Popup, Polyline, useMap, Circle, Pane } from 'react-leaflet'
 import L from "leaflet";
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 
 export type Intersection = {
     id: number;
@@ -58,10 +58,12 @@ export function Map(props: {
     pickupId: number | null,
     deliveryId: number | null,
 }) {
-    const mapBounds = new L.LatLngBounds(props.bounds);
+    const mapBounds = useMemo(() => new L.LatLngBounds(props.bounds), [props.bounds]);
 
-    const tourPoints = props.tours.flatMap(tour => tour.roadSegmentsTaken.flat());
-    const tourBounds = tourPoints.length > 0 ? new L.LatLngBounds(tourPoints) : mapBounds;
+    const tourBounds = useMemo(() => {
+        const tourPoints = props.tours.flatMap(tour => tour.roadSegmentsTaken.flat());
+        return tourPoints.length > 0 ? new L.LatLngBounds(tourPoints) : mapBounds;
+    }, [props.tours, mapBounds]);
 
 
     return (

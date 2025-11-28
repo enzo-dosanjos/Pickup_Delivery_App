@@ -15,6 +15,7 @@ type ApiIntersection = {
 type ApiRoadSegment = {
     startId: number;
     endId: number;
+    name: string;
 };
 
 type ApiMapData = {
@@ -55,6 +56,7 @@ export function meta({}: Route.MetaArgs) {
 export default function Home() {
     const [intersections, setIntersections] = useState<MapIntersection[]>([]);
     const [roadSegments, setRoadSegments] = useState<L.LatLngExpression[][]>([]);
+    const [intersectionIdToRoadName, setIntersectionIdToRoadName] = useState<Map<number, string>>(new Map());
     const [bounds, setBounds] = useState<L.LatLngExpression[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -66,6 +68,8 @@ export default function Home() {
     const [selectionMode, setSelectionMode] = useState<'pickup' | 'delivery' | null>(null);
     const [pickupId, setPickupId] = useState<number | null>(null);
     const [deliveryId, setDeliveryId] = useState<number | null>(null);
+    const [pickupName, setPickupName] = useState<string | null>(null);
+    const [deliveryName, setDeliveryName] = useState<string | null>(null);
 
 
     useEffect(() => {
@@ -88,20 +92,19 @@ export default function Home() {
                 }
                 console.log("Constructed intersectionMap:", intersectionMap);
 
-                const transformedIntersections: MapIntersection[] = Array.from(intersectionMap.values()).map(i => {
-                    return {
-                        id: i.id,
-                        position: [i.lat, i.lng],
-                    };
-                });
-
+                const nameMap = new Map<number, string>();
                 const transformedRoadSegments: L.LatLngExpression[][] = [];
                 for (const startIdStr in mapData.adjencyList) {
                     const segments = mapData.adjencyList[startIdStr];
-                    const startIntersection = intersectionMap.get(parseInt(startIdStr, 10));
+                    const startId = parseInt(startIdStr, 10);
+                    const startIntersection = intersectionMap.get(startId);
 
                     if (startIntersection) {
                         segments.forEach(segment => {
+                            if (segment.name && segment.name.trim() !== "") { // Use first non-empty name
+                                if (!nameMap.has(startId)) nameMap.set(startId, segment.name);
+                                if (!nameMap.has(segment.endId)) nameMap.set(segment.endId, segment.name);
+                            }
                             const endIntersection = intersectionMap.get(segment.endId);
                             if (endIntersection) {
                                 transformedRoadSegments.push([
@@ -116,6 +119,15 @@ export default function Home() {
                         console.warn(`Could not find startIntersection for id: ${startIdStr}`);
                     }
                 }
+                setIntersectionIdToRoadName(nameMap);
+
+                const transformedIntersections: MapIntersection[] = Array.from(intersectionMap.values()).map(i => {
+                    return {
+                        id: i.id,
+                        position: [i.lat, i.lng],
+                    };
+                });
+
 
                 if (transformedIntersections.length > 0) {
                     const latitudes = transformedIntersections.map(i => (i.position as [number, number])[0]);
@@ -186,11 +198,14 @@ export default function Home() {
     }, []);
 
     const handleMapClick = (intersectionId: number) => {
+        const roadName = intersectionIdToRoadName.get(intersectionId) || `Intersection ${intersectionId}`;
         if (selectionMode === 'pickup') {
             setPickupId(intersectionId);
+            setPickupName(roadName);
             setSelectionMode(null); // Deactivate selection mode after a point is chosen
         } else if (selectionMode === 'delivery') {
             setDeliveryId(intersectionId);
+            setDeliveryName(roadName);
             setSelectionMode(null); // Deactivate selection mode
         }
     };
@@ -244,6 +259,8 @@ export default function Home() {
         setSelectionMode(null);
         setPickupId(null);
         setDeliveryId(null);
+        setPickupName(null);
+        setDeliveryName(null);
     };
 
     const openModificationPanel = () => {
@@ -298,6 +315,8 @@ export default function Home() {
                 <ModificationPanel
                     pickupId={pickupId}
                     deliveryId={deliveryId}
+                    pickupName={pickupName}
+                    deliveryName={deliveryName}
                     onAddRequest={handleAddRequest}
                     onCancel={handleCancel}
                     selectionMode={selectionMode}
