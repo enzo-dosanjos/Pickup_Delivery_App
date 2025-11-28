@@ -34,4 +34,14 @@ public class Request {
     public int getDeliveryDuration() {
         return deliveryDuration;
     }
+
+    public String toString() {
+        return "Request{" +
+                "deliveryDuration=" + deliveryDuration +
+                ", deliveryIntersectionId=" + deliveryIntersectionId +
+                ", pickupDuration=" + pickupDuration +
+                ", pickupIntersectionId=" + pickupIntersectionId +
+                ", id=" + id +
+                '}';
+    }
 }
