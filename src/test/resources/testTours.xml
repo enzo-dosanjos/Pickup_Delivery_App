@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tours>
+    <tour courierId="1">
+        <stops>
+            <stop type="PICKUP" requestId="1" intersectionId="2684668925" arrivalTime="2023-01-01T09:00:00" departureTime="2023-01-01T09:05:00"/>
+            <stop type="DELIVERY" requestId="1" intersectionId="2509481775" arrivalTime="2023-01-01T09:15:00" departureTime="2023-01-01T09:20:00"/>
+        </stops>
+        <roadSegmentsTaken>
+            <segment name="rue de la Paix" length="100.0" startId="2684668925" endId="2509481775"/>
+        </roadSegmentsTaken>
+        <totalDistance>100</totalDistance>
+        <totalDuration>PT20M</totalDuration>
+    </tour>
+</tours>
