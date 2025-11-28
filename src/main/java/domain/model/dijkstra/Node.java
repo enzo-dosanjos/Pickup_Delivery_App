@@ -1,8 +1,8 @@
 package domain.model.dijkstra;
 
 public class Node implements Comparable<Node> {
-    long vertex;
-    double distance;
+    private long vertex;
+    private double distance;
 
     public Node(long v, double d) {
         this.vertex = v;

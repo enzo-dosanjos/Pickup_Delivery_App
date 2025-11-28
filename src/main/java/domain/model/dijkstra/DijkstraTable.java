@@ -3,7 +3,7 @@ package domain.model.dijkstra;
 import java.util.HashMap;
 
 public class DijkstraTable {
-    HashMap<Long, HashMap<Long, CellInfo>> table;
+    private HashMap<Long, HashMap<Long, CellInfo>> table;
 
     public DijkstraTable() {
         this.table = new HashMap<>();

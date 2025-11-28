@@ -1,9 +1,9 @@
 package domain.model.dijkstra;
 
 public class CellInfo {
-    double distance;
-    long predecessor;
-    boolean visited;
+    private double distance;
+    private long predecessor;
+    private boolean visited;
 
     public CellInfo(double distance, long predecessor, boolean visited) {
         this.distance = distance;
