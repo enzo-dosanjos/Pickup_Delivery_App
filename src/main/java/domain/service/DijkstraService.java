@@ -41,10 +41,9 @@ public class DijkstraService {
         this.g.setCout(start, start, 0L);
         long[] sommets = this.g.getSommets();
         HashMap<Long, RoadSegment[]> adjencyList = map.getAdjencyList();
-        //int compteur = 1;
         PriorityQueue<Node> pq = new PriorityQueue<>();
         pq.add(new Node(sommets[start], 0));
-        while (!pq.isEmpty()) {//&& compteur < grapheComplet.getNbSommets()) {
+        while (!pq.isEmpty()) {
             Node currentNode = pq.poll();
             long currentVertex = currentNode.getVertex();
             CellInfo currentCell = dijkstraTable.get(sommets[start], currentVertex);
@@ -71,27 +70,7 @@ public class DijkstraService {
             for (int j = 0; j < this.g.getNbSommets(); j++) {
                 if (sommets[j] == currentVertex) {
                     this.g.setCout(start, j, currentNode.getDistance());
-                    //compteur++;
                 }
-            }
-            // Ajout pour compléter dijkstraTable avec les dégâts colatéraux
-            long tempvertex = currentCell.getPredecessor();
-            if (tempvertex == -1) continue;
-            long firstPredecessorVertex = tempvertex;
-            double laDistance = currentCell.getDistance() - dijkstraTable.get(sommets[start], tempvertex).getDistance();
-            while (tempvertex != sommets[start]) {
-                dijkstraTable.put(tempvertex, currentVertex, laDistance + dijkstraTable.get(tempvertex, firstPredecessorVertex).getDistance(), firstPredecessorVertex, true);
-                // Test pour savoir si le sommet est dans grapheComplet
-                for (int i = 0; i < this.g.getNbSommets(); i++) {
-                    if (sommets[i] == tempvertex) {
-                        for (int j = 0; j < this.g.getNbSommets(); j++) {
-                            if (sommets[j] == currentVertex) {
-                                this.g.setCout(i, j, laDistance + dijkstraTable.get(tempvertex, firstPredecessorVertex).getDistance());
-                            }
-                        }
-                    }
-                }
-                tempvertex = dijkstraTable.get(sommets[start], tempvertex).getPredecessor();
             }
         }
     }

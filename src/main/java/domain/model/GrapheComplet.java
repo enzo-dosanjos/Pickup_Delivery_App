@@ -11,14 +11,14 @@ public class GrapheComplet implements Graphe {
 	public GrapheComplet(int nbSommets) {
         this.nbSommets = nbSommets;
         this.cout = new double[nbSommets][nbSommets];
-        for (int i = 0; i < nbSommets; i++) Arrays.fill(cout[i], Integer.MAX_VALUE);
+        for (int i = 0; i < nbSommets; i++) Arrays.fill(cout[i], Double.MAX_VALUE);
     }
 
 	public GrapheComplet(long[] sommets, int nbSommets){
         this.sommets = Arrays.copyOf(sommets, nbSommets);
 		this.nbSommets = nbSommets;
         this.cout = new double[nbSommets][nbSommets];
-        for (int i = 0; i < nbSommets; i++) Arrays.fill(cout[i], Integer.MAX_VALUE);
+        for (int i = 0; i < nbSommets; i++) Arrays.fill(cout[i], Double.MAX_VALUE);
 	}
 
     public long[] getSommets() { return sommets; }
