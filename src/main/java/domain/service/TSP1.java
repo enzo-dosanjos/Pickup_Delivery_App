@@ -8,8 +8,8 @@ import java.util.Iterator;
 public class TSP1 extends TemplateTSP {
 
 	@Override
-	protected int bound(Integer sommetCourant, Collection<Integer> nonVus) {
-		return 0;
+	protected double bound(Integer sommetCourant, Collection<Integer> nonVus) {
+		return 0.0;
 	}
 
 	@Override
