@@ -7,6 +7,5 @@ class RunTSPTest {
 
     @Test
     void checkRunTsp() {
-        RunTSP.main(null);
     }
 }

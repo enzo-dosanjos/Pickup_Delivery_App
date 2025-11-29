@@ -2,21 +2,21 @@ package domain.model;
 
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 class RequestTest {
 
     @Test
     void checkConstructorAndGetters() {
-        long id = 1L;
         long pickupIntersectionId = 100L;
-        int pickupDuration = 15;
+        Duration pickupDuration = Duration.ofMinutes(10);
         long deliveryIntersectionId = 200L;
-        int deliveryDuration = 20;
+        Duration deliveryDuration = Duration.ofMinutes(20);
 
-        Request request = new Request(id, pickupIntersectionId, pickupDuration, deliveryIntersectionId, deliveryDuration);
+        Request request = new Request(pickupIntersectionId, pickupDuration, deliveryIntersectionId, deliveryDuration);
 
-        assertEquals(id, request.getId());
         assertEquals(pickupIntersectionId, request.getPickupIntersectionId());
         assertEquals(pickupDuration, request.getPickupDuration());
         assertEquals(deliveryIntersectionId, request.getDeliveryIntersectionId());
