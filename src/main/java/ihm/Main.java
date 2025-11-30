@@ -8,39 +8,132 @@ import domain.service.TSP1;
 import persistence.XMLParsers;
 import domain.service.DijkstraService;
 
-import java.util.Arrays;
+import java.util.*;
 
 public class Main {
     public static void main(String[] args) {
-        // Parse XML files to import the map and tour stops
+        // 1. Parse XML files
         Map map = XMLParsers.parseMap("src/main/resources/grandPlan.xml");
         PickupDelivery pickupDelivery = XMLParsers.parseRequests("src/main/resources/requests.xml");
+        //PickupDelivery pickupDelivery = XMLParsers.parseRequests("src/main/resources/demandeMoyen5.xml");
 
-        // Initialize graph and 2D-array of predecessors to use Dijkstra
+        // 2. Build list of stops (warehouse + pickups + deliveries)
         int nbStops = 2 * pickupDelivery.getRequestsPerCourier().get(1L).size() + 1;
-        int actual = 0;
         long[] stops = new long[nbStops];
 
-        stops[actual++] = pickupDelivery.getWarehouseAddress();
-        for (long requestId: pickupDelivery.getRequestsPerCourier().get(1L)) {
-            Request request = pickupDelivery.getRequests().get(requestId);
-            stops[actual++] = request.getPickupIntersectionId();
-            stops[actual++] = request.getDeliveryIntersectionId();
+        int idx = 0;
+        stops[idx++] = pickupDelivery.getWarehouseAddress();
+
+        for (long reqId : pickupDelivery.getRequestsPerCourier().get(1L)) {
+            Request r = pickupDelivery.getRequests().get(reqId);
+            stops[idx++] = r.getPickupIntersectionId();
+            stops[idx++] = r.getDeliveryIntersectionId();
         }
 
+        // 3. biuldgraph
         GrapheComplet graph = new GrapheComplet(stops, nbStops);
 
-        // Compute the shortest paths using the Dijkstra algorithm
+        // 4. Distances with Dijkstra
         DijkstraService dijkstraService = new DijkstraService(map, graph);
         dijkstraService.computeShortestPath();
 
-        // Run the SOP algorithm (asymmetrical TSP with precedence constraints) on the graph
-        TSP1 TSPService = new TSP1();
-        TSPService.chercheSolution(30000, graph);
+        // 5. Inicialize TSP
+        TSP1 tsp = new TSP1();
 
-        System.out.println("Tour duration: " + TSPService.getCoutSolution());
-        for (int i = 0; i < nbStops; i++) {
-            System.out.println(map.getIntersections().get(graph.getSommets()[TSPService.getSolution(i)]));
+
+        // 6.PRECEDENCES
+    
+        HashMap<Integer, Set<Integer>> precs = new HashMap<>();
+
+        int requestIndex = 0;
+        for (long reqId : pickupDelivery.getRequestsPerCourier().get(1L)) {
+            int pickupIndex = 1 + requestIndex * 2;
+            int deliveryIndex = pickupIndex + 1;
+
+           
+            precs.put(deliveryIndex, Set.of(pickupIndex));
+
+            requestIndex++;
         }
+
+        tsp.setPrecedences(precs);
+
+
+        // 7. SERVICE TIMES
+        double[] serviceTimes = new double[nbStops];
+        Arrays.fill(serviceTimes, 0); // warehouse = 0
+
+        requestIndex = 0;
+        for (long reqId : pickupDelivery.getRequestsPerCourier().get(1L)) {
+            Request r = pickupDelivery.getRequests().get(reqId);
+
+            int pickupIndex = 1 + requestIndex * 2;
+            int deliveryIndex = pickupIndex + 1;
+
+            serviceTimes[pickupIndex]   = r.getPickupDuration();   // dureeEnlevement
+            serviceTimes[deliveryIndex] = r.getDeliveryDuration(); // dureeLivraison
+
+            requestIndex++;
+        }
+
+        tsp.setServiceTimes(serviceTimes);
+
+        // 8. execute TSP (SOP)
+        tsp.chercheSolution(30000, graph);
+
+        // 9. result
+      
+
+        double[] serviceTimesUsed = tsp.getServiceTimes();
+
+        System.out.println("\n============== OPTIMAL TOUR ==============\n");
+
+        double currentTime = 0.0;  // time
+
+        for (int i = 0; i < nbStops; i++) {
+            int node = tsp.getSolution(i);        
+            long intersectionId = graph.getSommets()[node];
+
+            if (i > 0) {
+                int prev = tsp.getSolution(i - 1);
+                currentTime += graph.getCout(prev, node);
+            }
+
+            // Arrival
+            double arrival = currentTime;
+
+            // Service time
+            double service = serviceTimesUsed[node];
+            double departure = arrival + service;
+
+            //(warehouse / pickup / delivery)
+            String label;
+            if (node == 0) {
+                label = "WAREHOUSE";
+            } else {
+                int logicalIdx = node - 1;
+                if (logicalIdx % 2 == 0)
+                    label = "PICKUP #" + (logicalIdx/2 + 1);
+                else
+                    label = "DELIVERY #" + (logicalIdx/2 + 1);
+            }
+
+            System.out.printf(
+                    "%-12s | Node %2d | ID: %-12d | Arrive: %8.1f s | Service: %5.1f s | Depart: %8.1f s\n",
+                    label, node, intersectionId, arrival, service, departure
+            );
+
+            currentTime = departure;
+        }
+
+        //return  warehouse
+        int last = tsp.getSolution(nbStops - 1);
+        double finalReturn = graph.getCout(last, 0);
+        currentTime += finalReturn;
+
+        System.out.println("\nReturn to warehouse: +" + finalReturn + " seconds");
+        System.out.println("TOTAL TOUR DURATION: " + currentTime + " seconds");
+        System.out.println("===========================================\n");
+
     }
 }

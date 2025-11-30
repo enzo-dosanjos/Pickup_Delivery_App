@@ -4,15 +4,42 @@ import domain.model.Graphe;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 public abstract class TemplateTSP implements TSP {
 	
 	private Integer[] meilleureSolution;
-	protected Graphe g;
-	private double coutMeilleureSolution;
-	private int tpsLimite;
-	private long tpsDebut;
+    protected Graphe g;
+    private double coutMeilleureSolution;
+    private int tpsLimite;
+    private long tpsDebut;
+
+    // --------
+    // Mapa: node -> leur precedences
+    private Map<Integer, Set<Integer>> precedences = new HashMap<>();
+
+    // Timps (seconds) pasee a chaque node 
+    private double[] serviceTimes = null;
+
+    public void setPrecedences(Map<Integer, Set<Integer>> precedences) {
+        if (precedences == null) this.precedences = new HashMap<>();
+        else this.precedences = precedences;
+    }
+
+    public Map<Integer, Set<Integer>> getPrecedences() {
+        return this.precedences;
+    }
+
+    public void setServiceTimes(double[] serviceTimes) {
+        this.serviceTimes = serviceTimes;
+    }
+
+    public double[] getServiceTimes() {
+        return serviceTimes;}
 	
 	public void chercheSolution(int tpsLimite, Graphe g){
 		if (tpsLimite <= 0) return;
@@ -78,11 +105,31 @@ public abstract class TemplateTSP implements TSP {
 	        Iterator<Integer> it = iterator(sommetCrt, nonVus, g);
 	        while (it.hasNext()){
 	        	Integer prochainSommet = it.next();
+				// --- PRECEDENCE ---
+                Set<Integer> preds = precedences.getOrDefault(prochainSommet, Collections.emptySet());
+                boolean ok = true;
+                for (Integer pred : preds) {
+                    if (!vus.contains(pred)) { 
+                        ok = false;
+                        break;
+                    }
+                }
+                if (!ok) continue; 
 	        	vus.add(prochainSommet);
 	            nonVus.remove(prochainSommet);
-	            branchAndBound(prochainSommet, nonVus, vus, coutVus+g.getCout(sommetCrt, prochainSommet));
-	            vus.remove(prochainSommet);
-	            nonVus.add(prochainSommet);
+	           
+                double addCost = g.getCout(sommetCrt, prochainSommet);
+
+                // Tempos service
+                if (serviceTimes != null && prochainSommet >= 0 && prochainSommet < serviceTimes.length) {
+                    addCost += serviceTimes[prochainSommet];
+                }
+
+                branchAndBound(prochainSommet, nonVus, vus, coutVus + addCost);
+
+                
+                vus.remove(prochainSommet);
+                nonVus.add(prochainSommet);
 	        }	    
 	    }
 	}
