@@ -14,15 +14,15 @@ public class Main {
     public static void main(String[] args) {
         // 1. Parse XML files
         Map map = XMLParsers.parseMap("src/main/resources/grandPlan.xml");
-        PickupDelivery pickupDelivery = XMLParsers.parseRequests("src/main/resources/requests.xml");
-        //PickupDelivery pickupDelivery = XMLParsers.parseRequests("src/main/resources/demandeMoyen5.xml");
+        PickupDelivery pickupDelivery = new PickupDelivery();
+        pickupDelivery.loadRequests("src/main/resources/requests.xml");
 
         // 2. Build list of stops (warehouse + pickups + deliveries)
-        int nbStops = 2 * pickupDelivery.getRequestsPerCourier().get(1L).size() + 1;
+        int nbStops = 2 * pickupDelivery.getRequestsPerCourier().get(1L).length + 1;
         long[] stops = new long[nbStops];
 
         int idx = 0;
-        stops[idx++] = pickupDelivery.getWarehouseAddress();
+        stops[idx++] = pickupDelivery.getWarehouseAdressId();
 
         for (long reqId : pickupDelivery.getRequestsPerCourier().get(1L)) {
             Request r = pickupDelivery.getRequests().get(reqId);
@@ -70,8 +70,8 @@ public class Main {
             int pickupIndex = 1 + requestIndex * 2;
             int deliveryIndex = pickupIndex + 1;
 
-            serviceTimes[pickupIndex]   = r.getPickupDuration();   // dureeEnlevement
-            serviceTimes[deliveryIndex] = r.getDeliveryDuration(); // dureeLivraison
+            serviceTimes[pickupIndex]   = r.getPickupDuration().getSeconds();   // dureeEnlevement
+            serviceTimes[deliveryIndex] = r.getDeliveryDuration().getSeconds(); // dureeLivraison
 
             requestIndex++;
         }

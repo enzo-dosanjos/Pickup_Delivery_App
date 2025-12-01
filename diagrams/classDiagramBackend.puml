@@ -32,20 +32,25 @@ package "Domain" {
         class Map {
             - intersections : TreeMap<long, Intersection>  (key: intersection id)
             - adjencyList : HashMap<long, RoadSegment[]>  (key: starting intersection id)
+            + loadMap(filePath: string) : void
             + addIntersection(intersection: Intersection) : boolean
-            + addRoadSegment(intersectionId: Long, roadSegment: RoadSegment) : boolean
+            + addRoadSegment(startIntersectionId: Long, roadSegment: RoadSegment) : boolean
             + getRoadSegment(startId: long, endId: long) : RoadSegment
+            + getRoadSegmentPerName(name: string) : ArrayList<RoadSegment>  (can give partial name)
         }
 
         class Tour {
             - courierId : long
-            - stops : TourStop[]
-            - roadSegmentsTaken : RoadSegment[]
+            - stops : ArrayList<TourStop>
+            - roadSegmentsTaken : ArrayList<RoadSegment>
             - totalDistance : double
             - totalDuration : time.Duration
             + addStop(stop: TourStop) : void
-            + updateTotalDistance(stop: TourStop) : void
-            + updateTotalDuration(stop: TourStop) : void
+            + addRoadSegment(roadSegment: RoadSegment, duration: Duration) : void
+            + updateTotalDistance(distance: double) : void
+            + updateTotalDuration(duration: Duration) : void
+            + saveTour(filepath: String) : void
+            + loadTour(filepath: String) : void
         }
 
         class TourStop {
@@ -59,7 +64,7 @@ package "Domain" {
         enum StopType {
             - Pickup
             - Delivery
-            - IntermediateIntersection
+            - Intermediate
             - Warehouse
         }
 
@@ -70,20 +75,23 @@ package "Domain" {
             - pickupDuration : time.Duration
             - deliveryIntersectionId : long
             - deliveryDuration : time.Duration
+            + generateId() : long
         }
 
         class Courier {
             - id : long
             - name : string
-            - numGivenRequests : int
             - shiftDuration : time.Duration
         }
 
         class PickupDelivery {
+            - warehouseAdressId : long
             - requests : TreeMap<long, Request>  (key: request id)
             - requestsPerCourier : TreeMap<long, long[]>  (key: courier id, value: list of request ids)
-            + addRequest(courierId: long, request: Request) : void
             + getRequestsForCourier(courierId: long) : Request[]
+            + addRequestToCourier(courierId: Long, request: Request) : boolean
+            + loadRequests(filepath: String) : void
+            + saveRequests(filepath: String) : void
         }
 
         class Graphe {
@@ -100,42 +108,59 @@ package "Domain" {
             + GrapheComplet(nbSommets: int) : void
             + estArc(i: int, j: int): boolean
         }
+
+        package dijkstra {
+            class Node {
+                - vertex : Long
+                - distance : double
+                + Node(v: Long, d: double) : void
+                + compareTo(other: Node) : int
+            }
+
+            class CellInfo {
+                - distance : double
+                - predecessor : long
+                - visited : boolean
+            }
+
+            class DijkstraTable {
+                - table : HashMap<Long, HashMap<Long, CellInfo>>  (key: startId, value: map of (key: endId, value: CellInfo))
+                + put(row: lonf, col: long, distance: double, predecessor, visited: boolean) : void
+                + put(row: long, col: long, cellInfo: CellInfo) : void
+                + get(row: long, col: long) : CellInfo
+                + contains(row: long, col: long) : boolean
+                + remove(row: long, col: long) : void
+            }
+        }
     }
 
     package "service" {
-        class MapService {
+        class DijkstraService {
             - map : Map
-            + loadMap(filePath: string) : Map
-            + getIntersectionsPerName(name: string) : Intersection[]  (can give partial name)
+            - g : GrapheComplet
+            + computeShortestPath(predecessors: long[][]) : void
+            + dijkstra(start: int, dijkstraTable: DijkstraTable) : void
         }
 
         class RequestService {
             - pickupDelivery : PickupDelivery
-            + addRequest(warehouseId, pickupIntersectionId, pickupDuration, deliveryIntersectionId, deliveryDuration, courierId)
-            + getRequestsForCourier(id) : Request[]
+            + addRequest(courierId: Long, request: Request) : void
             + loadRequests(filepath: String) : void
             + saveRequests(filepath: String) : void
         }
 
-        class DijkstraService {
-            + compareTo(map: Map, startId: long, endId: long) : double
-            + computeShortestPath(map: Map, requests: long[]) : pair<GrapheComplet, long[][]>  (pair of graph and matrix of predecessors)
-            + dijkstra(map: Map, graph: GrapheComplet, startId: long) : void
-        }
-
         class TourService {
-            - couriers : long[] (list of courier ids)
+            - couriers : Courier[] (list of courier ids)
             - numCouriers : int
-            - graph : GrapheComplet
             - tours : TreeMap<long, Tour>  (key: courier id)
-            - requestOrder : TreeMap<long, pair<Long, Long>[]  (key: courier id, value: pair of ids of stop that should be before the other)
-            + computeAllTours() : void
-            + computeTourForCourier(id) : Tour
+            - requestOrder : TreeMap<Long, HashMap<Long, Long>>  (key: courier id, value: pair of ids of stop that should be before the other)
             + saveTours(filepath: String) : void
-            + computeDistance(startId, endId): double
-            + computeDuration(startId, endId): time.Duration
-            + assignRequestsToCouriers() : void
-            + updateNumCouriers(numCouriers: int) : void
+            + loadTours(filepath: String) : void
+            + setTourForCourier(courierId: long, tour: Tour) : void
+            + addCourier(courier: Courier) : boolean
+            + computeDuration(distance: double): time.Duration
+            + updateNumCouriers(numCouriers: int) : boolean
+            + addCourier(CourierId: long) : void
             + updateRequestOrder(requestBeforeId: long, requestAfterId: long, courierId: long) : void
         }
 
@@ -188,40 +213,35 @@ package "Presentation" {
         + main(args: String[]): void
     }
 
-    class MapController {
-        + loadMap(filepath: String)
-        + saveMap(filepath: String)
-    }
-
     class RequestController {
-        + addRequest(courierId: String, pickupIntersectionId: String, deliveryIntersectionId: String)
-        + loadRequests(filepath: String)
-        + saveRequests(filepath: String)
+        + addRequest(warehouseId: Long, pickupIntersectionId: Long, pickupDuration: time.Duration, deliveryIntersectionId: Long, deliveryDuration: time.Duration, courierId: Long) : void
+        + loadRequests(filepath: String) : void
+        + saveRequests(filepath: String) : void
     }
 
     class TourController {
-        + saveTours(filepath: String)
-        + loadTours(filepath: String)
-        + updateNumCouriers(numCouriers: int)
-        + updateRequestOrder(requestBeforeId: long, requestAfterId: long)
-        + showRequestDetails(requestId: long, deliveryOrPickup: StopType)
+        + saveTours(filepath: String) : void
+        + loadTours(filepath: String) : void
+        + updateNumCouriers(numCouriers: int) : void
+        + updateRequestOrder(requestBeforeId: long, requestAfterId: long) : void
+        + showRequestDetails(requestId: long, deliveryOrPickup: StopType) : void
     }
 }
 
-MapController --> MapService
 RequestController --> RequestService
 TourController --> TourService
+TourController --> DijkstraService
+TourController --> TSP1
 
-TourService --> RequestService
-TourService --> MapService
+TourService --> Tour
+RequestService --> PickupDelivery
 
-MapService --> XMLParsers
-MapService --> XMLWriters
-RequestService --> XMLParsers
-RequestService --> XMLWriters
-TourService --> XMLWriters
+PickupDelivery --> XMLWriters
+Tour --> XMLWriters
 
-TourService --> TSP1
+PickupDelivery --> XMLParsers
+Map --> XMLParsers
+Tour --> XMLParsers
 
 TemplateTSP <|.. TSP1
 TSP <|-- TemplateTSP

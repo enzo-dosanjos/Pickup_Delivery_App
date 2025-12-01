@@ -8,6 +8,7 @@ import org.w3c.dom.NodeList;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
+import java.time.Duration;
 
 public class XMLParsers {
     public static Map parseMap(String filePath) {
@@ -64,9 +65,7 @@ public class XMLParsers {
         return map;
     }
 
-    public static PickupDelivery parseRequests(String filePath) {
-        PickupDelivery pickupDelivery = new PickupDelivery();
-
+    public static boolean parseRequests(String filePath, PickupDelivery pickupDeliveryToFill) {
         try {
             // Initialise XML parser
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -78,15 +77,19 @@ public class XMLParsers {
 
             Element root = doc.getDocumentElement(); // planningRequest
 
-            long requestIdCounter = 1L; // To generate sequential IDs for requests
-
             // Parse depot information
             NodeList depotElements = root.getElementsByTagName("depot");
             for (int i = 0; i < depotElements.getLength(); i++) {
                 Element depotElement = (Element) depotElements.item(i);
 
                 long warehouseAddress = Long.parseLong(depotElement.getAttribute("address"));
-                pickupDelivery.setWarehouseAddress(warehouseAddress);
+                if (pickupDeliveryToFill.getWarehouseAdressId() == -1) {
+                    pickupDeliveryToFill.setWarehouseAdressId(warehouseAddress);
+                }
+
+                if (pickupDeliveryToFill.getWarehouseAdressId() != warehouseAddress) {
+                    return false;
+                }
                 // Ignore departureTime for now as it's not in the Request model
             }
 
@@ -97,20 +100,25 @@ public class XMLParsers {
 
                 long pickupIntersectionId = Long.parseLong(requestElement.getAttribute("pickupAddress"));
                 long deliveryIntersectionId = Long.parseLong(requestElement.getAttribute("deliveryAddress"));
-                int pickupDuration = Integer.parseInt(requestElement.getAttribute("pickupDuration"));
-                int deliveryDuration = Integer.parseInt(requestElement.getAttribute("deliveryDuration"));
+                Duration pickupDuration = Duration.ofMinutes(
+                        Integer.parseInt(requestElement.getAttribute("pickupDuration"))
+                );
+                Duration deliveryDuration = Duration.ofMinutes(
+                        Integer.parseInt(requestElement.getAttribute("deliveryDuration"))
+                );
 
                 // Use a default courierId as it's not in the XML
                 long defaultCourierId = 1L;
 
-                Request request = new Request(requestIdCounter++, pickupIntersectionId, pickupDuration, deliveryIntersectionId, deliveryDuration);
-                pickupDelivery.addRequest(defaultCourierId, request);
+                Request request = new Request(pickupIntersectionId, pickupDuration, deliveryIntersectionId, deliveryDuration);
+                pickupDeliveryToFill.addRequestToCourier(defaultCourierId, request);
             }
 
         } catch (Exception e) {
             e.printStackTrace();
         }
 
-        return pickupDelivery;
+        return true;
     }
+
 }
