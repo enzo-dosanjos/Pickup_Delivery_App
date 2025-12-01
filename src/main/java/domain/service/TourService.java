@@ -75,6 +75,7 @@ public class TourService {
         Integer previousTourStop = null;
 
         Request request;
+        long requestId;
 
         StopType stopType;
         TourStop tourStop;
@@ -82,7 +83,6 @@ public class TourService {
         Duration duration;
 
         Tour tour = new Tour(courierId, startTime);
-        double distance = 0.0;
         double minutes = 0.0;
         boolean first = true;
         Duration commuteDuration = Duration.ZERO;
@@ -91,40 +91,55 @@ public class TourService {
         {
             duration = Duration.ZERO;
             intersectionId = vertices[i];
-            var result = pickupDelivery.findRequestByIntersectionId(intersectionId);
-            request = result.getKey();
-            stopType = result.getValue();
-            arrivalTime =  tour.getStartTime().plus(tour.getTotalDuration());
 
-            if (stopType == StopType.PICKUP)
-            {
-                duration = request.getPickupDuration();
-            }
-
-            else if(stopType == StopType.DELIVERY)
-            {
-                duration = request.getDeliveryDuration();
-            }
 
             if(first)
             {
+                stopType = StopType.WAREHOUSE;
+                requestId = 0;
+                arrivalTime = tour.getStartTime();
                 first = false;
             }
             else
             {
+                var result = pickupDelivery.findRequestByIntersectionId(intersectionId);
+                request = result.getKey();
+                stopType = result.getValue();
+                arrivalTime =  tour.getStartTime().plus(tour.getTotalDuration());
+
+                if (stopType == StopType.PICKUP)
+                {
+                    duration = request.getPickupDuration();
+                }
+
+                else if(stopType == StopType.DELIVERY)
+                {
+                    duration = request.getDeliveryDuration();
+                }
                 minutes = costs[previousTourStop][i];
                 long wholeMinutes = (long) minutes;
                 long seconds = Math.round((minutes - wholeMinutes) * 60);
                 commuteDuration = Duration.ofMinutes(wholeMinutes).plusSeconds(seconds);
                 arrivalTime = arrivalTime.plus(commuteDuration);
+                requestId = request.getId();
             }
             departureTime = arrivalTime.plus(duration);
-            tourStop = new TourStop(stopType, request.getId(), intersectionId, arrivalTime, departureTime);
+            tourStop = new TourStop(stopType, requestId, intersectionId, arrivalTime, departureTime);
             tour.addStop(tourStop);
             tour.updateTotalDuration(duration.plus(commuteDuration));
             previousTourStop = i;
 
         }
+        //add commute time between last stop and warehouse
+        minutes = costs[solution[solution.length - 1]][solution[0]];
+        long wholeMinutes = (long) minutes;
+        long seconds = Math.round((minutes - wholeMinutes) * 60);
+        commuteDuration = Duration.ofMinutes(wholeMinutes).plusSeconds(seconds);
+        tour.updateTotalDuration(commuteDuration);
+        return tour;
+    }
+
+    public Tour addRoadsToTour(Tour tour){
         return tour;
     }
 }
