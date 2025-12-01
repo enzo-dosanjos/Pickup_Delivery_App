@@ -198,6 +198,13 @@ package "Domain" {
             + iterator(sommetCrt: int, nonVus: Collection<int>, g: Graphe) : Iterator<int>
         }
     }
+
+    package "utils" {
+        class DurationUtil {
+            - COURIER_SPEED_KMH : double
+            + computeDuration(roadSegment: RoadSegment) : double
+        }
+    }
 }
 
 
