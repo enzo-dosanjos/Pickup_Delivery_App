@@ -4,7 +4,19 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="a57357fd-e316-4268-8d2b-b827d25b4723" name="Changes" comment="">
+    <list default="true" id="a57357fd-e316-4268-8d2b-b827d25b4723" name="Changes" comment="added the modification panel to add a request in react. Map zoom handling.">
+      <change afterPath="$PROJECT_DIR$/react-app/.react-router/types/+future.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/react-app/.react-router/types/+routes.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/react-app/.react-router/types/+server-build.d.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/react-app/.react-router/types/app/+types/root.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/react-app/.react-router/types/app/routes/+types/home.ts" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/react-app/app/components/Header.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/react-app/app/components/Header.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/react-app/app/components/ModificationPanel.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/react-app/app/components/ModificationPanel.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/react-app/app/components/SearchBar.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/react-app/app/components/SearchBar.tsx" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/react-app/node_modules/.package-lock.json" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -19,19 +31,20 @@
       </map>
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+    <option name="RESET_MODE" value="HARD" />
   </component>
-  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
-  "lastFilter": {
-    "state": "OPEN",
-    "assignee": "kakiim"
+  <component name="GitHubPullRequestSearchHistory">{
+  &quot;lastFilter&quot;: {
+    &quot;state&quot;: &quot;OPEN&quot;,
+    &quot;assignee&quot;: &quot;kakiim&quot;
   }
-}]]></component>
-  <component name="GithubPullRequestsUISettings"><![CDATA[{
-  "selectedUrlAndAccountId": {
-    "url": "https://github.com/enzo-dosanjos/Pickup_Delivery_App",
-    "accountId": "8a2cae82-b3d1-41ca-aed0-296b108bbcec"
+}</component>
+  <component name="GithubPullRequestsUISettings">{
+  &quot;selectedUrlAndAccountId&quot;: {
+    &quot;url&quot;: &quot;https://github.com/enzo-dosanjos/Pickup_Delivery_App.git&quot;,
+    &quot;accountId&quot;: &quot;1521454d-cb1f-47eb-865d-06f52a748ee8&quot;
   }
-}]]></component>
+}</component>
   <component name="ProblemsViewState">
     <option name="selectedTabId" value="CurrentFile" />
   </component>
@@ -46,8 +59,14 @@
   <component name="PropertiesComponent">{
   &quot;keyToString&quot;: {
     &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RequestMappingsPanelOrder0&quot;: &quot;0&quot;,
+    &quot;RequestMappingsPanelOrder1&quot;: &quot;1&quot;,
+    &quot;RequestMappingsPanelWidth0&quot;: &quot;75&quot;,
+    &quot;RequestMappingsPanelWidth1&quot;: &quot;75&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;Spring Boot.Application.executor&quot;: &quot;Run&quot;,
+    &quot;Spring Boot.PickupDeliveryApplication.executor&quot;: &quot;Run&quot;,
     &quot;com.intellij.ml.llm.matterhorn.ej.ui.settings.DefaultModelSelectionForGA.v1&quot;: &quot;true&quot;,
     &quot;git-widget-placeholder&quot;: &quot;ReactApp&quot;,
     &quot;ignore.virus.scanning.warn.message&quot;: &quot;true&quot;,
@@ -63,7 +82,14 @@
     &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
 }</component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Spring Boot.Application">
+    <configuration name="Application" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
+      <module name="Pickup_Delivery_App" />
+      <option name="SPRING_BOOT_MAIN_CLASS" value="org.example.Application" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="PickupDeliveryApplication" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot" nameIsGenerated="true">
       <module name="Pickup_Delivery_App" />
       <option name="SPRING_BOOT_MAIN_CLASS" value="org.example.PickupDeliveryApplication" />
@@ -75,8 +101,8 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-9823dce3aa75-bf35d07a577b-intellij.indexing.shared.core-IU-252.28238.7" />
-        <option value="bundled-js-predefined-d6986cc7102b-a71380e98a7c-JavaScript-IU-252.28238.7" />
+        <option value="bundled-jdk-9823dce3aa75-bf35d07a577b-intellij.indexing.shared.core-IU-252.27397.103" />
+        <option value="bundled-js-predefined-d6986cc7102b-3aa1da707db6-JavaScript-IU-252.27397.103" />
       </set>
     </attachedChunks>
   </component>
@@ -89,6 +115,8 @@
       <updated>1764243629690</updated>
       <workItem from="1764243642637" duration="391000" />
       <workItem from="1764244047574" duration="9858000" />
+      <workItem from="1764319083337" duration="7617000" />
+      <workItem from="1764573360972" duration="465000" />
     </task>
     <task id="LOCAL-00001" summary="springboot integration + display map in react">
       <option name="closed" value="true" />
@@ -106,7 +134,31 @@
       <option name="project" value="LOCAL" />
       <updated>1764254993418</updated>
     </task>
-    <option name="localTasksCounter" value="3" />
+    <task id="LOCAL-00003" summary="added the modification panel to add a request in react. Map zoom handling.">
+      <option name="closed" value="true" />
+      <created>1764323433335</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1764323433335</updated>
+    </task>
+    <task id="LOCAL-00004" summary="added the modification panel to add a request in react. Map zoom handling.">
+      <option name="closed" value="true" />
+      <created>1764323636327</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1764323636327</updated>
+    </task>
+    <task id="LOCAL-00005" summary="added the modification panel to add a request in react. Map zoom handling.">
+      <option name="closed" value="true" />
+      <created>1764324629667</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1764324629667</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -126,6 +178,7 @@
   <component name="VcsManagerConfiguration">
     <MESSAGE value="springboot integration + display map in react" />
     <MESSAGE value="display map" />
-    <option name="LAST_COMMIT_MESSAGE" value="display map" />
+    <MESSAGE value="added the modification panel to add a request in react. Map zoom handling." />
+    <option name="LAST_COMMIT_MESSAGE" value="added the modification panel to add a request in react. Map zoom handling." />
   </component>
 </project>
