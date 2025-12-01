@@ -3,11 +3,11 @@ package domain.model;
 import java.time.LocalDateTime;
 
 public class TourStop {
-    StopType type;
-    long requestID;
-    long intersectionId;
-    LocalDateTime  arrivalTime;
-    LocalDateTime  departureTime;
+    private final StopType type;
+    private final long requestID;
+    private final long intersectionId;
+    private LocalDateTime  arrivalTime;
+    private LocalDateTime  departureTime;
 
     public TourStop(StopType type, long requestID, long intersectionId, LocalDateTime arrivalTime, LocalDateTime departureTime) {
         this.type = type;
@@ -35,6 +35,14 @@ public class TourStop {
 
     public LocalDateTime getDepartureTime() {
         return departureTime;
+    }
+
+    public void setArrivalTime(LocalDateTime arrivalTime) {
+        this.arrivalTime = arrivalTime;
+    }
+
+    public void setDepartureTime(LocalDateTime departureTime) {
+        this.departureTime = departureTime;
     }
 
     public String toString() {

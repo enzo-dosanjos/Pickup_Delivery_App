@@ -4,6 +4,7 @@ import domain.model.GrapheComplet;
 import domain.model.Map;
 import domain.model.PickupDelivery;
 import domain.model.Request;
+import domain.model.dijkstra.DijkstraTable;
 import domain.service.TSP1;
 import persistence.XMLParsers;
 import domain.service.DijkstraService;
@@ -32,10 +33,11 @@ public class Main {
 
         // 3. biuldgraph
         GrapheComplet graph = new GrapheComplet(stops, nbStops);
+        DijkstraTable dijkstraTable = new DijkstraTable();
 
         // 4. Distances with Dijkstra
         DijkstraService dijkstraService = new DijkstraService(map, graph);
-        dijkstraService.computeShortestPath();
+        dijkstraService.computeShortestPath(dijkstraTable);
 
         // 5. Inicialize TSP
         TSP1 tsp = new TSP1();
@@ -60,7 +62,7 @@ public class Main {
 
 
         // 7. SERVICE TIMES
-        double[] serviceTimes = new double[nbStops];
+        double[] serviceTimes = new double[dijkstraService.getGraph().getNbSommets()];
         Arrays.fill(serviceTimes, 0); // warehouse = 0
 
         requestIndex = 0;
@@ -79,7 +81,7 @@ public class Main {
         tsp.setServiceTimes(serviceTimes);
 
         // 8. execute TSP (SOP)
-        tsp.chercheSolution(30000, graph);
+        tsp.chercheSolution(30000, dijkstraService.getGraph());
 
         // 9. result
       
@@ -90,13 +92,13 @@ public class Main {
 
         double currentTime = 0.0;  // time
 
-        for (int i = 0; i < nbStops; i++) {
+        for (int i = 0; i < dijkstraService.getGraph().getNbSommets(); i++) {
             int node = tsp.getSolution(i);        
-            long intersectionId = graph.getSommets()[node];
+            long intersectionId = dijkstraService.getGraph().getSommets()[node];
 
             if (i > 0) {
                 int prev = tsp.getSolution(i - 1);
-                currentTime += graph.getCout(prev, node);
+                currentTime += dijkstraService.getGraph().getCout(prev, node);
             }
 
             // Arrival
@@ -127,8 +129,8 @@ public class Main {
         }
 
         //return  warehouse
-        int last = tsp.getSolution(nbStops - 1);
-        double finalReturn = graph.getCout(last, 0);
+        int last = tsp.getSolution(dijkstraService.getGraph().getNbSommets() - 1);
+        double finalReturn = dijkstraService.getGraph().getCout(last, 0);
         currentTime += finalReturn;
 
         System.out.println("\nReturn to warehouse: +" + finalReturn + " seconds");

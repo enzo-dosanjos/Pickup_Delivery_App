@@ -1,10 +1,8 @@
 package domain.service;
 
 
-import domain.model.GrapheComplet;
-import domain.model.Intersection;
-import domain.model.Map;
-import domain.model.RoadSegment;
+import domain.model.*;
+import domain.model.dijkstra.DijkstraTable;
 import domain.utils.DurationUtil;
 import org.junit.jupiter.api.Test;
 
@@ -19,17 +17,19 @@ class DijkstraServiceTest {
     private DijkstraService dijkstraService;
     private Map map;
     private GrapheComplet grapheComplet;
+    private DijkstraTable dijkstraTable;
 
 
     @Test
     void computeShortestPathWithEmptyMap() {
         map = new Map();
         grapheComplet = new GrapheComplet(0);
+        dijkstraTable = new DijkstraTable();
         dijkstraService = new DijkstraService(map, grapheComplet);
 
-        dijkstraService.computeShortestPath();
+        dijkstraService.computeShortestPath(dijkstraTable);
 
-        assertEquals(0, grapheComplet.getNbSommets());
+        assertEquals(0, dijkstraService.getGraph().getNbSommets());
     }
 
     @Test
@@ -39,11 +39,12 @@ class DijkstraServiceTest {
         long[] intersectionsIds = {1L};
         map.addIntersection(intersection);
         grapheComplet = new GrapheComplet(intersectionsIds, 1);
+        dijkstraTable = new DijkstraTable();
         dijkstraService = new DijkstraService(map, grapheComplet);
 
-        dijkstraService.computeShortestPath();
+        dijkstraService.computeShortestPath(dijkstraTable);
 
-        assertEquals(0, grapheComplet.getCout(0, 0));
+        assertEquals(0, dijkstraService.getGraph().getCout(0, 0));
     }
 
     @Test
@@ -54,14 +55,15 @@ class DijkstraServiceTest {
         long[] intersectionsIds = {1L, 2L};
         map.addIntersection(intersection2);
         map.addIntersection(intersection);
+        dijkstraTable = new DijkstraTable();
         grapheComplet = new GrapheComplet(intersectionsIds, 2);
         dijkstraService = new DijkstraService(map, grapheComplet);
 
 
-        dijkstraService.computeShortestPath();
+        dijkstraService.computeShortestPath(dijkstraTable);
 
-        assertEquals(Double.MAX_VALUE, grapheComplet.getCout(0, 1));
-        assertEquals(Double.MAX_VALUE, grapheComplet.getCout(1, 0));
+        assertEquals(Double.MAX_VALUE, dijkstraService.getGraph().getCout(0, 1));
+        assertEquals(Double.MAX_VALUE, dijkstraService.getGraph().getCout(1, 0));
     }
 
     @Test
@@ -74,13 +76,14 @@ class DijkstraServiceTest {
         map.addIntersection(intersection);
         RoadSegment roadSegment = new RoadSegment("Jean Paul", 5, 2L, 1L);
         map.addRoadSegment(2L, roadSegment);
+        dijkstraTable = new DijkstraTable();
         grapheComplet = new GrapheComplet(intersectionsIds, 2);
         dijkstraService = new DijkstraService(map, grapheComplet);
 
-        dijkstraService.computeShortestPath();
+        dijkstraService.computeShortestPath(dijkstraTable);
 
-        assertEquals(5*60.0/15.0/1000.0, grapheComplet.getCout(1, 0));
-        assertEquals(Double.MAX_VALUE, grapheComplet.getCout(0, 1));
+        assertEquals(5*60.0/15.0/1000.0, dijkstraService.getGraph().getCout(1, 0));
+        assertEquals(Double.MAX_VALUE, dijkstraService.getGraph().getCout(0, 1));
     }
 
     @Test
@@ -99,11 +102,12 @@ class DijkstraServiceTest {
         map.addRoadSegment(1L, roadSegment);
         map.addRoadSegment(2L, roadSegment2);
         map.addRoadSegment(3L, roadSegment3);
+        dijkstraTable = new DijkstraTable();
         grapheComplet = new GrapheComplet(intersectionsIds, 3);
         dijkstraService = new DijkstraService(map, grapheComplet);
 
 
-        dijkstraService.computeShortestPath();
+        dijkstraService.computeShortestPath(dijkstraTable);
 
         assertEquals(5*60.0/15.0/1000.0, grapheComplet.getCout(0, 1),0.0001);
         assertEquals(9*60.0/15.0/1000.0, grapheComplet.getCout(0, 2),0.0001);
@@ -136,15 +140,16 @@ class DijkstraServiceTest {
         map.addRoadSegment(3L, roadSegment3);
         map.addRoadSegment(1L, roadSegment4);
         map.addRoadSegment(4L, roadSegment5);
+        dijkstraTable = new DijkstraTable();
         grapheComplet = new GrapheComplet(intersectionsIds, 3);
         dijkstraService = new DijkstraService(map, grapheComplet);
 
 
-        dijkstraService.computeShortestPath();
+        dijkstraService.computeShortestPath(dijkstraTable);
 
-        assertEquals(5*60.0/15.0/1000.0, grapheComplet.getCout(0, 1),0.0001);
-        assertEquals(9*60.0/15.0/1000.0, grapheComplet.getCout(0, 2),0.0001);
-        assertEquals(6*60.0/15.0/1000.0, grapheComplet.getCout(1, 0),0.0001);
+        assertEquals(5*60.0/15.0/1000.0, dijkstraService.getGraph().getCout(0, 1),0.0001);
+        assertEquals(9*60.0/15.0/1000.0, dijkstraService.getGraph().getCout(0, 2),0.0001);
+        assertEquals(6*60.0/15.0/1000.0, dijkstraService.getGraph().getCout(1, 0),0.0001);
         assertEquals(4*60.0/15.0/1000.0, grapheComplet.getCout(1, 2),0.0001);
         assertEquals(2*60.0/15.0/1000.0, grapheComplet.getCout(2, 0),0.0001);
         assertEquals(7*60.0/15.0/1000.0, grapheComplet.getCout(2, 1),0.0001);

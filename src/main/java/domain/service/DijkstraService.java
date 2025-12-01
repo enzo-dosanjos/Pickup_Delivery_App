@@ -13,10 +13,9 @@ public class DijkstraService {
     private final Map map;
     private GrapheComplet g;
 
-    public void computeShortestPath() {
+    public void computeShortestPath(DijkstraTable dijkstraTable) {
     // Calculate the shortest paths between all intersections that need to be visited using Dijkstra's algorithm
 
-        DijkstraTable dijkstraTable = new DijkstraTable();
         for (Long row : map.getIntersections().keySet()) {
             for (Long col : map.getIntersections().keySet()) {
                 double duration;
@@ -78,5 +77,9 @@ public class DijkstraService {
     public DijkstraService(Map map, GrapheComplet g) {
         this.map = map;
         this.g = g;
+    }
+
+    public GrapheComplet getGraph() {
+        return g;
     }
 }

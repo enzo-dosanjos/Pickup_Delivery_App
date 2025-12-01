@@ -3,21 +3,19 @@ package domain.service;
 import domain.model.Courier;
 import domain.model.Tour;
 
-import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.TreeMap;
 
 public class TourService {
     private int numCouriers;
-    private Courier[] couriers;
+    private ArrayList<Courier> couriers;
     private TreeMap<Long,Tour> tours;
     private TreeMap<Long, HashMap<Long, Long>> requestsOrder;
 
-    private static final double COURIER_SPEED_KMH = 15.0;
-
     public TourService() {
-        this.numCouriers = 1;
-        this.couriers = new Courier[numCouriers];
+        this.numCouriers = 0;
+        this.couriers = new ArrayList<>();
         this.tours = new TreeMap<>();
         this.requestsOrder = new TreeMap<>();
     }
@@ -27,48 +25,30 @@ public class TourService {
     }
 
     public boolean addCourier(Courier courier) {
-        for (int i = 0; i < couriers.length; i++) {
-            if (couriers[i] == null) {
-                couriers[i] = courier;
-                return true;
+        boolean added = couriers.add(courier);
+        if (added) { numCouriers++; }
+        return added;
+    }
+
+    public boolean updateRequestOrder(long requestBeforeId, long requestAfterId, long courierId)
+    // Adds a constraint that requestBeforeId must be served before requestAfterId by the specified courier
+    {
+        boolean courierExists = false;
+        for (Courier courier : couriers) {
+            if (courier.getId() == courierId) {
+                courierExists = true;
             }
         }
+        if (!courierExists) { return false; }
 
-        return false;
-    }
-
-    public Duration computeDuration(double distance) {
-        if (distance <= 0.0) {
-            return Duration.ZERO;
-        }
-
-        double hours = distance / COURIER_SPEED_KMH;
-        long seconds = Math.round(hours * 3600.0);
-        return Duration.ofSeconds(seconds);
-    }
-
-    public boolean updateNumCouriers(int numCouriers)
-    // Updates the number of couriers, clears the couriers array and resizes it accordingly
-    {
-        if (numCouriers < 0) {
-            return false;
-        }
-
-        this.numCouriers = numCouriers;
-        this.couriers = new Courier[numCouriers];
+        HashMap<Long, Long> constraints =
+                requestsOrder.computeIfAbsent(courierId, id -> new HashMap<>());
+        constraints.put(requestBeforeId, requestAfterId);
 
         return true;
     }
 
-    public void updateRequestOrder(long requestBeforeId, long requestAfterId, long courierId)
-    // Adds a constraint that requestBeforeId must be served before requestAfterId by the specified courier
-    {
-        HashMap<Long, Long> constraints =
-                requestsOrder.computeIfAbsent(courierId, id -> new HashMap<>());
-        constraints.put(requestBeforeId, requestAfterId);
-    }
-
-    public Courier[] getCouriers() {
+    public ArrayList<Courier> getCouriers() {
         return couriers;
     }
 
