@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 import java.util.AbstractMap;
 import java.util.List;
 
-import static org.junit.Assert.assertEquals;
+//import static org.junit.Assert.assertEquals;
 
 
 import java.util.HashMap;
@@ -64,7 +64,6 @@ class TourServiceTest {
 
     }
 
-}
 
     @Test
     void checkUpdateRequestOrderAddsConstraintForCourier() {
