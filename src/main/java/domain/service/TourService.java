@@ -5,9 +5,12 @@ import domain.model.Tour;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.TreeMap;
 
 import domain.model.*;
+import domain.model.dijkstra.CellInfo;
+import domain.model.dijkstra.DijkstraTable;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -139,7 +142,43 @@ public class TourService {
         return tour;
     }
 
-    public Tour addRoadsToTour(Tour tour){
+    public Tour addRoadsToTour(Tour tour, DijkstraTable table, Map map){
+        List<TourStop> stops = tour.getStops();
+
+        long targetIntersectionId;
+        long sourceIntersectionId;
+        long currentIntersectionId;
+
+        CellInfo info;
+        Duration duration;
+        double minutes;
+
+        RoadSegment road;
+
+        //add all the visited intersections in order to a list
+        for (int i = stops.size(); i > 0; i--) {
+            if(i==stops.size()){
+                sourceIntersectionId = stops.get(i-1).getIntersectionId();
+                targetIntersectionId = stops.getFirst().getIntersectionId();
+            }
+            else{
+                sourceIntersectionId = stops.get(i-1).getIntersectionId();
+                targetIntersectionId = stops.get(i).getIntersectionId();
+            }
+            currentIntersectionId = targetIntersectionId;
+            while (currentIntersectionId != sourceIntersectionId) {
+                info = table.get(sourceIntersectionId, currentIntersectionId);
+                road = map.getRoadSegment(currentIntersectionId,  info.getPredecessor());
+                minutes = info.getDuration();
+                long wholeMinutes = (long) minutes;
+                long seconds = Math.round((minutes - wholeMinutes) * 60);
+                duration = Duration.ofMinutes(wholeMinutes).plusSeconds(seconds);
+                tour.addRoadSegment(road, duration);
+                tour.updateTotalDistance(road.getLength());
+                currentIntersectionId = info.getPredecessor();
+            }
+        }
+
         return tour;
     }
 }
