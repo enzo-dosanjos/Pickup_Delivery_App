@@ -1,100 +1,137 @@
 package ihm;
 
+import domain.model.*;
+import domain.model.Map;
+import domain.service.PlanningService;
 import domain.service.RequestService;
 import domain.service.TourService;
-import ihm.controller.TourController;
-import domain.model.Request;
-import domain.model.StopType;
+import ihm.controller.RequestController;
+import persistence.XMLParsers;
 
 import java.time.Duration;
-import java.util.Map;
-import java.util.Scanner;
+import java.time.LocalTime;
+import java.util.*;
 
 public class Main {
-
     public static void main(String[] args) {
-        // Initialize services and controller
+        // Domain + services
+        Map map = XMLParsers.parseMap("src/main/resources/grandPlan.xml");
         RequestService requestService = new RequestService();
-        requestService.loadRequests("src/main/resources/requests.xml"); // Load requests to test
+        PickupDelivery pickupDelivery = requestService.getPickupDelivery();
         TourService tourService = new TourService();
-        TourController tourController = new TourController(tourService, requestService);
+        PlanningService planningService = new PlanningService(map, requestService, tourService);
+
+        Courier courier1 = new Courier(1L, "Courier 1", Duration.ofHours(8));
+        tourService.addCourier(courier1);
+
+        // Controller
+        RequestController requestController = new RequestController(requestService, planningService);
 
         Scanner scanner = new Scanner(System.in);
         boolean running = true;
 
-        while (running) {
-            System.out.println("=== Tour Console IHM ===");
-            System.out.println("1. Add courier");
-            System.out.println("2. Remove courier");
-            System.out.println("3. Update request order");
-            System.out.println("4. Show request details (by intersection id)");
-            System.out.println("5. Exit");
+            while (running) {
+            System.out.println("\n===== REQUEST / TOUR CONSOLE IHM =====");
+            System.out.println("1) Load requests from XML");
+            System.out.println("2) Add a new request (courier 1)");
+            System.out.println("3) List current requests");
+            System.out.println("4) Quit");
             System.out.print("Choice: ");
 
             String choice = scanner.nextLine().trim();
 
-            try {
-                switch (choice) {
-                    case "1" -> {
-                        System.out.print("Courier id: ");
-                        long id = Long.parseLong(scanner.nextLine().trim());
-                        System.out.print("Courier name: ");
-                        String name = scanner.nextLine().trim();
-                        System.out.print("Shift duration in minutes: ");
-                        long minutes = Long.parseLong(scanner.nextLine().trim());
-                        Duration shiftDuration = Duration.ofMinutes(minutes);
-
-                        boolean ok = tourController.addCourier(id, name, shiftDuration);
-                        System.out.println(ok ? "Courier added." : "Failed to add courier.");
-                    }
-                    case "2" -> {
-                        System.out.print("Courier id to remove: ");
-                        long id = Long.parseLong(scanner.nextLine().trim());
-                        boolean ok = tourController.removeCourier(id);
-                        System.out.println(ok ? "Courier removed." : "Courier not found.");
-                    }
-                    case "3" -> {
-                        System.out.print("Courier id: ");
-                        long courierId = Long.parseLong(scanner.nextLine().trim());
-                        System.out.print("Request id that must be BEFORE: ");
-                        long beforeId = Long.parseLong(scanner.nextLine().trim());
-                        System.out.print("Request id that must be AFTER: ");
-                        long afterId = Long.parseLong(scanner.nextLine().trim());
-
-                        tourController.updateRequestOrder(beforeId, afterId, courierId);
-                        System.out.println("Request order updated (if courier exists).");
-                    }
-                    case "4" -> {
-                        System.out.print("Intersection id: ");
-                        long intersectionId = Long.parseLong(scanner.nextLine().trim());
-
-                        Map.Entry<Request, StopType> entry =
-                                tourController.showRequestDetails(intersectionId);
-
-                        if (entry == null) {
-                            System.out.println("No request found for this intersection.");
-                        } else {
-                            Request r = entry.getKey();
-                            StopType type = entry.getValue();
-                            System.out.println("Request id: " + r.getId());
-                            System.out.println("Pickup intersection id: " + r.getPickupIntersectionId());
-                            System.out.println("Delivery intersection id: " + r.getDeliveryIntersectionId());
-                            System.out.println("Stop type at this intersection: " + type);
-                        }
-                    }
-                    case "5" -> {
-                        running = false;
-                        System.out.println("Exiting.");
-                    }
-                    default -> System.out.println("Unknown choice.");
-                }
-            } catch (Exception e) {
-                System.out.println("Error: " + e.getMessage());
+            switch (choice) {
+                case "1" -> loadRequestsMenu(scanner, requestController);
+                case "2" -> addRequestMenu(scanner, requestController);
+                case "3" -> listRequests(pickupDelivery);
+                case "4" -> running = false;
+                default -> System.out.println("Unknown choice.");
             }
-
-            System.out.println();
         }
 
-        scanner.close();
+            scanner.close();
+    }
+
+    private static void loadRequestsMenu(Scanner scanner, RequestController requestController) {
+        System.out.print("Courier id: ");
+        long id = Long.parseLong(scanner.nextLine().trim());
+
+        System.out.print("Enter XML requests file path (by default : `src/main/resources/requests.xml`): ");
+        String path = scanner.nextLine().trim();
+        if (path.isEmpty()) {
+            path = "src/main/resources/requests.xml";
+        }
+
+        try {
+            requestController.loadRequests(path, id);
+            System.out.println("Requests loaded and internal model updated.");
+        } catch (Exception e) {
+            System.out.println("Error while loading requests: " + e.getMessage());
+        }
+    }
+
+    private static void addRequestMenu(Scanner scanner, RequestController requestController) {
+        try {
+            System.out.print("Courier id: ");
+            long courierId = Long.parseLong(scanner.nextLine().trim());
+
+            System.out.print("Pickup intersection id: ");
+            long pickupId = Long.parseLong(scanner.nextLine().trim());
+
+            System.out.print("Pickup duration in seconds: ");
+            long pickupSec = Long.parseLong(scanner.nextLine().trim());
+
+            System.out.print("Delivery intersection id: ");
+            long deliveryId = Long.parseLong(scanner.nextLine().trim());
+
+            System.out.print("Delivery duration in seconds: ");
+            long deliverySec = Long.parseLong(scanner.nextLine().trim());
+
+            // In this simple IHM we fix:
+            // \- warehouse id is not used by Request constructor here
+            Long warehouseId = 0L;
+
+            requestController.addRequest(
+                    warehouseId,
+                    pickupId,
+                    Duration.ofSeconds(pickupSec),
+                    deliveryId,
+                    Duration.ofSeconds(deliverySec),
+                    courierId
+            );
+
+            System.out.println("Request added and tour recomputed for courier " + courierId + ".");
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid numeric value: " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("Error while adding request: " + e.getMessage());
+        }
+    }
+
+    private static void listRequests(PickupDelivery pickupDelivery) {
+        TreeMap<Long, Request> requests = pickupDelivery.getRequests();
+        if (requests.isEmpty()) {
+            System.out.println("No requests loaded.");
+            return;
+        }
+
+        System.out.println("\nCurrent requests:");
+        for (Request r : requests.values()) {
+            System.out.println(
+                    "Request #" + r.getId()
+                            + " | pickup=" + r.getPickupIntersectionId()
+                            + " (" + formatDuration(r.getPickupDuration()) + ")"
+                            + " | delivery=" + r.getDeliveryIntersectionId()
+                            + " (" + formatDuration(r.getDeliveryDuration()) + ")"
+            );
+        }
+    }
+
+    private static String formatDuration(Duration d) {
+        long sec = d.getSeconds();
+        long h = sec / 3600;
+        long m = (sec % 3600) / 60;
+        long s = sec % 60;
+        return LocalTime.of((int) h, (int) m, (int) s).toString();
     }
 }
