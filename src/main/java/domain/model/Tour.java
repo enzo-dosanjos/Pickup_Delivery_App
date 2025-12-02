@@ -1,6 +1,7 @@
 package domain.model;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -9,10 +10,12 @@ public class Tour {
     private ArrayList<TourStop> stops;
     private ArrayList<RoadSegment> roadSegmentsTaken;
     private double totalDistance;
+    private LocalDateTime startTime;
     private Duration totalDuration;
 
-    public Tour(long courierId) {
+    public Tour(long courierId, LocalDateTime startTime) {
         this.courierId = courierId;
+        this.startTime = startTime;
         stops = new ArrayList<>();
         roadSegmentsTaken = new ArrayList<>();
         totalDistance = 0.0;
@@ -47,6 +50,10 @@ public class Tour {
 
     public double getTotalDistance() {
         return totalDistance;
+    }
+
+    public LocalDateTime getStartTime() {
+        return startTime;
     }
 
     public Duration getTotalDuration() {

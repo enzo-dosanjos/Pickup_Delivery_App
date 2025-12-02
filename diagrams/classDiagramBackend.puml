@@ -44,6 +44,7 @@ package "Domain" {
             - stops : ArrayList<TourStop>
             - roadSegmentsTaken : ArrayList<RoadSegment>
             - totalDistance : double
+            - startTime : LocalDateTime
             - totalDuration : time.Duration
             + addStop(stop: TourStop) : void
             + addRoadSegment(roadSegment: RoadSegment, duration: Duration) : void
@@ -62,10 +63,10 @@ package "Domain" {
         }
 
         enum StopType {
-            - Pickup
-            - Delivery
-            - Intermediate
-            - Warehouse
+            - PICKUP
+            - DELIVERY
+            - INTERMEDIATE
+            - WAREHOUSE
         }
 
         class Request {
@@ -92,6 +93,8 @@ package "Domain" {
             + addRequestToCourier(courierId: Long, request: Request) : boolean
             + loadRequests(filepath: String) : void
             + saveRequests(filepath: String) : void
+            + findRequestById(requestId: long) : Request
+            + findRequestByIntersectionId(intersectionId: long) : Map.Entry<Request, StopType>
         }
 
         class Graphe {
@@ -158,10 +161,10 @@ package "Domain" {
             + loadTours(filepath: String) : void
             + setTourForCourier(courierId: long, tour: Tour) : void
             + addCourier(courier: Courier) : boolean
-            + computeDuration(distance: double): time.Duration
             + updateNumCouriers(numCouriers: int) : boolean
-            + addCourier(CourierId: long) : void
             + updateRequestOrder(requestBeforeId: long, requestAfterId: long, courierId: long) : void
+            + convertGraphToTour(pickupDelivery: PickupDelivery, startTime: LocalDateTime, courierId: long, solution: Integer[], vertices: long[], costs: double[][]) : Tour
+            + addRoadsToTour(tour: Tour, table: DijkstraTable, map: Map) : Tour
         }
 
         class IteratorSeq {

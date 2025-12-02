@@ -1,11 +1,18 @@
 package domain.service;
 
 import domain.model.Courier;
+import domain.model.Map;
 import domain.model.Tour;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.TreeMap;
+import java.util.*;
+import java.util.Map.Entry;
+
+import domain.model.*;
+import domain.model.dijkstra.CellInfo;
+import domain.model.dijkstra.DijkstraTable;
+
+import java.time.Duration;
+import java.time.LocalDateTime;
 
 public class TourService {
     private int numCouriers;
@@ -62,5 +69,119 @@ public class TourService {
 
     public TreeMap<Long, HashMap<Long, Long>> getRequestOrder() {
         return requestsOrder;
+    }
+
+    public Tour convertGraphToTour(PickupDelivery pickupDelivery, LocalDateTime startTime, long courierId, Integer[] solution, Long[] vertices, double[][] costs) {
+        long intersectionId;
+        Integer previousTourStop = null;
+
+        Request request;
+        long requestId;
+
+        StopType stopType;
+        TourStop tourStop;
+        LocalDateTime arrivalTime, departureTime;
+        Duration duration;
+
+        Tour tour = new Tour(courierId, startTime);
+        double minutes = 0.0;
+        boolean first = true;
+        Duration commuteDuration = Duration.ZERO;
+
+        for(Integer i : solution)
+        {
+            duration = Duration.ZERO;
+            intersectionId = vertices[i];
+
+
+            if(first)
+            {
+                stopType = StopType.WAREHOUSE;
+                requestId = 0;
+                arrivalTime = tour.getStartTime();
+                first = false;
+            }
+            else
+            {
+                Entry<Request, StopType> result = pickupDelivery.findRequestByIntersectionId(intersectionId);
+
+                if (result == null) {
+                    // This should not happen if the solution is valid
+                    throw new IllegalArgumentException("No request found for intersection ID: " + intersectionId);
+                }
+
+                request = result.getKey();
+                stopType = result.getValue();
+                arrivalTime =  tour.getStartTime().plus(tour.getTotalDuration());
+
+                if (stopType == StopType.PICKUP)
+                {
+                    duration = request.getPickupDuration();
+                }
+
+                else if(stopType == StopType.DELIVERY)
+                {
+                    duration = request.getDeliveryDuration();
+                }
+                minutes = costs[previousTourStop][i];
+                long wholeMinutes = (long) minutes;
+                long seconds = Math.round((minutes - wholeMinutes) * 60);
+                commuteDuration = Duration.ofMinutes(wholeMinutes).plusSeconds(seconds);
+                arrivalTime = arrivalTime.plus(commuteDuration);
+                requestId = request.getId();
+            }
+            departureTime = arrivalTime.plus(duration);
+            tourStop = new TourStop(stopType, requestId, intersectionId, arrivalTime, departureTime);
+            tour.addStop(tourStop);
+            tour.updateTotalDuration(duration.plus(commuteDuration));
+            previousTourStop = i;
+
+        }
+        //add commute time between last stop and warehouse
+        minutes = costs[solution[solution.length - 1]][solution[0]];
+        long wholeMinutes = (long) minutes;
+        long seconds = Math.round((minutes - wholeMinutes) * 60);
+        commuteDuration = Duration.ofMinutes(wholeMinutes).plusSeconds(seconds);
+        tour.updateTotalDuration(commuteDuration);
+        return tour;
+    }
+
+    public Tour addRoadsToTour(Tour tour, DijkstraTable table, Map map){
+        List<TourStop> stops = tour.getStops();
+        List<Long> reverseIntersectPath = new ArrayList<>();
+
+        long targetIntersectionId;
+        long sourceIntersectionId;
+        long currentIntersectionId;
+
+        CellInfo info;
+
+        RoadSegment road;
+
+        //add all the visited intersections in order to a list
+        for (int i = stops.size(); i > 0; i--) {
+            if(i == stops.size()){
+                targetIntersectionId = stops.getFirst().getIntersectionId();
+            }
+            else{
+                targetIntersectionId = stops.get(i).getIntersectionId();
+            }
+            sourceIntersectionId = stops.get(i-1).getIntersectionId();
+            currentIntersectionId = targetIntersectionId;
+            while (currentIntersectionId != sourceIntersectionId) {
+                reverseIntersectPath.add(currentIntersectionId);
+                info = table.get(sourceIntersectionId, currentIntersectionId);
+                currentIntersectionId = info.getPredecessor();
+            }
+        }
+
+        reverseIntersectPath.add(stops.getFirst().getIntersectionId());
+        Collections.reverse(reverseIntersectPath);
+
+        for (int i = 0; i < reverseIntersectPath.size()-1; i++){
+            road = map.getRoadSegment(reverseIntersectPath.get(i), reverseIntersectPath.get(i+1));
+            tour.addRoadSegment(road, Duration.ZERO); }
+
+        return tour;
     }
 }

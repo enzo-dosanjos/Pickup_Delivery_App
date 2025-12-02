@@ -35,6 +35,8 @@ public class GrapheComplet implements Graphe {
 		return cout[i][j];
 	}
 
+    public double[][]  getCout() {return cout;}
+
     public void setCout(int i, int j, double newVal) {
         cout[i][j] = newVal;
     }
