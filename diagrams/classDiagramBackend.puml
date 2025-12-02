@@ -10,7 +10,6 @@ package "Persistence" {
     class XMLWriters {
         + writeTour(tour: Tour, filePath: string) : void
         + writeRequests(requests: PickupDelivery, filePath: string) : void
-        + writeMap(map: Map, filePath: string) : void
     }
 }
 
@@ -83,6 +82,13 @@ package "Domain" {
             - id : long
             - name : string
             - shiftDuration : time.Duration
+            - availabilityStatus : AvailabilityStatus
+        }
+
+        enum AvailabilityStatus {
+            - AVAILABLE
+            - BUSY
+            - UNAVAILABLE
         }
 
         class PickupDelivery {
@@ -167,6 +173,14 @@ package "Domain" {
             + addRoadsToTour(tour: Tour, table: DijkstraTable, map: Map) : Tour
         }
 
+        class PlanningService {
+            - requestService : RequestService
+            - tourService : TourService
+            - map : Map
+            - tsp : TSP1
+            + recomputeTourForCourier(courierId: long) : void
+        }
+
         class IteratorSeq {
             - candidats : int[]
             - nbCandidats : int
@@ -217,12 +231,16 @@ package "Presentation" {
     }
 
     class RequestController {
+        - requestService : RequestService
+        - planningService : PlanningService
         + addRequest(warehouseId: Long, pickupIntersectionId: Long, pickupDuration: time.Duration, deliveryIntersectionId: Long, deliveryDuration: time.Duration, courierId: Long) : void
         + loadRequests(filepath: String) : void
         + saveRequests(filepath: String) : void
     }
 
     class TourController {
+        - requestService : RequestService
+        - tourService : TourService
         + saveTours(filepath: String) : void
         + loadTours(filepath: String) : void
         + updateNumCouriers(numCouriers: int) : void
@@ -232,11 +250,17 @@ package "Presentation" {
 }
 
 RequestController --> RequestService
+RequestController --> PlanningService
 TourController --> TourService
-TourController --> DijkstraService
-TourController --> TSP1
+TourController --> RequestService
+
+PlanningService --> RequestService
+PlanningService --> TourService
+PlanningService --> Map
+PlanningService --> TSP1
 
 TourService --> Tour
+TourService --> Courier
 RequestService --> PickupDelivery
 
 PickupDelivery --> XMLWriters
@@ -247,12 +271,42 @@ Map --> XMLParsers
 Tour --> XMLParsers
 
 TemplateTSP <|.. TSP1
+TemplateTSP --> Graphe
 TSP <|-- TemplateTSP
 Graphe <|-- GrapheComplet
+
+
+Request --> Intersection : warehouseId
+Request --> Intersection : pickupIntersectionId
+Request --> Intersection : deliveryIntersectionId
+
+PickupDelivery --> Courier : courierId
+
+Tour --> Courier : courierId
+
+TourStop --> Request : requestId
+
+TourStop --> Intersection : intersectionId
+
+RoadSegment --> Intersection : startId
+RoadSegment --> Intersection : endId
 
 Map "1" *-- "*" Intersection
 Map "1" *-- "*" RoadSegment
 
 PickupDelivery "1" o-- "*" Request
 Tour "1" *-- "*" TourStop
+
+Courier --> AvailabilityStatus
+
+TourStop --> StopType
+
+Tour --> RoadSegment
+
+DijkstraService --> DijkstraTable
+DijkstraTable --> CellInfo
+DijkstraService --> GrapheComplet
+DijkstraService --> Node
+DijkstraService --> DurationUtil
+
 @enduml

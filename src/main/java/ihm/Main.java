@@ -2,185 +2,136 @@ package ihm;
 
 import domain.model.*;
 import domain.model.Map;
-import domain.model.dijkstra.DijkstraTable;
-import domain.service.TSP1;
+import domain.service.PlanningService;
+import domain.service.RequestService;
 import domain.service.TourService;
+import ihm.controller.RequestController;
 import persistence.XMLParsers;
-import domain.service.DijkstraService;
 
-import java.time.LocalDateTime;
+import java.time.Duration;
+import java.time.LocalTime;
 import java.util.*;
 
 public class Main {
     public static void main(String[] args) {
-        // 1. Parse XML files
+        // Domain + services
         Map map = XMLParsers.parseMap("src/main/resources/grandPlan.xml");
-        PickupDelivery pickupDelivery = new PickupDelivery();
-        pickupDelivery.loadRequests("src/main/resources/requests.xml");
+        RequestService requestService = new RequestService();
+        PickupDelivery pickupDelivery = requestService.getPickupDelivery();
+        TourService tourService = new TourService();
+        PlanningService planningService = new PlanningService(map, requestService, tourService);
 
-        // 2. Build list of stops (warehouse + pickups + deliveries)
-        int nbStops = 2 * pickupDelivery.getRequestsPerCourier().get(1L).length + 1;
-        long[] stops = new long[nbStops];
+        Courier courier1 = new Courier(1L, "Courier 1", Duration.ofHours(8));
+        tourService.addCourier(courier1);
 
-        int idx = 0;
-        stops[idx++] = pickupDelivery.getWarehouseAdressId();
+        // Controller
+        RequestController requestController = new RequestController(requestService, planningService);
 
-        for (long reqId : pickupDelivery.getRequestsPerCourier().get(1L)) {
-            Request r = pickupDelivery.getRequests().get(reqId);
-            stops[idx++] = r.getPickupIntersectionId();
-            stops[idx++] = r.getDeliveryIntersectionId();
-        }
+        Scanner scanner = new Scanner(System.in);
+        boolean running = true;
 
-        // 3. biuldgraph
-        GrapheComplet graph = new GrapheComplet(stops, nbStops);
-        DijkstraTable dijkstraTable = new DijkstraTable();
+            while (running) {
+            System.out.println("\n===== REQUEST / TOUR CONSOLE IHM =====");
+            System.out.println("1) Load requests from XML");
+            System.out.println("2) Add a new request (courier 1)");
+            System.out.println("3) List current requests");
+            System.out.println("4) Quit");
+            System.out.print("Choice: ");
 
-        // 4. Distances with Dijkstra
-        DijkstraService dijkstraService = new DijkstraService(map, graph);
-        dijkstraService.computeShortestPath(dijkstraTable);
+            String choice = scanner.nextLine().trim();
 
-        // 5. Inicialize TSP
-        TSP1 tsp = new TSP1();
-
-
-        // 6.PRECEDENCES
-    
-        HashMap<Integer, Set<Integer>> precs = new HashMap<>();
-
-        int requestIndex = 0;
-        for (long reqId : pickupDelivery.getRequestsPerCourier().get(1L)) {
-            int pickupIndex = 1 + requestIndex * 2;
-            int deliveryIndex = pickupIndex + 1;
-
-           
-            precs.put(deliveryIndex, Set.of(pickupIndex));
-
-            requestIndex++;
-        }
-
-        tsp.setPrecedences(precs);
-
-
-        // 7. SERVICE TIMES
-        double[] serviceTimes = new double[dijkstraService.getGraph().getNbSommets()];
-        Arrays.fill(serviceTimes, 0); // warehouse = 0
-
-        requestIndex = 0;
-        for (long reqId : pickupDelivery.getRequestsPerCourier().get(1L)) {
-            Request r = pickupDelivery.getRequests().get(reqId);
-
-            int pickupIndex = 1 + requestIndex * 2;
-            int deliveryIndex = pickupIndex + 1;
-
-            serviceTimes[pickupIndex]   = r.getPickupDuration().getSeconds();   // dureeEnlevement
-            serviceTimes[deliveryIndex] = r.getDeliveryDuration().getSeconds(); // dureeLivraison
-
-            requestIndex++;
-        }
-
-        tsp.setServiceTimes(serviceTimes);
-
-        // 8. execute TSP (SOP)
-        tsp.chercheSolution(30000, dijkstraService.getGraph());
-
-        // 9. result
-      
-
-        double[] serviceTimesUsed = tsp.getServiceTimes();
-
-        System.out.println("\n============== OPTIMAL TOUR ==============\n");
-
-        double currentTime = 0.0;  // time
-
-        for (int i = 0; i < dijkstraService.getGraph().getNbSommets(); i++) {
-            int node = tsp.getSolution(i);        
-            long intersectionId = dijkstraService.getGraph().getSommets()[node];
-
-            if (i > 0) {
-                int prev = tsp.getSolution(i - 1);
-                currentTime += dijkstraService.getGraph().getCout(prev, node);
+            switch (choice) {
+                case "1" -> loadRequestsMenu(scanner, requestController);
+                case "2" -> addRequestMenu(scanner, requestController);
+                case "3" -> listRequests(pickupDelivery);
+                case "4" -> running = false;
+                default -> System.out.println("Unknown choice.");
             }
+        }
 
-            // Arrival
-            double arrival = currentTime;
+            scanner.close();
+    }
 
-            // Service time
-            double service = serviceTimesUsed[node];
-            double departure = arrival + service;
+    private static void loadRequestsMenu(Scanner scanner, RequestController requestController) {
+        System.out.print("Courier id: ");
+        long id = Long.parseLong(scanner.nextLine().trim());
 
-            //(warehouse / pickup / delivery)
-            String label;
-            if (node == 0) {
-                label = "WAREHOUSE";
-            } else {
-                int logicalIdx = node - 1;
-                if (logicalIdx % 2 == 0)
-                    label = "PICKUP #" + (logicalIdx/2 + 1);
-                else
-                    label = "DELIVERY #" + (logicalIdx/2 + 1);
-            }
+        System.out.print("Enter XML requests file path (by default : `src/main/resources/requests.xml`): ");
+        String path = scanner.nextLine().trim();
+        if (path.isEmpty()) {
+            path = "src/main/resources/requests.xml";
+        }
 
-            System.out.printf(
-                    "%-12s | Node %2d | ID: %-12d | Arrive: %8.1f s | Service: %5.1f s | Depart: %8.1f s\n",
-                    label, node, intersectionId, arrival, service, departure
+        try {
+            requestController.loadRequests(path, id);
+            System.out.println("Requests loaded and internal model updated.");
+        } catch (Exception e) {
+            System.out.println("Error while loading requests: " + e.getMessage());
+        }
+    }
+
+    private static void addRequestMenu(Scanner scanner, RequestController requestController) {
+        try {
+            System.out.print("Courier id: ");
+            long courierId = Long.parseLong(scanner.nextLine().trim());
+
+            System.out.print("Pickup intersection id: ");
+            long pickupId = Long.parseLong(scanner.nextLine().trim());
+
+            System.out.print("Pickup duration in seconds: ");
+            long pickupSec = Long.parseLong(scanner.nextLine().trim());
+
+            System.out.print("Delivery intersection id: ");
+            long deliveryId = Long.parseLong(scanner.nextLine().trim());
+
+            System.out.print("Delivery duration in seconds: ");
+            long deliverySec = Long.parseLong(scanner.nextLine().trim());
+
+            // In this simple IHM we fix:
+            // \- warehouse id is not used by Request constructor here
+            Long warehouseId = 0L;
+
+            requestController.addRequest(
+                    warehouseId,
+                    pickupId,
+                    Duration.ofSeconds(pickupSec),
+                    deliveryId,
+                    Duration.ofSeconds(deliverySec),
+                    courierId
             );
 
-            currentTime = departure;
+            System.out.println("Request added and tour recomputed for courier " + courierId + ".");
+        } catch (NumberFormatException e) {
+            System.out.println("Invalid numeric value: " + e.getMessage());
+        } catch (Exception e) {
+            System.out.println("Error while adding request: " + e.getMessage());
+        }
+    }
+
+    private static void listRequests(PickupDelivery pickupDelivery) {
+        TreeMap<Long, Request> requests = pickupDelivery.getRequests();
+        if (requests.isEmpty()) {
+            System.out.println("No requests loaded.");
+            return;
         }
 
-        //return  warehouse
-        int last = tsp.getSolution(dijkstraService.getGraph().getNbSommets() - 1);
-        double finalReturn = dijkstraService.getGraph().getCout(last, 0);
-        currentTime += finalReturn;
-
-        System.out.println("\nReturn to warehouse: +" + finalReturn + " seconds");
-        System.out.println("TOTAL TOUR DURATION: " + currentTime + " seconds");
-        System.out.println("===========================================\n");
-
-        // 10. convert graph to tour
-
-        System.out.println("\n========== TEST convertGraphToTour() ==========\n");
-
-        Integer[] sol = new Integer[graph.getNbSommets()];
-        for (int i = 0; i < sol.length; i++)
-            sol[i] = tsp.getSolution(i);
-
-        Long[] vertices = Arrays.stream(graph.getSommets()).boxed().toArray(Long[]::new);
-
-        TourService tourService = new TourService();
-        LocalDateTime start = LocalDateTime.now();
-
-        Tour tour = tourService.convertGraphToTour(
-                pickupDelivery, start, 1L, sol, vertices, graph.getCout()
-        );
-
-        System.out.println("Generated tour stops:");
-        for (TourStop stop : tour.getStops()) {
-            System.out.println(stop);
+        System.out.println("\nCurrent requests:");
+        for (Request r : requests.values()) {
+            System.out.println(
+                    "Request #" + r.getId()
+                            + " | pickup=" + r.getPickupIntersectionId()
+                            + " (" + formatDuration(r.getPickupDuration()) + ")"
+                            + " | delivery=" + r.getDeliveryIntersectionId()
+                            + " (" + formatDuration(r.getDeliveryDuration()) + ")"
+            );
         }
+    }
 
-        System.out.println("\nTotal duration (min): " + tour.getTotalDuration().toMinutes());
-
-
-        // 11. add roads to tour
-
-        System.out.println("\n========== TEST addRoadsToTour() ==========\n");
-        System.out.println("Road segments problématiques : ");
-        tour = tourService.addRoadsToTour(tour, dijkstraTable, map);
-
-        System.out.println("Road segments added: " + tour.getRoadSegmentsTaken().size());
-        System.out.println("Total distance: " + tour.getTotalDistance() + " meters");
-
-        System.out.println("\n===== ROAD SEGMENTS =====");
-        tour.getRoadSegmentsTaken().forEach(seg ->
-                System.out.println(seg.getStartId() + " → " +
-                        seg.getEndId() + " | " +
-                        "len=" + seg.getLength() )
-        );
-
-
-
-        System.out.println("\n========= END TESTS =========\n");
-
+    private static String formatDuration(Duration d) {
+        long sec = d.getSeconds();
+        long h = sec / 3600;
+        long m = (sec % 3600) / 60;
+        long s = sec % 60;
+        return LocalTime.of((int) h, (int) m, (int) s).toString();
     }
 }
