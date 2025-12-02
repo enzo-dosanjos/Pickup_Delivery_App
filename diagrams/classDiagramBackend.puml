@@ -223,6 +223,8 @@ package "Presentation" {
     }
 
     class TourController {
+        - requestService : RequestService
+        - tourService : TourService
         + saveTours(filepath: String) : void
         + loadTours(filepath: String) : void
         + addCourier(id: long, name: String, shiftDuration: Duration) : void
