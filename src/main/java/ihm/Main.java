@@ -6,6 +6,7 @@ import domain.model.dijkstra.DijkstraTable;
 import domain.service.TSP1;
 import domain.service.TourService;
 import persistence.XMLParsers;
+import persistence.XMLWriters;
 import domain.service.DijkstraService;
 
 import java.time.LocalDateTime;
@@ -178,7 +179,15 @@ public class Main {
                         "len=" + seg.getLength() )
         );
 
-
+        //12. Export tour
+        try {
+            XMLWriters.exportTourToXml(tour, "tour.xml");
+        } catch (Exception e) {
+            // TODO Auto-generated catch block
+            System.out.println("------Fail exporting tour------");
+            e.printStackTrace();
+        }
+        System.out.println("Tour exported successfully!");
 
         System.out.println("\n========= END TESTS =========\n");
 
