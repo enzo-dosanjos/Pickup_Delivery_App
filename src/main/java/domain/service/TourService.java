@@ -5,13 +5,13 @@ import domain.model.Map;
 import domain.model.Tour;
 
 import java.util.*;
+import java.util.Map.Entry;
 
 import domain.model.*;
 import domain.model.dijkstra.CellInfo;
 import domain.model.dijkstra.DijkstraTable;
 
 import java.time.Duration;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 public class TourService {
@@ -103,7 +103,13 @@ public class TourService {
             }
             else
             {
-                var result = pickupDelivery.findRequestByIntersectionId(intersectionId);
+                Entry<Request, StopType> result = pickupDelivery.findRequestByIntersectionId(intersectionId);
+
+                if (result == null) {
+                    // This should not happen if the solution is valid
+                    throw new IllegalArgumentException("No request found for intersection ID: " + intersectionId);
+                }
+
                 request = result.getKey();
                 stopType = result.getValue();
                 arrivalTime =  tour.getStartTime().plus(tour.getTotalDuration());
@@ -149,8 +155,6 @@ public class TourService {
         long currentIntersectionId;
 
         CellInfo info;
-        Duration duration;
-        double minutes;
 
         RoadSegment road;
 
