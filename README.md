@@ -51,18 +51,58 @@ The project is organized into the following main packages:
 
 The project's architecture is based on the design specified in the PlantUML diagrams located in the `/diagrams` directory.
 
+## REST API
+
+The backend provides a REST API to interact with the application's features. Here are the main endpoints:
+
+### Map
+-   `GET /api/map`: Retrieves the map data, including intersections and road segments.
+
+### Requests
+-   `POST /api/request/load`: Loads pickup and delivery requests from a specified XML file.
+-   `POST /api/request/add`: Adds a new pickup and delivery request.
+-   `POST /api/request/save`: Saves the current set of requests to an XML file.
+-   `GET /api/request/warehouse`: Retrieves the warehouse intersection ID.
+
+### Tours
+-   `POST /api/tour/save`: Saves the computed tours to a specified XML file.
+-   `GET /api/tour/load`: Loads tours from a specified XML file.
+-   `POST /api/tour/update-num-couriers`: Updates the number of available couriers.
+-   `POST /api/tour/update-request-order`: Updates the order of requests for a courier.
+-   `GET /api/tour/show-request-details`: (Not implemented) Shows details for a specific request.
+
 ## How to Run
 
-To compile and run the application, you need to have **Java** and **Apache Maven** installed on your system.
+To compile and run the application, you need to have **Java** and **Apache Maven** installed for the backend, and **Node.js** and **npm** for the frontend.
 
-1.  **Compile the project:**
-    ```bash
-    mvn compile
-    ```
-2.  **Run the application:**
-    ```bash
-    mvn exec:java -Dexec.mainClass="ihm.Main"
-    ```
-    The `Main` class is currently configured to run test-level code that executes both the `parseRequests` and `parseTours` methods and prints the parsed data to the console. You can inspect the output to verify that the XML files (`requests.xml` and `tour.xml`) are being read correctly.
+### Backend (Spring Boot Application)
 
-## Current Limitations
+1.  Navigate to the root directory of the project.
+2.  **Compile and run the application:**
+    ```bash
+    mvn spring-boot:run
+    ```
+    The backend server will start on `http://localhost:8080`.
+
+### Frontend (React Application)
+
+The frontend of this application is a React project located in the `react-app/` directory. It provides a user interface to visualize maps, tours, and interact with the backend services.
+
+### How to Run the React Application
+
+To run the React application, follow these steps:
+
+1.  Navigate to the `react-app` directory:
+    ```bash
+    cd react-app
+    ```
+2.  Install the dependencies:
+    ```bash
+    npm install
+    ```
+3.  Start the development server:
+    ```bash
+    npm run dev
+    ```
+    The React application will typically be available at `http://localhost:5173` (or another port if 5173 is in use).
+    Ensure the Java backend is running for the React application to function correctly.
