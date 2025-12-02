@@ -165,7 +165,7 @@ public class Main {
         // 11. add roads to tour
 
         System.out.println("\n========== TEST addRoadsToTour() ==========\n");
-        System.out.println("Road segments problématiques : ");
+        System.out.println("Road segments not found: ");
         tour = tourService.addRoadsToTour(tour, dijkstraTable, map);
 
         System.out.println("Road segments added: " + tour.getRoadSegmentsTaken().size());
