@@ -97,7 +97,7 @@ public class TourService {
             if(first)
             {
                 stopType = StopType.WAREHOUSE;
-                requestId = 0;
+                requestId = -1;
                 arrivalTime = tour.getStartTime();
                 first = false;
             }
@@ -149,9 +149,6 @@ public class TourService {
         long currentIntersectionId;
 
         CellInfo info;
-        Duration duration;
-        double minutes;
-
         RoadSegment road;
 
         //add all the visited intersections in order to a list
@@ -176,7 +173,7 @@ public class TourService {
 
         for (int i = 0; i < reverseIntersectPath.size()-1; i++){
             road = map.getRoadSegment(reverseIntersectPath.get(i), reverseIntersectPath.get(i+1));
-            tour.addRoadSegment(road, Duration.ZERO); }
+            tour.addRoadSegment(road); }
 
         return tour;
     }

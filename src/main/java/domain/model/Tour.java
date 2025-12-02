@@ -26,10 +26,9 @@ public class Tour {
         this.stops.add(stop);
     }
 
-    public void addRoadSegment (RoadSegment roadSegment, Duration duration){
+    public void addRoadSegment (RoadSegment roadSegment){
         roadSegmentsTaken.add(roadSegment);
         updateTotalDistance(roadSegment.getLength());
-        updateTotalDuration(duration);
     }
 
     public void updateTotalDistance(double distance) {
@@ -60,7 +59,7 @@ public class Tour {
         return totalDuration;
     }
 
-    public List<RoadSegment> getRoadSegmentsTaken() {
+    public ArrayList<RoadSegment> getRoadSegmentsTaken() {
         return roadSegmentsTaken;
     }
 
