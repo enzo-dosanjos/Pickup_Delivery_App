@@ -1,12 +1,10 @@
 package domain.service;
 
 import domain.model.Courier;
+import domain.model.Map;
 import domain.model.Tour;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.TreeMap;
+import java.util.*;
 
 import domain.model.*;
 import domain.model.dijkstra.CellInfo;
@@ -144,6 +142,7 @@ public class TourService {
 
     public Tour addRoadsToTour(Tour tour, DijkstraTable table, Map map){
         List<TourStop> stops = tour.getStops();
+        List<Long> reverseIntersectPath = new ArrayList<>();
 
         long targetIntersectionId;
         long sourceIntersectionId;
@@ -157,27 +156,27 @@ public class TourService {
 
         //add all the visited intersections in order to a list
         for (int i = stops.size(); i > 0; i--) {
-            if(i==stops.size()){
-                sourceIntersectionId = stops.get(i-1).getIntersectionId();
+            if(i == stops.size()){
                 targetIntersectionId = stops.getFirst().getIntersectionId();
             }
             else{
-                sourceIntersectionId = stops.get(i-1).getIntersectionId();
                 targetIntersectionId = stops.get(i).getIntersectionId();
             }
+            sourceIntersectionId = stops.get(i-1).getIntersectionId();
             currentIntersectionId = targetIntersectionId;
             while (currentIntersectionId != sourceIntersectionId) {
+                reverseIntersectPath.add(currentIntersectionId);
                 info = table.get(sourceIntersectionId, currentIntersectionId);
-                road = map.getRoadSegment(currentIntersectionId,  info.getPredecessor());
-                minutes = info.getDuration();
-                long wholeMinutes = (long) minutes;
-                long seconds = Math.round((minutes - wholeMinutes) * 60);
-                duration = Duration.ofMinutes(wholeMinutes).plusSeconds(seconds);
-                tour.addRoadSegment(road, duration);
-                tour.updateTotalDistance(road.getLength());
                 currentIntersectionId = info.getPredecessor();
             }
         }
+
+        reverseIntersectPath.add(stops.getFirst().getIntersectionId());
+        Collections.reverse(reverseIntersectPath);
+
+        for (int i = 0; i < reverseIntersectPath.size()-1; i++){
+            road = map.getRoadSegment(reverseIntersectPath.get(i), reverseIntersectPath.get(i+1));
+            tour.addRoadSegment(road, Duration.ZERO); }
 
         return tour;
     }

@@ -1,14 +1,14 @@
 package ihm;
 
-import domain.model.GrapheComplet;
+import domain.model.*;
 import domain.model.Map;
-import domain.model.PickupDelivery;
-import domain.model.Request;
 import domain.model.dijkstra.DijkstraTable;
 import domain.service.TSP1;
+import domain.service.TourService;
 import persistence.XMLParsers;
 import domain.service.DijkstraService;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 public class Main {
@@ -136,6 +136,51 @@ public class Main {
         System.out.println("\nReturn to warehouse: +" + finalReturn + " seconds");
         System.out.println("TOTAL TOUR DURATION: " + currentTime + " seconds");
         System.out.println("===========================================\n");
+
+        // 10. convert graph to tour
+
+        System.out.println("\n========== TEST convertGraphToTour() ==========\n");
+
+        Integer[] sol = new Integer[graph.getNbSommets()];
+        for (int i = 0; i < sol.length; i++)
+            sol[i] = tsp.getSolution(i);
+
+        Long[] vertices = Arrays.stream(graph.getSommets()).boxed().toArray(Long[]::new);
+
+        TourService tourService = new TourService();
+        LocalDateTime start = LocalDateTime.now();
+
+        Tour tour = tourService.convertGraphToTour(
+                pickupDelivery, start, 1L, sol, vertices, graph.getCout()
+        );
+
+        System.out.println("Generated tour stops:");
+        for (TourStop stop : tour.getStops()) {
+            System.out.println(stop);
+        }
+
+        System.out.println("\nTotal duration (min): " + tour.getTotalDuration().toMinutes());
+
+
+        // 11. add roads to tour
+
+        System.out.println("\n========== TEST addRoadsToTour() ==========\n");
+        System.out.println("Road segments problématiques : ");
+        tour = tourService.addRoadsToTour(tour, dijkstraTable, map);
+
+        System.out.println("Road segments added: " + tour.getRoadSegmentsTaken().size());
+        System.out.println("Total distance: " + tour.getTotalDistance() + " meters");
+
+        System.out.println("\n===== ROAD SEGMENTS =====");
+        tour.getRoadSegmentsTaken().forEach(seg ->
+                System.out.println(seg.getStartId() + " → " +
+                        seg.getEndId() + " | " +
+                        "len=" + seg.getLength() )
+        );
+
+
+
+        System.out.println("\n========= END TESTS =========\n");
 
     }
 }
