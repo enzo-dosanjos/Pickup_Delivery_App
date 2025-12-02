@@ -17,7 +17,8 @@ public class XMLWriters {
         String indent = "    "; 
 
         writer.writeStartDocument("UTF-8", "1.0");
-
+        writer.writeCharacters("\n");
+        
         // <Tour courierId="..." startTime="...">
         writer.writeStartElement("Tour");
         writer.writeAttribute("courierId", String.valueOf(tour.getCourierId()));
