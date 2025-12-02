@@ -5,6 +5,9 @@ import persistence.XMLParsers;
 import java.util.*;
 import java.util.Map;
 
+import static domain.model.StopType.*;
+
+
 public class PickupDelivery {
 
     private TreeMap<Long, Request> requests;
@@ -66,6 +69,20 @@ public class PickupDelivery {
 
     public void setWarehouseAdressId(long warehouseAdressId) {
         this.warehouseAdressId = warehouseAdressId;
+    }
+
+    public Request findRequestById(long requestId) {return requests.get(requestId);}
+
+    public Map.Entry<Request, StopType> findRequestByIntersectionId(long intersectionId) {
+        for(Request req : requests.values()) {
+            if (req.getDeliveryIntersectionId() == intersectionId) {
+                return  Map.entry(req, DELIVERY);
+            }
+            else if (req.getPickupIntersectionId() == intersectionId){
+                return  Map.entry(req, PICKUP);
+            }
+        }
+        return null;
     }
 
     public String toString() {
