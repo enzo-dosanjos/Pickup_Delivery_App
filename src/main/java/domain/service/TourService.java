@@ -37,6 +37,18 @@ public class TourService {
         return added;
     }
 
+    public boolean removeCourier(long courierId) {
+        for (int i = 0; i < couriers.size(); i++) {
+            if (couriers.get(i).getId() == courierId) {
+                couriers.remove(i);
+                numCouriers--;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public boolean updateRequestOrder(long requestBeforeId, long requestAfterId, long courierId)
     // Adds a constraint that requestBeforeId must be served before requestAfterId by the specified courier
     {

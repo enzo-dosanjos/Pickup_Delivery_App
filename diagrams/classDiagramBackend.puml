@@ -161,7 +161,7 @@ package "Domain" {
             + loadTours(filepath: String) : void
             + setTourForCourier(courierId: long, tour: Tour) : void
             + addCourier(courier: Courier) : boolean
-            + updateNumCouriers(numCouriers: int) : boolean
+            + removeCourier(courierId: long) : boolean
             + updateRequestOrder(requestBeforeId: long, requestAfterId: long, courierId: long) : void
             + convertGraphToTour(pickupDelivery: PickupDelivery, startTime: LocalDateTime, courierId: long, solution: Integer[], vertices: long[], costs: double[][]) : Tour
             + addRoadsToTour(tour: Tour, table: DijkstraTable, map: Map) : Tour
@@ -225,16 +225,18 @@ package "Presentation" {
     class TourController {
         + saveTours(filepath: String) : void
         + loadTours(filepath: String) : void
-        + updateNumCouriers(numCouriers: int) : void
+        + addCourier(id: long, name: String, shiftDuration: Duration) : void
+        + removeCourier(courierId: long) : void
         + updateRequestOrder(requestBeforeId: long, requestAfterId: long) : void
         + showRequestDetails(requestId: long, deliveryOrPickup: StopType) : void
     }
 }
 
 RequestController --> RequestService
+RequestController --> TourService
 TourController --> TourService
-TourController --> DijkstraService
-TourController --> TSP1
+RequestController --> DijkstraService
+RequestController --> TSP1
 
 TourService --> Tour
 RequestService --> PickupDelivery
