@@ -1,0 +1,11 @@
+<planningRequest>
+    <depot address="342873658" departureTime="8:0:0"/>
+    <request pickupAddress="208769039" deliveryAddress="25173820" pickupDuration="180" deliveryDuration="240"/>
+    <request pickupAddress="8358135" deliveryAddress="26033322" pickupDuration="100" deliveryDuration="150"/>
+    <request pickupAddress="21703544" deliveryAddress="25610704" pickupDuration="150" deliveryDuration="120"/>
+    <request pickupAddress="25478613" deliveryAddress="1036842122" pickupDuration="140" deliveryDuration="130"/>
+    <request pickupAddress="1036842114" deliveryAddress="26033321" pickupDuration="130" deliveryDuration="140"/>
+    <request pickupAddress="25622515" deliveryAddress="1373825343" pickupDuration="120" deliveryDuration="150"/>
+    <request pickupAddress="34829078" deliveryAddress="27359824" pickupDuration="110" deliveryDuration="160"/>
+    <request pickupAddress="2587463836" deliveryAddress="25173843" pickupDuration="204" deliveryDuration="299"/>
+</planningRequest>
