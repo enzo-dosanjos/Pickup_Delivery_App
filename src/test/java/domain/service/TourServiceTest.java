@@ -5,14 +5,12 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.AbstractMap;
 import java.util.List;
 
 //import static org.junit.Assert.assertEquals;
 
 
 import java.util.HashMap;
-import java.util.TreeMap;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -56,7 +54,7 @@ class TourServiceTest {
         assertEquals(5, tourStops.size());
         assertEquals(Duration.ofMinutes(5 + 10 + 3 + 8 + 12+15+10+12+30), tour.getTotalDuration());
         assertEquals(startTime, tour.getStartTime());
-        assertEquals(123L, tour.getCourrierId());
+        assertEquals(123L, tour.getCourierId());
         assertEquals(2L, tourStops.get(1).getIntersectionId());
         assertEquals(3L, tourStops.get(2).getIntersectionId());
         assertEquals(4L, tourStops.get(3).getIntersectionId());

@@ -6,15 +6,15 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Tour {
-    long courrierId;
-    ArrayList<TourStop> stops;
-    ArrayList<RoadSegment> roadSegmentsTaken;
-    double totalDistance;
-    LocalDateTime startTime;
-    Duration totalDuration;
+    private final long courierId;
+    private ArrayList<TourStop> stops;
+    private ArrayList<RoadSegment> roadSegmentsTaken;
+    private double totalDistance;
+    private LocalDateTime startTime;
+    private Duration totalDuration;
 
-    public Tour(long courrierId, LocalDateTime startTime) {
-        this.courrierId = courrierId;
+    public Tour(long courierId, LocalDateTime startTime) {
+        this.courierId = courierId;
         this.startTime = startTime;
         stops = new ArrayList<>();
         roadSegmentsTaken = new ArrayList<>();
@@ -39,8 +39,8 @@ public class Tour {
         totalDuration = totalDuration.plus(duration);
     }
 
-    public long getCourrierId() {
-        return courrierId;
+    public long getCourierId() {
+        return courierId;
     }
 
     public List<TourStop> getStops() {
@@ -65,7 +65,7 @@ public class Tour {
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("Tour for Courrier ID: ").append(courrierId).append("\n");
+        sb.append("Tour for Courier ID: ").append(courierId).append("\n");
         sb.append("Stops:\n");
         for (TourStop stop : stops) {
             sb.append(" - ").append(stop.toString()).append("\n");

@@ -71,6 +71,19 @@ public class PickupDelivery {
         this.warehouseAdressId = warehouseAdressId;
     }
 
+    public Request findRequestById(long requestId) {return requests.get(requestId);}
+
+    public Map.Entry<Request, StopType> findRequestByIntersectionId(long intersectionId) {
+        for(Request req : requests.values()) {
+            if (req.getDeliveryIntersectionId() == intersectionId) {
+                return  Map.entry(req, DELIVERY);
+            }
+            else if (req.getPickupIntersectionId() == intersectionId){
+                return  Map.entry(req, PICKUP);
+            }
+        }
+        return null;
+    }
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -85,18 +98,5 @@ public class PickupDelivery {
             sb.append("\n");
         }
         return sb.toString();
-    }
-    public Request findRequestById(long requestId) {return requests.get(requestId);}
-
-    public Map.Entry<Request, StopType> findRequestByIntersectionId(long intersectionId) {
-        for(Request req : requests.values()) {
-            if (req.getDeliveryIntersectionId() == intersectionId) {
-                return  Map.entry(req, DELIVERY);
-            }
-            else if (req.getPickupIntersectionId() == intersectionId){
-                return  Map.entry(req, PICKUP);
-            }
-        }
-        return null;
     }
 }
