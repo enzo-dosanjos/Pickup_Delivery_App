@@ -2,6 +2,7 @@ package persistence;
 
 import domain.model.RoadSegment;
 import domain.model.Tour;
+import domain.model.TourStop;
 
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamWriter;
@@ -31,7 +32,27 @@ public class XMLWriters {
             writer.writeCharacters(indent); // indentation
             writer.writeStartElement("step");
             writer.writeAttribute("origine_adresse", String.valueOf(seg.getStartId()));
+
+            
+            TourStop start = tour.getStopByIntersectionId(seg.getStartId());
+            String type_1;
+            if (start != null) {
+                type_1 =  String.valueOf(start.getType());
+            } else {
+                type_1 = "intermediaire";
+            }
+
+            writer.writeAttribute("type_Start", type_1);
             writer.writeAttribute("destination_adresse", String.valueOf(seg.getEndId()));
+
+            TourStop stop = tour.getStopByIntersectionId(seg.getEndId());
+            String type_2;
+            if (stop != null) {
+                type_2 =  String.valueOf(stop.getType());
+            } else {
+                type_2 = "intermediaire";
+            }
+            writer.writeAttribute("type_Finish", type_2);
             writer.writeEndElement(); // </step>
             writer.writeCharacters("\n");
 

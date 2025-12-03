@@ -182,12 +182,13 @@ public class Main {
         //12. Export tour
         try {
             XMLWriters.exportTourToXml(tour, "tour.xml");
+            System.out.println("Tour exported successfully!");
         } catch (Exception e) {
-            // TODO Auto-generated catch block
+            //Auto-generated catch block
             System.out.println("------Fail exporting tour------");
             e.printStackTrace();
         }
-        System.out.println("Tour exported successfully!");
+       
 
         System.out.println("\n========= END TESTS =========\n");
 
