@@ -86,30 +86,11 @@ public class Main {
 
         // 9. result
       
-
-        double[] serviceTimesUsed = tsp.getServiceTimes();
-
         System.out.println("\n============== OPTIMAL TOUR ==============\n");
-
-        double currentTime = 0.0;  // time
 
         for (int i = 0; i < dijkstraService.getGraph().getNbSommets(); i++) {
             int node = tsp.getSolution(i);        
             long intersectionId = dijkstraService.getGraph().getSommets()[node];
-
-            if (i > 0) {
-                int prev = tsp.getSolution(i - 1);
-                currentTime += dijkstraService.getGraph().getCout(prev, node);
-            }
-
-            // Arrival
-            double arrival = currentTime;
-
-            // Service time
-            double service = serviceTimesUsed[node];
-            double departure = arrival + service;
-
-            //(warehouse / pickup / delivery)
             String label;
             if (node == 0) {
                 label = "WAREHOUSE";
@@ -121,21 +102,10 @@ public class Main {
                     label = "DELIVERY #" + (logicalIdx/2 + 1);
             }
 
-            System.out.printf(
-                    "%-12s | Node %2d | ID: %-12d | Arrive: %8.1f s | Service: %5.1f s | Depart: %8.1f s\n",
-                    label, node, intersectionId, arrival, service, departure
-            );
+            System.out.printf("%-12s | Node %2d | ID: %-12d \n",  label, node, intersectionId);
 
-            currentTime = departure;
+            
         }
-
-        //return  warehouse
-        int last = tsp.getSolution(dijkstraService.getGraph().getNbSommets() - 1);
-        double finalReturn = dijkstraService.getGraph().getCout(last, 0);
-        currentTime += finalReturn;
-
-        System.out.println("\nReturn to warehouse: +" + finalReturn + " seconds");
-        System.out.println("TOTAL TOUR DURATION: " + currentTime + " seconds");
         System.out.println("===========================================\n");
 
         // 10. convert graph to tour
@@ -180,6 +150,7 @@ public class Main {
         );
 
         //12. Export tour
+        System.out.println("========================\n");
         try {
             XMLWriters.exportTourToXml(tour, "tour.xml");
             System.out.println("Tour exported successfully!");
