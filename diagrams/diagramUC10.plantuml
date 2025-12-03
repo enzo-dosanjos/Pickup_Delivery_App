@@ -6,10 +6,10 @@ participant "TourController" as TC
 participant "TourService" as TS
 participant "TSP1" as TSP1
 
-User -> TC : updateRequestOrder(requestBeforeId, requestAfterId, courierId)
+User -> TC : updateRequestOrder(requestBeforeId, requestAfterId)
 activate TC
 
-TC -> TS : updateRequestOrder(requestBeforeId, requestAfterId, courierId)
+TC -> TS : updateRequestOrder(requestBeforeId, requestAfterId)
 activate TS
 
 TS -> TS : apply precedence constraint(requestBeforeId, requestAfterId, courierId)

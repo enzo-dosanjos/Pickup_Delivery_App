@@ -3,15 +3,11 @@ title UC8 - Choisir lieu de livraison
 
 actor User
 participant "RequestController" as RC
-participant "MapService" as MS
 
-User -> RC : chooseDelivery(intersectionId)
+
+User -> RC : chooseDelivery(intersectionId) (soit dans la carte, un liste)
 activate RC
 
-RC -> MS : getOutgoingRoadSegments(intersectionId)
-activate MS
-MS --> RC : vector<RoadSegment>
-deactivate MS
 
 RC --> User : deliverySelected (UI updated)
 deactivate RC

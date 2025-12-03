@@ -12,13 +12,15 @@ activate TC
 TC -> TS : saveTours(filepath)
 activate TS
 
-TS -> XW : writeTour(tour, filepath)  // chaque tour
-XW --> TS : confirmation
-deactivate XW
+loop pour chaque tour
+    TS -> XW : writeTour(tour, filepath)
+    XW --> TS : confirmation
+end
 
 TS --> TC : confirmation
 deactivate TS
 
 TC --> User : "Programme sauvegardé"
 deactivate TC
+
 @enduml

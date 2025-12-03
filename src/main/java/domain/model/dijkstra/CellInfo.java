@@ -1,30 +1,30 @@
 package domain.model.dijkstra;
 
 public class CellInfo {
-    double distance;
-    long precedent;
-    boolean visited;
+    private double duration;
+    private long predecessor;
+    private boolean visited;
 
-    public CellInfo(double distance, long precedent, boolean visited) {
-        this.distance = distance;
-        this.precedent = precedent;
+    public CellInfo(double duration, long predecessor, boolean visited) {
+        this.duration = duration;
+        this.predecessor = predecessor;
         this.visited = visited;
     }
 
-    public double getDistance() {
-        return distance;
+    public double getDuration() {
+        return duration;
     }
 
-    public void setDistance(double distance) {
-        this.distance = distance;
+    public void setDuration(double duration) {
+        this.duration = duration;
     }
 
-    public long getPrecedent() {
-        return precedent;
+    public long getPredecessor() {
+        return predecessor;
     }
 
-    public void setPrecedent(long precedent) {
-        this.precedent = precedent;
+    public void setPredecessor(long predecessor) {
+        this.predecessor = predecessor;
     }
 
     public boolean isVisited() {

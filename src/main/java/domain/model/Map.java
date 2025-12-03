@@ -1,5 +1,8 @@
 package domain.model;
 
+import persistence.XMLParsers;
+
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.TreeMap;
 
@@ -13,21 +16,29 @@ public class Map {
     }
 
     public boolean addIntersection(Intersection intersection) {
-        if (intersections.containsKey((long)intersection.getId())) {
+        if (intersections.containsKey(intersection.getId())) {
             return false;
         }
 
-        intersections.put((long)intersection.getId(), intersection);
+        intersections.put(intersection.getId(), intersection);
 
         return true;
     }
 
-    public boolean addRoadSegment(Long intersectionId, RoadSegment roadSegment) {
-        if (!intersections.containsKey(intersectionId)) {
+    public boolean addRoadSegment(Long startIntersectionId, RoadSegment roadSegment) {
+        if (!intersections.containsKey(startIntersectionId)) {
             return false;
         }
 
-        RoadSegment[] segments = adjencyList.get(intersectionId);
+        if (roadSegment.getStartId() != startIntersectionId) {
+            return false;
+        }
+
+        if (!intersections.containsKey(roadSegment.getEndId())) {
+            return false;
+        }
+
+        RoadSegment[] segments = adjencyList.get(startIntersectionId);
         if (segments == null) {
             segments = new RoadSegment[] { roadSegment };
         } else {
@@ -37,7 +48,7 @@ public class Map {
             segments = newSegments;
         }
 
-        adjencyList.put(intersectionId, segments);
+        adjencyList.put(startIntersectionId, segments);
 
         return true;
     }
@@ -53,6 +64,30 @@ public class Map {
         }
 
         return null;
+    }
+
+    public void loadMap(String filePath) {
+        Map loaded = XMLParsers.parseMap(filePath);
+
+        this.intersections.clear();
+        this.intersections.putAll(loaded.getIntersections());
+
+        this.adjencyList.clear();
+        this.adjencyList.putAll(loaded.getAdjencyList());
+    }
+
+    public ArrayList<RoadSegment> getRoadSegmentByName(String name) {
+        // Iterate through all road segments in the adjacency list to find segments with the given partial or full name
+        ArrayList<RoadSegment> roadSegments = new ArrayList<>();
+        for (RoadSegment[] segments : adjencyList.values()) {
+            for (RoadSegment segment : segments) {
+                if (segment.getName().contains(name)) {
+                    roadSegments.add(segment);
+                }
+            }
+        }
+
+        return roadSegments;
     }
 
     public TreeMap<Long, Intersection> getIntersections() {

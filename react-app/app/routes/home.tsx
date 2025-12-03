@@ -46,6 +46,20 @@ type ApiTour = {
     totalDuration: number;
 };
 
+type ApiRequest = {
+    id: number;
+    pickupIntersectionId: number;
+    pickupDuration: number;
+    deliveryIntersectionId: number;
+    deliveryDuration: number;
+}
+
+type ApiCourier = {
+    id: number;
+    name: string;
+    shiftDuration: number;
+}
+
 export function meta({}: Route.MetaArgs) {
     return [
         { title: "Pick-up & Delivery App" },
@@ -141,9 +155,26 @@ export default function Home() {
                 setIntersections(transformedIntersections);
                 setRoadSegments(transformedRoadSegments);
 
+                // Add a courier
+                const courierParams = new URLSearchParams();
+                courierParams.append('id', '1');
+                courierParams.append('name', 'Courier 1');
+                courierParams.append('shiftDurationInSeconds', '28800'); // 8 hours in seconds
+                const courierResponse = await fetch("http://localhost:8080/api/tour/add-courier", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: courierParams,
+                });
+                if (!courierResponse.ok) {
+                    throw new Error(`HTTP error! status: ${courierResponse.status}`);
+                }
+
                 // Load requests
                 const requestParams = new URLSearchParams();
-                requestParams.append('filepath', 'src/main/resources/requestsSmall1.xml');
+                requestParams.append('filepath', 'src/main/resources/requests.xml');
+                requestParams.append("courierId", "1"); // todo: make dynamic
                 const requestResponse = await fetch("http://localhost:8080/api/request/load", {
                     method: 'POST',
                     headers: {
@@ -155,7 +186,7 @@ export default function Home() {
                     throw new Error(`HTTP error! status: ${requestResponse.status}`);
                 }
 
-                // Fetch Tour Data
+                /*// Fetch Tour Data
                 const tourResponse = await fetch("http://localhost:8080/api/tour/load?filepath=src/test/resources/testTours.xml"); // Assuming a default filepath
                 if (!tourResponse.ok) {
                     throw new Error(`HTTP error! status: ${tourResponse.status}`);
@@ -183,7 +214,7 @@ export default function Home() {
                     };
                 });
 
-                setTours(transformedTours);
+                setTours(transformedTours);*/
 
             } catch (e: any) {
                 console.error("Caught error object:", e);

@@ -1,14 +1,16 @@
 package domain.model;
 
-public class Courier {
-    private long id;
-    private String name;
-    private int numGivenRequests;
+import java.time.Duration;
 
-    public Courier(long id, String name) {
+public class Courier {
+    private final long id;
+    private final String name;
+    private final Duration shiftDuration;
+
+    public Courier(long id, String name, Duration shiftDuration) {
         this.id = id;
         this.name = name;
-        this.numGivenRequests = 0;
+        this.shiftDuration = shiftDuration;
     }
 
     public long getId() {
@@ -19,11 +21,11 @@ public class Courier {
         return name;
     }
 
-    public int getNumGivenRequests() {
-        return numGivenRequests;
+    public Duration getShiftDuration() {
+        return shiftDuration;
     }
 
-    public void setNumGivenRequests(int numGivenRequests) {
-        this.numGivenRequests = numGivenRequests;
+    public String toString() {
+        return "Courier{id=" + id + ", name='" + name + "', shiftDuration=" + shiftDuration + "}";
     }
 }

@@ -6,10 +6,10 @@ participant "RequestController" as RC
 participant "RequestService" as RS
 participant "TourService" as TS
 
-User -> RC : addRequest(warehouseId, pickupId, pickupDuration, deliveryId, deliveryDuration, courierId)
+User -> RC : addRequest(courierId: String, pickupIntersectionId: String, deliveryIntersectionId: String)
 activate RC
 
-RC -> RS : addRequest(warehouseId, pickupId, pickupDuration, deliveryId, deliveryDuration, courierId)
+RC -> RS : addRequest(courierId: String, pickupIntersectionId: String, deliveryIntersectionId: String)
 activate RS
 RS --> RC : requestId
 deactivate RS

@@ -1,18 +1,25 @@
 package domain.model;
 
+import java.time.Duration;
+import java.util.UUID;
+
 public class Request {
     private final long id;
     private final long pickupIntersectionId;
-    private final long pickupDuration;
+    private final Duration pickupDuration;
     private final long deliveryIntersectionId;
-    private final long deliveryDuration;
+    private final Duration deliveryDuration;
 
-    public Request(long id, long pickupIntersectionId, long pickupDuration, long deliveryIntersectionId, long deliveryDuration) {
-        this.id = id;
+    public Request(long pickupIntersectionId, Duration pickupDuration, long deliveryIntersectionId, Duration deliveryDuration) {
+        this.id = generateId();
         this.pickupIntersectionId = pickupIntersectionId;
         this.pickupDuration = pickupDuration;
         this.deliveryIntersectionId = deliveryIntersectionId;
         this.deliveryDuration = deliveryDuration;
+    }
+
+    public static long generateId() {
+        return UUID.randomUUID().getMostSignificantBits();
     }
 
     public long getId() {
@@ -23,7 +30,7 @@ public class Request {
         return pickupIntersectionId;
     }
 
-    public long getPickupDuration() {
+    public Duration getPickupDuration() {
         return pickupDuration;
     }
 
@@ -31,7 +38,13 @@ public class Request {
         return deliveryIntersectionId;
     }
 
-    public long getDeliveryDuration() {
+    public Duration getDeliveryDuration() {
         return deliveryDuration;
+    }
+
+    public String toString() {
+        return "Request ID: " + id +
+               ", Pickup at: " + pickupIntersectionId + " (Duration: " + pickupDuration.toMinutes() + " mins)" +
+               ", Delivery at: " + deliveryIntersectionId + " (Duration: " + deliveryDuration.toMinutes() + " mins)";
     }
 }

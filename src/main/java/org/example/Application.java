@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication
-@ComponentScan(basePackages = {"controller", "domain.service", "persistence", "org.example", "ihm"}) // Scan for components in our existing packages
+@ComponentScan(basePackages = {"ihm.controller", "domain.service", "persistence", "org.example"}) // Scan for components in our existing packages
 public class Application {
 
     public static void main(String[] args) {

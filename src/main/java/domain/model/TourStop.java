@@ -3,13 +3,13 @@ package domain.model;
 import java.time.LocalDateTime;
 
 public class TourStop {
-    private StopType type;
-    private long requestID;
-    private long intersectionId;
-    private long arrivalTime;
-    private long departureTime;
+    private final StopType type;
+    private final long requestID;
+    private final long intersectionId;
+    private LocalDateTime  arrivalTime;
+    private LocalDateTime  departureTime;
 
-    public TourStop(StopType type, long requestID, long intersectionId, long arrivalTime, long departureTime) {
+    public TourStop(StopType type, long requestID, long intersectionId, LocalDateTime arrivalTime, LocalDateTime departureTime) {
         this.type = type;
         this.requestID = requestID;
         this.intersectionId = intersectionId;
@@ -29,11 +29,24 @@ public class TourStop {
         return intersectionId;
     }
 
-    public long getArrivalTime() {
+    public LocalDateTime getArrivalTime() {
         return arrivalTime;
     }
 
-    public long getDepartureTime() {
+    public LocalDateTime getDepartureTime() {
         return departureTime;
+    }
+
+    public void setArrivalTime(LocalDateTime arrivalTime) {
+        this.arrivalTime = arrivalTime;
+    }
+
+    public void setDepartureTime(LocalDateTime departureTime) {
+        this.departureTime = departureTime;
+    }
+
+    public String toString() {
+        return "TourStop [type=" + type + ", requestID=" + requestID + ", intersectionId=" + intersectionId
+                + ", arrivalTime=" + arrivalTime + ", departureTime=" + departureTime + "]";
     }
 }

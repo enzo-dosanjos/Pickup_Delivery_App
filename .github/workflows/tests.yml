@@ -1,0 +1,65 @@
+# This workflow will build a Java project with Maven, and cache/restore any dependencies to improve the workflow execution time
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-maven
+
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+name: Run tests
+
+on: [push]
+
+jobs:
+  discover-tests:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+
+      # STEP 1 — Collect test class names into tests.json
+      - id: find-tests
+        run: |
+          find src/test/java -name "*Test.java" -printf "%f\n" \
+            | sed 's/.java$//' \
+            | jq -R . \
+            | jq -s . \
+            > tests.json
+
+          echo "Detected test classes:"
+          cat tests.json
+
+          # Save compressed JSON for GitHub output
+          echo "tests=$(jq -c . tests.json)" >> $GITHUB_OUTPUT
+
+      # STEP 2 — Create matrix.json using jq ONLY on real JSON file
+      - id: set-matrix
+        run: |
+          # Use the tests.json file directly—never use GitHub expressions for JSON
+          jq -c '{ test_class: . }' tests.json > matrix.json
+
+          echo "matrix=$(cat matrix.json)" >> $GITHUB_OUTPUT
+
+
+  test:
+    needs: discover-tests
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.discover-tests.outputs.matrix) }}
+
+    name: Test ${{ matrix.test_class }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: temurin
+
+      - name: Run single test
+        run: mvn -B -Dtest=${{ matrix.test_class }} test

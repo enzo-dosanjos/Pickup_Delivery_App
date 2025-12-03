@@ -3,16 +3,16 @@ package domain.model.dijkstra;
 import java.util.HashMap;
 
 public class DijkstraTable {
-    HashMap<Long, HashMap<Long, CellInfo>> table;
+    private HashMap<Long, HashMap<Long, CellInfo>> table;
 
     public DijkstraTable() {
         this.table = new HashMap<>();
     }
 
     // Add or replace a cell with individual values
-    public void put(long row, long col, double distance, long precedent, boolean visited) {
+    public void put(long row, long col, double duration, long predecessor, boolean visited) {
         table.computeIfAbsent(row, r -> new HashMap<>())
-                .put(col, new CellInfo(distance, precedent, visited));
+                .put(col, new CellInfo(duration, predecessor, visited));
     }
 
     // Add or replace a cell with a CellInfo object
