@@ -31,34 +31,34 @@ public class XMLWriters {
 
         // Write each road segment as a <step>
         for (RoadSegment seg : tour.getRoadSegmentsTaken()) {
-            writer.writeCharacters(indent); // indentation
+            writer.writeCharacters(indent);
             writer.writeStartElement("step");
+
             writer.writeAttribute("origine_adresse", String.valueOf(seg.getStartId()));
-
-            
-            TourStop start = tour.getStopByIntersectionId(seg.getStartId());
-            String type_1;
-            if (start != null) {
-                type_1 =  String.valueOf(start.getType());
-            } else {
-                type_1 = "intermediaire";
-            }
-
-            writer.writeAttribute("type_Start", type_1);
             writer.writeAttribute("destination_adresse", String.valueOf(seg.getEndId()));
 
+            TourStop start = tour.getStopByIntersectionId(seg.getStartId());
+            String type_1 = (start != null) ? start.getType().toString() : "intermediaire";
+            writer.writeAttribute("type_Start", type_1);
+
             TourStop stop = tour.getStopByIntersectionId(seg.getEndId());
-            String type_2;
-            if (stop != null) {
-                type_2 =  String.valueOf(stop.getType());
-            } else {
-                type_2 = "intermediaire";
-            }
+            String type_2 = (stop != null) ? stop.getType().toString() : "intermediaire";
             writer.writeAttribute("type_Finish", type_2);
+
+            // Solo agregar departureTime si origen no es intermediaire
+            if (start != null && !"intermediaire".equalsIgnoreCase(type_1) && start.getDepartureTime() != null) {
+                writer.writeAttribute("departureTime", start.getDepartureTime().toString());
+            }
+
+            // Solo agregar arrivalTime si destino no es intermediaire
+            if (stop != null && !"intermediaire".equalsIgnoreCase(type_2) && stop.getArrivalTime() != null) {
+                writer.writeAttribute("arrivalTime", stop.getArrivalTime().toString());
+            }
+
             writer.writeEndElement(); // </step>
             writer.writeCharacters("\n");
-
         }
+
 
         writer.writeEndElement(); // </Tour>
         writer.writeCharacters("\n");
