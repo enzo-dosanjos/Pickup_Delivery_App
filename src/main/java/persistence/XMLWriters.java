@@ -24,6 +24,8 @@ public class XMLWriters {
         writer.writeStartElement("Tour");
         writer.writeAttribute("courierId", String.valueOf(tour.getCourierId()));
         writer.writeAttribute("startTime", tour.getStartTime().toString());
+        writer.writeAttribute("TotalDistance", String.valueOf(tour.getTotalDistance()));
+        writer.writeAttribute("TotalDuration", String.valueOf(tour.getTotalDuration().toMinutes()));
         writer.writeCharacters("\n");
 
 

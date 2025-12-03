@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Tour courierId="1" startTime="2025-12-03T17:02:46.880154200">
+<Tour courierId="1" startTime="2025-12-03T17:16:18.587839200" TotalDistance="8172.5659651" TotalDuration="702">
     <step origine_adresse="342873658" type_Start="WAREHOUSE" destination_adresse="208769457" type_Finish="intermediaire"></step>
     <step origine_adresse="208769457" type_Start="intermediaire" destination_adresse="208769499" type_Finish="intermediaire"></step>
     <step origine_adresse="208769499" type_Start="intermediaire" destination_adresse="55475018" type_Finish="intermediaire"></step>
