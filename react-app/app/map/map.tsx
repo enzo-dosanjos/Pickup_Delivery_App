@@ -48,6 +48,15 @@ const endIcon = new L.Icon({
     shadowSize: [41, 41]
 });
 
+const warehouseIcon = new L.Icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png', // Using blue for warehouse for now
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [25, 41],
+    iconAnchor: [12, 41],
+    popupAnchor: [1, -34],
+    shadowSize: [41, 41]
+});
+
 export function Map(props: {
     intersections: Intersection[],
     roadSegments: L.LatLngExpression[][],
@@ -57,6 +66,8 @@ export function Map(props: {
     selectionModeActive: boolean,
     pickupId: number | null,
     deliveryId: number | null,
+    onDeleteRequest?: (requestId: number, courierId: number) => void,
+    warehouseId: number | null,
 }) {
     const mapBounds = useMemo(() => new L.LatLngBounds(props.bounds), [props.bounds]);
 
@@ -71,7 +82,18 @@ export function Map(props: {
             <Pane name="roads-pane" style={{ zIndex: 450 }} />
             <Pane name="intersections-pane" style={{ zIndex: 500 }} />
 
-            {props.selectionModeActive && props.intersections.map((intersection) => {
+            {props.intersections.map((intersection) => {
+                if (intersection.id === props.warehouseId) {
+                    return (
+                        <Marker
+                            key={intersection.id}
+                            position={intersection.position}
+                            icon={warehouseIcon}
+                        >
+                            <Popup>Warehouse</Popup>
+                        </Marker>
+                    );
+                }
                 let color = 'blue';
                 let radius = 8;
                 if (intersection.id === props.pickupId) {
@@ -122,6 +144,9 @@ export function Map(props: {
                                             Stop Type: {stop.type} <br />
                                             Request ID: {stop.requestID} <br />
                                             Intersection ID: {stop.intersectionId} <br />
+                                            <button onClick={() => props.onDeleteRequest?.(stop.requestID, tour.courierId)}>
+                                                Delete Request
+                                            </button>
                                         </div>
                                     </Popup>
                                 </Marker>

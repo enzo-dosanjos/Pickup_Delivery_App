@@ -52,4 +52,10 @@ public class RequestController {
         // Recompute the tour for the courier
         planningService.recomputeTourForCourier(courierId);
     }
+    @PostMapping("/delete")
+    public void deleteRequest(@RequestParam long requestId,
+                              @RequestParam long courierId) {
+        requestService.deleteRequest(requestId, courierId);
+        planningService.recomputeTourForCourier(courierId);
+    }
 }

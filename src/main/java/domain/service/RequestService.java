@@ -19,6 +19,10 @@ public class RequestService {
         pickupDelivery.addRequestToCourier(courierId, request);
     }
 
+    public void deleteRequest(long requestId, long courierId) {
+        pickupDelivery.removeRequestFromCourier(requestId, courierId);
+    }
+
     public void loadRequests(String filepath) {
         XMLParsers.parseRequests(filepath, pickupDelivery);
     }

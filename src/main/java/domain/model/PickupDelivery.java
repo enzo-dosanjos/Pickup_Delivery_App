@@ -47,6 +47,38 @@ public class PickupDelivery {
         return true;
     }
 
+    public boolean removeRequestFromCourier(long requestId, long courierId) {
+        requests.remove(requestId);
+
+        Long[] requestsOfCourier = requestsPerCourier.get(courierId);
+        if (requestsOfCourier == null) {
+            return false;
+        }
+
+        int indexToRemove = -1;
+        for (int i = 0; i < requestsOfCourier.length; i++) {
+            if (requestsOfCourier[i] == requestId) {
+                indexToRemove = i;
+                break;
+            }
+        }
+
+        if (indexToRemove == -1) {
+            return false;
+        }
+
+        Long[] newRequestsOfCourier = new Long[requestsOfCourier.length - 1];
+        for (int i = 0, j = 0; i < requestsOfCourier.length; i++) {
+            if (i != indexToRemove) {
+                newRequestsOfCourier[j++] = requestsOfCourier[i];
+            }
+        }
+
+        requestsPerCourier.put(courierId, newRequestsOfCourier);
+
+        return true;
+    }
+
     public Request[] getRequestsForCourier(long courierId) {
         Long[] requestIds = requestsPerCourier.get(courierId);
         if (requestIds == null) {

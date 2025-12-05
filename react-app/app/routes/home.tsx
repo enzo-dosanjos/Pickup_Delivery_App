@@ -84,6 +84,7 @@ export default function Home() {
     const [deliveryId, setDeliveryId] = useState<number | null>(null);
     const [pickupName, setPickupName] = useState<string | null>(null);
     const [deliveryName, setDeliveryName] = useState<string | null>(null);
+    const [warehouseId, setWarehouseId] = useState<number | null>(null);
     const fetchInitiated = useRef(false);
 
 
@@ -223,7 +224,11 @@ export default function Home() {
 
             } catch (e: any) {
                 console.error("Caught error object:", e);
-                setError(`Failed to fetch data: ${e.message}`);
+                if (e.message && e.message.includes("TSP algorithm did not find a solution")) {
+                    setError("Failed to fetch initial data: No tour could be found with the current requests. Please modify requests.");
+                } else {
+                    setError(`Failed to fetch data: ${e.message}`);
+                }
             } finally {
                 setLoading(false);
                 setLoadingTours(false);
@@ -257,11 +262,12 @@ export default function Home() {
             if (!warehouseResponse.ok) {
                 throw new Error(`HTTP error! status: ${warehouseResponse.status}`);
             }
-            const warehouseId = await warehouseResponse.json();
+            const fetchedWarehouseId = await warehouseResponse.json();
+            setWarehouseId(fetchedWarehouseId);
 
             // Now, add the request with the fetched warehouse ID
             const params = new URLSearchParams();
-            params.append('warehouseId', warehouseId.toString());
+            params.append('warehouseId', fetchedWarehouseId.toString());
             params.append('pickupIntersectionId', pickupId.toString());
             params.append('pickupDuration', '300'); // Hardcoded duration
             params.append('deliveryIntersectionId', deliveryId.toString());
@@ -284,7 +290,11 @@ export default function Home() {
 
         } catch (e: any) {
             console.error("Failed to add request:", e);
-            setError(`Failed to add request: ${e.message}`);
+            if (e.message && e.message.includes("TSP algorithm did not find a solution")) {
+                setError("Failed to add request: No tour could be found for this courier. Please try with different parameters or another courier.");
+            } else {
+                setError(`Failed to add request: ${e.message}`);
+            }
         } finally {
             handleCancel();
         }
@@ -324,6 +334,36 @@ export default function Home() {
         } catch (e: any) {
             console.error("Failed to save requests:", e);
             setError(`Failed to save requests: ${e.message}`);
+        }
+    };
+
+    const handleDeleteRequest = async (requestId: number, courierId: number) => {
+        try {
+            const params = new URLSearchParams();
+            params.append('requestId', requestId.toString());
+            params.append('courierId', courierId.toString());
+
+            const response = await fetch('http://localhost:8080/api/request/delete', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: params,
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            console.log('Request deleted successfully');
+
+        } catch (e: any) {
+            console.error("Failed to delete request:", e);
+            if (e.message && e.message.includes("TSP algorithm did not find a solution")) {
+                setError("Failed to delete request: Deleting this request would lead to no valid tour. Please try another action.");
+            } else {
+                setError(`Failed to delete request: ${e.message}`);
+            }
         }
     };
 
@@ -369,6 +409,8 @@ export default function Home() {
                     selectionModeActive={isPanelOpen}
                     pickupId={pickupId}
                     deliveryId={deliveryId}
+                    onDeleteRequest={handleDeleteRequest}
+                    warehouseId={warehouseId}
                 />
             )}
         </div>

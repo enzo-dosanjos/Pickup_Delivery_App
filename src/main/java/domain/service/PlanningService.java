@@ -100,6 +100,10 @@ public class PlanningService {
         // 6. execute TSP (SOP)
         tsp.chercheSolution(30000, dijkstraService.getGraph());
 
+        if (tsp.getMeilleureCoutSolution() == Integer.MAX_VALUE) {
+            throw new RuntimeException("TSP algorithm did not find a solution for courier " + courierId);
+        }
+
         // 7. result
         double[] serviceTimesUsed = tsp.getServiceTimes();
 

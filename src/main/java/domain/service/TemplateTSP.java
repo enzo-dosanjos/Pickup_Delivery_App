@@ -61,12 +61,16 @@ public abstract class TemplateTSP implements TSP {
 		return -1;
 	}
 	
-	public double getCoutSolution(){
-		if (g != null)
-			return coutMeilleureSolution;
-		return -1;
-	}
+	    public double getCoutSolution(){
+			if (g != null)
+				return coutMeilleureSolution;
+			return -1;
+		}
 	
+	    public double getMeilleureCoutSolution() {
+	        return coutMeilleureSolution;
+	    }
+		
 	/**
 	 * Methode devant etre redefinie par les sous-classes de TemplateTSP
 	 * @param sommetCourant
