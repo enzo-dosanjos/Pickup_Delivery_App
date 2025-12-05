@@ -1,6 +1,6 @@
 import type { Route } from "./+types/home";
 import { Map as MapComponent, type Intersection as MapIntersection } from "../map/map";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import L from "leaflet";
 import { ModificationPanel } from "../components/ModificationPanel";
 import "../components/ModificationPanel.css";
@@ -84,9 +84,14 @@ export default function Home() {
     const [deliveryId, setDeliveryId] = useState<number | null>(null);
     const [pickupName, setPickupName] = useState<string | null>(null);
     const [deliveryName, setDeliveryName] = useState<string | null>(null);
+    const fetchInitiated = useRef(false);
 
 
     useEffect(() => {
+        if (fetchInitiated.current) {
+            return;
+        }
+        fetchInitiated.current = true;
         const fetchData = async () => {
             try {
                 // Fetch Map Data
