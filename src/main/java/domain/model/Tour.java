@@ -63,6 +63,16 @@ public class Tour {
         return roadSegmentsTaken;
     }
 
+    public TourStop getStopByIntersectionId(long intersectionId) {
+    for (TourStop stop : stops) {
+        if (stop.getIntersectionId() == intersectionId) {
+            return stop;
+        }
+    }
+    return null; 
+}
+
+
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("Tour for Courier ID: ").append(courierId).append("\n");
