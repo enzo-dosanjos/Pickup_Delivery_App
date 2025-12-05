@@ -4,10 +4,7 @@ import domain.model.*;
 import domain.service.RequestService;
 import domain.service.TourService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
 import java.util.Map;
@@ -50,5 +47,10 @@ public class TourController {
     @PostMapping("/show-request-details")
     public Map.Entry<Request, StopType> showRequestDetails(@RequestParam long instersectionId) {
         return requestService.getPickupDelivery().findRequestByIntersectionId(instersectionId);  // todo: create a service method
+    }
+
+    @GetMapping("/tours")
+    public Map<Long, Tour> getTours() {
+        return tourService.getTours();
     }
 }

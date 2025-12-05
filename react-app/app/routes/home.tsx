@@ -87,12 +87,15 @@ export default function Home() {
     const [warehouseId, setWarehouseId] = useState<number | null>(null);
     const fetchInitiated = useRef(false);
 
+    // store intersectionMap globally for this component
+    const intersectionMapRef = useRef<IntersectionMap | null>(null);
 
     useEffect(() => {
         if (fetchInitiated.current) {
             return;
         }
         fetchInitiated.current = true;
+
         const fetchData = async () => {
             try {
                 // Fetch Map Data
@@ -111,6 +114,9 @@ export default function Home() {
                     }
                 }
                 console.log("Constructed intersectionMap:", intersectionMap);
+
+                // save for later use in displayTour / handleAddRequest
+                intersectionMapRef.current = intersectionMap;
 
                 const nameMap = new Map<number, string>();
                 const transformedRoadSegments: L.LatLngExpression[][] = [];
@@ -192,35 +198,8 @@ export default function Home() {
                     throw new Error(`HTTP error! status: ${requestResponse.status}`);
                 }
 
-                /*// Fetch Tour Data
-                const tourResponse = await fetch("http://localhost:8080/api/tour/load?filepath=src/test/resources/testTours.xml"); // Assuming a default filepath
-                if (!tourResponse.ok) {
-                    throw new Error(`HTTP error! status: ${tourResponse.status}`);
-                }
-                const tourData: ApiTour[] = await tourResponse.json();
-                console.log("Raw tour data from API:", tourData);
-
-                // Transform Tour Data
-                const transformedTours = tourData.map(tour => {
-                    const transformedRoadSegments = tour.roadSegmentsTaken.map(segment => {
-                        const startIntersection = intersectionMap.get(segment.startId);
-                        const endIntersection = intersectionMap.get(segment.endId);
-                        if (startIntersection && endIntersection) {
-                            return [
-                                [startIntersection.lat, startIntersection.lng],
-                                [endIntersection.lat, endIntersection.lng]
-                            ];
-                        }
-                        return null;
-                    }).filter((s): s is L.LatLngExpression[] => s !== null);
-
-                    return {
-                        ...tour,
-                        roadSegmentsTaken: transformedRoadSegments
-                    };
-                });
-
-                setTours(transformedTours);*/
+                // Finally, fetch and display tours
+                await displayTour();
 
             } catch (e: any) {
                 console.error("Caught error object:", e);
@@ -251,6 +230,47 @@ export default function Home() {
         }
     };
 
+    const displayTour = async () => {
+        if (!intersectionMapRef.current) {
+            throw new Error("intersectionMap not initialized");
+        }
+        const intersectionMap = intersectionMapRef.current;
+
+        // Fetch tours from backend
+        const toursResponse = await fetch("http://localhost:8080/api/tour/tours");
+        if (!toursResponse.ok) {
+            throw new Error(`HTTP error! status: ${toursResponse.status}`);
+        }
+
+        // Backend returns Map<Long, Tour> -> JSON object: { "1": {..tour..}, "2": {..} }
+        const toursJson: Record<string, ApiTour> = await toursResponse.json();
+
+        const apiTours: ApiTour[] = Object.values(toursJson);
+        console.log("Raw tour data from API:", apiTours);
+
+        // Transform Tour Data
+        const transformedTours: ApiTour[] = apiTours.map(tour => {
+            const transformedRoadSegments = tour.roadSegmentsTaken.map(segment => {
+                const startIntersection = intersectionMap.get(segment.startId);
+                const endIntersection = intersectionMap.get(segment.endId);
+                if (startIntersection && endIntersection) {
+                    return [
+                        [startIntersection.lat, startIntersection.lng],
+                        [endIntersection.lat, endIntersection.lng]
+                    ];
+                }
+                return null;
+            }).filter((s): s is L.LatLngExpression[] => s !== null);
+
+            return {
+                ...tour,
+                roadSegmentsTaken: transformedRoadSegments
+            };
+        });
+
+        setTours(transformedTours);
+    }
+
     const handleAddRequest = async () => {
         if (pickupId === null || deliveryId === null) {
             return;
@@ -269,9 +289,9 @@ export default function Home() {
             const params = new URLSearchParams();
             params.append('warehouseId', fetchedWarehouseId.toString());
             params.append('pickupIntersectionId', pickupId.toString());
-            params.append('pickupDuration', '300'); // Hardcoded duration
+            params.append('pickupDurationInSeconds', '300'); // Hardcoded duration
             params.append('deliveryIntersectionId', deliveryId.toString());
-            params.append('deliveryDuration', '300'); // Hardcoded duration
+            params.append('deliveryDurationInSeconds', '300'); // Hardcoded duration
             params.append('courierId', '1'); // Hardcoded courier ID
 
             const response = await fetch('http://localhost:8080/api/request/add', {
@@ -287,6 +307,9 @@ export default function Home() {
             }
 
             console.log('Request added successfully');
+
+            // Finally, fetch and display tours
+            await displayTour();
 
         } catch (e: any) {
             console.error("Failed to add request:", e);

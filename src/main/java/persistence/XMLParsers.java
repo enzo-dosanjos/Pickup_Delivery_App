@@ -112,9 +112,12 @@ public class XMLParsers {
 
                 Request request = new Request(pickupIntersectionId, pickupDuration, deliveryIntersectionId, deliveryDuration);
 
-                // Check if pickupDelivery already has the request
-                if (pickupDeliveryToFill.getRequests().containsKey(request.getId())) {
-                    continue; // Skip adding this request
+                // Check if pickupDelivery already has the request by checking the delivery ID, pickup ID and durations  // todo: remove
+                if (pickupDeliveryToFill.getRequests().values().stream().anyMatch(r ->
+                        r.getPickupIntersectionId() == pickupIntersectionId &&
+                        r.getDeliveryIntersectionId() == deliveryIntersectionId
+                )) {
+                    continue; // skip adding this request as it already exists
                 }
 
                 pickupDeliveryToFill.addRequestToCourier(defaultCourierId, request);

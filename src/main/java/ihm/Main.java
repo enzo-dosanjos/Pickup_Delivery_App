@@ -93,9 +93,9 @@ public class Main {
             requestController.addRequest(
                     warehouseId,
                     pickupId,
-                    Duration.ofSeconds(pickupSec),
+                    pickupSec,
                     deliveryId,
-                    Duration.ofSeconds(deliverySec),
+                    deliverySec,
                     courierId
             );
 

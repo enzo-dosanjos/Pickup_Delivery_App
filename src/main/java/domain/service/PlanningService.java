@@ -27,20 +27,10 @@ public class PlanningService {
     }
 
     public void recomputeTourForCourier(long courierId) {
-        System.out.println(courierId);  // debug
         // Create a local copy to avoid concurrency issues
         PickupDelivery pickupDelivery = new PickupDelivery(requestService.getPickupDelivery());
         TreeMap<Long, Request> requests = pickupDelivery.getRequests();
         Long[] requestIdsForCourier = pickupDelivery.getRequestsPerCourier().get(courierId);
-
-        System.out.println(pickupDelivery);  // debug
-        // display requests for courier (debug)
-        StringBuilder sb = new StringBuilder("Requests for courier " + courierId + ": ");
-        for (Long requestId : requestIdsForCourier) {
-            sb.append(requests.get(requestId)).append(" ");
-        }
-        sb.append("\n");
-        System.out.println(sb.toString());
 
         // 1. Build list of stops (warehouse + pickups + deliveries)
         int nbStops = 2 * requestIdsForCourier.length + 1;
@@ -111,9 +101,7 @@ public class PlanningService {
 
         int numVertices = dijkstraService.getGraph().getNbSommets();
         for (int i = 0; i < numVertices; i++) {
-            System.out.println(i + " " + serviceTimesUsed[i]);  // debug
             int node = tsp.getSolution(i);
-            System.out.println("Node " + i + ": " + node);  // debug
 
             if (i > 0) {
                 int prev = tsp.getSolution(i - 1);

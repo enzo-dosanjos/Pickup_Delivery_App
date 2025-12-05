@@ -4,10 +4,7 @@ package ihm.controller;
 import domain.model.*;
 import domain.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
 
@@ -36,10 +33,14 @@ public class RequestController {
     @PostMapping("/add")
     public void addRequest(@RequestParam Long warehouseId,
                            @RequestParam long pickupIntersectionId,
-                           @RequestParam Duration pickupDuration,
+                           @RequestParam long pickupDurationInSeconds,
                            @RequestParam long deliveryIntersectionId,
-                           @RequestParam Duration deliveryDuration,
+                           @RequestParam long deliveryDurationInSeconds,
                            @RequestParam Long courierId) {
+        // Convert durations from seconds to Duration
+        Duration pickupDuration = Duration.ofSeconds(pickupDurationInSeconds);
+        Duration deliveryDuration = Duration.ofSeconds(deliveryDurationInSeconds);
+
         // Build and register the new request
         Request newRequest = new Request(
                 pickupIntersectionId,
@@ -52,6 +53,12 @@ public class RequestController {
         // Recompute the tour for the courier
         planningService.recomputeTourForCourier(courierId);
     }
+
+    @GetMapping("/warehouse")
+    public long getWarehouseAddress() {
+        return requestService.getPickupDelivery().getWarehouseAdressId();
+    }
+
     @PostMapping("/delete")
     public void deleteRequest(@RequestParam long requestId,
                               @RequestParam long courierId) {
