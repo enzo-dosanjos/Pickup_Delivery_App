@@ -20,6 +20,15 @@ public class PickupDelivery {
         warehouseAdressId = -1;
     }
 
+    public PickupDelivery(PickupDelivery other) {
+        this.requests = new TreeMap<>(other.requests);
+        this.requestsPerCourier = new TreeMap<>();
+        for (Map.Entry<Long, Long[]> entry : other.requestsPerCourier.entrySet()) {
+            this.requestsPerCourier.put(entry.getKey(), Arrays.copyOf(entry.getValue(), entry.getValue().length));
+        }
+        this.warehouseAdressId = other.warehouseAdressId;
+    }
+
     public boolean addRequestToCourier(long courierId, Request request) {
         requests.put(request.getId(), request);
 
@@ -34,6 +43,38 @@ public class PickupDelivery {
         }
 
         requestsPerCourier.put(courierId, requestsOfCourier);
+
+        return true;
+    }
+
+    public boolean removeRequestFromCourier(long requestId, long courierId) {
+        requests.remove(requestId);
+
+        Long[] requestsOfCourier = requestsPerCourier.get(courierId);
+        if (requestsOfCourier == null) {
+            return false;
+        }
+
+        int indexToRemove = -1;
+        for (int i = 0; i < requestsOfCourier.length; i++) {
+            if (requestsOfCourier[i] == requestId) {
+                indexToRemove = i;
+                break;
+            }
+        }
+
+        if (indexToRemove == -1) {
+            return false;
+        }
+
+        Long[] newRequestsOfCourier = new Long[requestsOfCourier.length - 1];
+        for (int i = 0, j = 0; i < requestsOfCourier.length; i++) {
+            if (i != indexToRemove) {
+                newRequestsOfCourier[j++] = requestsOfCourier[i];
+            }
+        }
+
+        requestsPerCourier.put(courierId, newRequestsOfCourier);
 
         return true;
     }

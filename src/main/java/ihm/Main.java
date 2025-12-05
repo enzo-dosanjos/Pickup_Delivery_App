@@ -15,11 +15,10 @@ import java.util.*;
 public class Main {
     public static void main(String[] args) {
         // Domain + services
-        Map map = XMLParsers.parseMap("src/main/resources/grandPlan.xml");
         RequestService requestService = new RequestService();
         PickupDelivery pickupDelivery = requestService.getPickupDelivery();
         TourService tourService = new TourService();
-        PlanningService planningService = new PlanningService(map, requestService, tourService);
+        PlanningService planningService = new PlanningService(requestService, tourService);
 
         Courier courier1 = new Courier(1L, "Courier 1", Duration.ofHours(8));
         tourService.addCourier(courier1);
@@ -94,9 +93,9 @@ public class Main {
             requestController.addRequest(
                     warehouseId,
                     pickupId,
-                    Duration.ofSeconds(pickupSec),
+                    pickupSec,
                     deliveryId,
-                    Duration.ofSeconds(deliverySec),
+                    deliverySec,
                     courierId
             );
 

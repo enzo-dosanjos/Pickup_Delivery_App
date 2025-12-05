@@ -10,10 +10,12 @@ import java.util.Map.Entry;
 import domain.model.*;
 import domain.model.dijkstra.CellInfo;
 import domain.model.dijkstra.DijkstraTable;
+import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 
+@Service
 public class TourService {
     private int numCouriers;
     private ArrayList<Courier> couriers;
@@ -173,7 +175,7 @@ public class TourService {
         //add all the visited intersections in order to a list
         for (int i = stops.size(); i > 0; i--) {
             if(i == stops.size()){
-                targetIntersectionId = stops.getFirst().getIntersectionId();
+                targetIntersectionId = stops.get(0).getIntersectionId();
             }
             else{
                 targetIntersectionId = stops.get(i).getIntersectionId();
@@ -187,7 +189,7 @@ public class TourService {
             }
         }
 
-        reverseIntersectPath.add(stops.getFirst().getIntersectionId());
+        reverseIntersectPath.add(stops.get(0).getIntersectionId());
         Collections.reverse(reverseIntersectPath);
 
         for (int i = 0; i < reverseIntersectPath.size()-1; i++){

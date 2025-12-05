@@ -2,6 +2,8 @@ package domain.service;
 
 import domain.model.*;
 import domain.model.dijkstra.DijkstraTable;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -9,22 +11,24 @@ import java.util.HashMap;
 import java.util.Set;
 import java.util.TreeMap;
 
+@Service
 public class PlanningService {
     private final RequestService requestService;
     private final TourService tourService;
-    private final Map map;
-    private final TSP1 tsp;
+    private Map map;
 
-    public PlanningService(Map map, RequestService requestService, TourService tourService) {
+    @Autowired
+    public PlanningService(RequestService requestService, TourService tourService) {
         this.requestService = requestService;
         this.tourService = tourService;
 
-        this.map = map;
-        this.tsp = new TSP1();
+        this.map = new Map();
+        map.loadMap("src/main/resources/grandPlan.xml");
     }
 
     public void recomputeTourForCourier(long courierId) {
-        PickupDelivery pickupDelivery = requestService.getPickupDelivery();
+        // Create a local copy to avoid concurrency issues
+        PickupDelivery pickupDelivery = new PickupDelivery(requestService.getPickupDelivery());
         TreeMap<Long, Request> requests = pickupDelivery.getRequests();
         Long[] requestIdsForCourier = pickupDelivery.getRequestsPerCourier().get(courierId);
 
@@ -61,6 +65,7 @@ public class PlanningService {
             requestIndex++;
         }
 
+        TSP1 tsp = new TSP1();
         tsp.setPrecedences(precs);
 
         // 5. Service times
@@ -85,12 +90,17 @@ public class PlanningService {
         // 6. execute TSP (SOP)
         tsp.chercheSolution(30000, dijkstraService.getGraph());
 
+        if (tsp.getMeilleureCoutSolution() == Integer.MAX_VALUE) {
+            throw new RuntimeException("TSP algorithm did not find a solution for courier " + courierId);
+        }
+
         // 7. result
         double[] serviceTimesUsed = tsp.getServiceTimes();
 
         double currentTime = 0.0;  // time
 
-        for (int i = 0; i < dijkstraService.getGraph().getNbSommets(); i++) {
+        int numVertices = dijkstraService.getGraph().getNbSommets();
+        for (int i = 0; i < numVertices; i++) {
             int node = tsp.getSolution(i);
 
             if (i > 0) {
@@ -125,5 +135,13 @@ public class PlanningService {
         tour = tourService.addRoadsToTour(tour, dijkstraTable, map);
 
         tourService.setTourForCourier(courierId, tour);
+    }
+
+    public Map getMap() {
+        return map;
+    }
+
+    public void setMap(Map map) {
+        this.map = map;
     }
 }

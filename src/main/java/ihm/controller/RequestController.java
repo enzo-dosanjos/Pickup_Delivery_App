@@ -2,36 +2,45 @@ package ihm.controller;
 
 
 import domain.model.*;
-import domain.model.dijkstra.DijkstraTable;
 import domain.service.*;
-import persistence.XMLParsers;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Set;
-import java.util.TreeMap;
 
+@RestController
+@RequestMapping("/api/request")
 public class RequestController {
 
     private final RequestService requestService;
     private final PlanningService planningService;
 
+    @Autowired
     public RequestController(RequestService requestService, PlanningService planningService) {
         this.requestService = requestService;
         this.planningService = planningService;
     }
 
-    public void loadRequests(String filepath, long courierId) {
+    @PostMapping("/load")
+    public void loadRequests(@RequestParam String filepath,
+                             @RequestParam long courierId) {
         requestService.loadRequests(filepath);
 
         // Recompute tours for the courier
         planningService.recomputeTourForCourier(courierId);
     }
 
-    public void addRequest(Long warehouseId, long pickupIntersectionId, Duration pickupDuration,
-                           long deliveryIntersectionId, Duration deliveryDuration, Long courierId) {
+    @PostMapping("/add")
+    public void addRequest(@RequestParam Long warehouseId,
+                           @RequestParam long pickupIntersectionId,
+                           @RequestParam long pickupDurationInSeconds,
+                           @RequestParam long deliveryIntersectionId,
+                           @RequestParam long deliveryDurationInSeconds,
+                           @RequestParam Long courierId) {
+        // Convert durations from seconds to Duration
+        Duration pickupDuration = Duration.ofSeconds(pickupDurationInSeconds);
+        Duration deliveryDuration = Duration.ofSeconds(deliveryDurationInSeconds);
+
         // Build and register the new request
         Request newRequest = new Request(
                 pickupIntersectionId,
@@ -42,6 +51,18 @@ public class RequestController {
         requestService.addRequest(courierId, newRequest);
 
         // Recompute the tour for the courier
+        planningService.recomputeTourForCourier(courierId);
+    }
+
+    @GetMapping("/warehouse")
+    public long getWarehouseAddress() {
+        return requestService.getPickupDelivery().getWarehouseAdressId();
+    }
+
+    @PostMapping("/delete")
+    public void deleteRequest(@RequestParam long requestId,
+                              @RequestParam long courierId) {
+        requestService.deleteRequest(requestId, courierId);
         planningService.recomputeTourForCourier(courierId);
     }
 }
