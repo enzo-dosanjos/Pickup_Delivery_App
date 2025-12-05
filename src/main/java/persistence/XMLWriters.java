@@ -9,8 +9,6 @@ import javax.xml.stream.XMLStreamWriter;
 import java.io.FileOutputStream;
 
 public class XMLWriters {
-
-
     public static void exportTourToXml(Tour tour, String filePath) throws Exception {
         XMLStreamWriter writer = XMLOutputFactory.newInstance()
                 .createXMLStreamWriter(new FileOutputStream(filePath), "UTF-8");
@@ -45,12 +43,12 @@ public class XMLWriters {
             String type_2 = (stop != null) ? stop.getType().toString() : "intermediaire";
             writer.writeAttribute("type_Finish", type_2);
 
-            // Solo agregar departureTime si origen no es intermediaire
+            // Only add departureTime if start is not intermediaire
             if (start != null && !"intermediaire".equalsIgnoreCase(type_1) && start.getDepartureTime() != null) {
                 writer.writeAttribute("departureTime", start.getDepartureTime().toString());
             }
 
-            // Solo agregar arrivalTime si destino no es intermediaire
+            // Only add arrivalTime if destination is not intermediaire
             if (stop != null && !"intermediaire".equalsIgnoreCase(type_2) && stop.getArrivalTime() != null) {
                 writer.writeAttribute("arrivalTime", stop.getArrivalTime().toString());
             }
