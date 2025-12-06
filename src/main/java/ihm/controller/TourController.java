@@ -37,6 +37,11 @@ public class TourController {
         return tourService.removeCourier(id);
     }
 
+    @PostMapping("/load-couriers")
+    public void loadCouriers(@RequestParam String filepath) {
+        tourService.loadCouriers(filepath);
+    }
+
     @PostMapping("/update-request-order")
     public void updateRequestOrder(@RequestParam long requestBeforeId,
                                    @RequestParam long requestAfterId,

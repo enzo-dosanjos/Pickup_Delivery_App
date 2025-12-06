@@ -11,6 +11,7 @@ import domain.model.*;
 import domain.model.dijkstra.CellInfo;
 import domain.model.dijkstra.DijkstraTable;
 import org.springframework.stereotype.Service;
+import persistence.XMLParsers;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -49,6 +50,15 @@ public class TourService {
         }
 
         return false;
+    }
+
+    public void loadCouriers(String filepath) {
+        ArrayList<Courier> couriersToAdd = XMLParsers.parseCouriers(filepath);
+
+        for (Courier courier : couriersToAdd) {
+            boolean added = couriers.add(courier);
+            if (added) { numCouriers++; }
+        }
     }
 
     public boolean updateRequestOrder(long requestBeforeId, long requestAfterId, long courierId)
