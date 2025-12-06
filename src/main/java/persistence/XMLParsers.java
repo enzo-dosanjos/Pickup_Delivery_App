@@ -9,6 +9,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 import java.time.Duration;
+import java.util.ArrayList;
 
 public class XMLParsers {
     public static Map parseMap(String filePath) {
@@ -130,4 +131,38 @@ public class XMLParsers {
         return true;
     }
 
+    public static ArrayList<Courier> parseCouriers(String filePath) {
+        ArrayList<Courier> couriers = new ArrayList<>();
+
+        try {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setIgnoringComments(true);
+
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            Document doc = builder.parse(new File(filePath));
+            doc.getDocumentElement().normalize();
+
+            Element root = doc.getDocumentElement();
+
+            NodeList courierNodes = root.getElementsByTagName("courier");
+            for (int i = 0; i < courierNodes.getLength(); i++) {
+                Element courierElement = (Element) courierNodes.item(i);
+
+                long id = Long.parseLong(courierElement.getAttribute("id"));
+                String name = courierElement.getAttribute("name");
+
+                String shiftDurationMinutesStr = courierElement.getAttribute("shiftDurationMinutes");
+                long shiftDurationMinutes = Long.parseLong(shiftDurationMinutesStr);
+                Duration shiftDuration = Duration.ofMinutes(shiftDurationMinutes);
+
+                Courier courier = new Courier(id, name, shiftDuration);
+
+                couriers.add(courier);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return couriers;
+    }
 }

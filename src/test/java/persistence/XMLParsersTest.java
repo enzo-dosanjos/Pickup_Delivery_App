@@ -1,15 +1,13 @@
 package persistence;
 
-import domain.model.Intersection;
-import domain.model.Map;
-import domain.model.PickupDelivery;
-import domain.model.Request;
+import domain.model.*;
 import org.junit.jupiter.api.Test;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.TreeMap;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -36,7 +34,9 @@ class XMLParsersTest {
         String filePath = "src/test/resources/testRequest.xml";
         PickupDelivery pickupDelivery = new PickupDelivery();
 
-        XMLParsers.parseRequests(filePath, pickupDelivery);
+        long courierId = 1L;
+
+        XMLParsers.parseRequests(filePath, courierId, pickupDelivery);
 
         assertNotNull(pickupDelivery, "The pickupDelivery should not be null after parsing");
         assertEquals(342873658, pickupDelivery.getWarehouseAdressId(), "The warehouse address should match the expected value");
@@ -53,8 +53,31 @@ class XMLParsersTest {
 
         pickupDelivery.setWarehouseAdressId(123456789L); // Set a different warehouse ID
 
-        boolean result = XMLParsers.parseRequests(filePath, pickupDelivery);
+        long courierId = 1L;
+
+        boolean result = XMLParsers.parseRequests(filePath, courierId, pickupDelivery);
 
         assertFalse(result, "The parsing should return false due to different warehouse IDs");
+    }
+
+    @Test
+    void checkParseCouriersLoadsCouriers() {
+        String filePath = "src/test/resources/testCouriers.xml";
+        ArrayList<Courier> couriers = XMLParsers.parseCouriers(filePath);
+
+        assertNotNull(couriers, "The couriers list should not be null after parsing");
+        assertEquals(3, couriers.size(), "There should be 3 couriers loaded");
+
+        assertEquals(1L, couriers.get(0).getId(), "First courier ID should match expected value");
+        assertEquals("Courier 1", couriers.get(0).getName(), "First courier name should match expected value");
+        assertEquals(Duration.ofHours(8), couriers.get(0).getShiftDuration(), "First courier shift duration should match expected value");
+
+        assertEquals(2L, couriers.get(1).getId(), "Second courier ID should match expected value");
+        assertEquals("Courier 2", couriers.get(1).getName(), "Second courier name should match expected value");
+        assertEquals(Duration.ofHours(6), couriers.get(1).getShiftDuration(), "Second courier shift duration should match expected value");
+
+        assertEquals(3L, couriers.get(2).getId(), "Third courier ID should match expected value");
+        assertEquals("Courier 3", couriers.get(2).getName(), "Third courier name should match expected value");
+        assertEquals(Duration.ofHours(7), couriers.get(2).getShiftDuration(), "Third courier shift duration should match expected value");
     }
 }
