@@ -46,7 +46,7 @@ package "Domain" {
             - startTime : LocalDateTime
             - totalDuration : time.Duration
             + addStop(stop: TourStop) : void
-            + addRoadSegment(roadSegment: RoadSegment, duration: Duration) : void
+            + addRoadSegment(roadSegment: RoadSegment) : void
             + updateTotalDistance(distance: double) : void
             + updateTotalDuration(duration: Duration) : void
             + saveTour(filepath: String) : void
