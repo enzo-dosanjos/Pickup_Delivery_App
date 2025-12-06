@@ -1,15 +1,35 @@
 package persistence;
 
-import domain.model.RoadSegment;
-import domain.model.Tour;
-import domain.model.TourStop;
+import domain.model.*;
+import org.springframework.stereotype.Component;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamWriter;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import java.io.File;
 import java.io.FileOutputStream;
+import java.util.Collection; // For writeTours method if needed
 
+/**
+ * Utility class for writing application data (Map, Requests, Tours) to XML files.
+ */
+@Component
 public class XMLWriters {
-    public static void exportTourToXml(Tour tour, String filePath) throws Exception {
+
+    /**
+     * Writes a single Tour object to an XML file.
+     * @param tour The Tour object to write.
+     * @param filePath The path to the XML file.
+     */
+    public static void writeTour(Tour tour, String filePath) throws Exception {
         XMLStreamWriter writer = XMLOutputFactory.newInstance()
                 .createXMLStreamWriter(new FileOutputStream(filePath), "UTF-8");
 
@@ -64,5 +84,50 @@ public class XMLWriters {
 
         writer.flush();
         writer.close();
+    }
+
+    /**
+     * Writes a PickupDelivery object (containing requests) to an XML file.
+     * @param pickupDelivery The PickupDelivery object to write.
+     * @param filePath The path to the XML file.
+     */
+    public void writeRequests(PickupDelivery pickupDelivery, String filePath) {
+        try {
+            DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
+            Document doc = dBuilder.newDocument();
+
+            // root element
+            Element rootElement = doc.createElement("planningRequest");
+            doc.appendChild(rootElement);
+
+            // depot element
+            Element depot = doc.createElement("depot");
+            depot.setAttribute("address", String.valueOf(pickupDelivery.getWarehouseAdressId()));
+            depot.setAttribute("departureTime", "8:0:0"); // Hardcoded as per file format
+            rootElement.appendChild(depot);
+
+            // request elements
+            for (Request req : pickupDelivery.getRequests().values()) {
+                Element requestElement = doc.createElement("request");
+                requestElement.setAttribute("pickupAddress", String.valueOf(req.getPickupIntersectionId()));
+                requestElement.setAttribute("deliveryAddress", String.valueOf(req.getDeliveryIntersectionId()));
+                requestElement.setAttribute("pickupDuration", String.valueOf(req.getPickupDuration()));
+                requestElement.setAttribute("deliveryDuration", String.valueOf(req.getDeliveryDuration()));
+                rootElement.appendChild(requestElement);
+            }
+
+            // write the content into xml file
+            TransformerFactory transformerFactory = TransformerFactory.newInstance();
+            Transformer transformer = transformerFactory.newTransformer();
+            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+            transformer.setOutputProperty(OutputKeys.STANDALONE, "no");
+            DOMSource source = new DOMSource(doc);
+            StreamResult result = new StreamResult(new File(filePath));
+            transformer.transform(source, result);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 }

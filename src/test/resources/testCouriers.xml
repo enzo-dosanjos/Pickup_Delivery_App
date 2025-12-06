@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<couriers>
+    <courier id="1" name="Courier 1" shiftDurationMinutes="480" />
+    <courier id="2" name="Courier 2" shiftDurationMinutes="360" />
+    <courier id="3" name="Courier 3" shiftDurationMinutes="420" />
+</couriers>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<tours>
+    <tour courierId="1">
+        <stops>
+            <stop type="WAREHOUSE" requestId="0" intersectionId="26086115" arrivalTime="2023-01-02T08:00:00" departureTime="2023-01-02T08:00:00"/>
+            <stop type="PICKUP" requestId="1" intersectionId="26086120" arrivalTime="2023-01-02T08:10:00" departureTime="2023-01-02T08:15:00"/>
+            <stop type="DELIVERY" requestId="1" intersectionId="26086119" arrivalTime="2023-01-02T08:25:00" departureTime="2023-01-02T08:30:00"/>
+            <stop type="PICKUP" requestId="2" intersectionId="26086118" arrivalTime="2023-01-02T08:40:00" departureTime="2023-01-02T08:45:00"/>
+            <stop type="DELIVERY" requestId="2" intersectionId="26086117" arrivalTime="2023-01-02T08:55:00" departureTime="2023-01-02T09:00:00"/>
+            <stop type="WAREHOUSE" requestId="0" intersectionId="26086115" arrivalTime="2023-01-02T09:30:00" departureTime="2023-01-02T09:30:00"/>
+        </stops>
+        <roadSegmentsTaken>
+            <segment name="Rue d'Aubigny" length="60.97287" startId="26086115" endId="26086120"/>
+            <segment name="Rue d'Aubigny" length="63.36733" startId="26086120" endId="26086119"/>
+            <segment name="Rue d'Aubigny" length="79.10604" startId="26086119" endId="26086118"/>
+            <segment name="Rue d'Aubigny" length="138.79436" startId="26086118" endId="26086117"/>
+            <segment name="Rue Baraban" length="104.15767" startId="26086117" endId="26086122"/>
+            <segment name="Rue Roposte" length="136.39932" startId="26086122" endId="26086121"/>
+            <segment name="Rue Étienne Richerand" length="62.881767" startId="26086121" endId="48833743"/>
+            <segment name="Rue Étienne Richerand" length="83.11128" startId="48833743" endId="26086127"/>
+            <segment name="Avenue Georges Pompidou" length="48.14814" startId="26086127" endId="26086126"/>
+            <segment name="Avenue Georges Pompidou" length="193.08192" startId="26086126" endId="26086124"/>
+            <segment name="Rue Maurice Flandin" length="252.46027" startId="26086124" endId="26086114"/>
+            <segment name="Rue d'Aubigny" length="70.569046" startId="26086114" endId="26086115"/>
+        </roadSegmentsTaken>
+        <totalDistance>1293.04</totalDistance>
+        <totalDuration>PT1H30M</totalDuration>
+    </tour>
+</tours>
