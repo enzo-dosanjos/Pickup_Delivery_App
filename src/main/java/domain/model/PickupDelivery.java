@@ -1,7 +1,5 @@
 package domain.model;
 
-import persistence.XMLParsers;
-
 import java.util.*;
 import java.util.Map;
 
@@ -90,10 +88,6 @@ public class PickupDelivery {
         }
 
         return result;
-    }
-
-    public boolean loadRequests(String filepath) {
-        return XMLParsers.parseRequests(filepath, this);
     }
 
     public Map<Long, Long[]> getRequestsPerCourier() {

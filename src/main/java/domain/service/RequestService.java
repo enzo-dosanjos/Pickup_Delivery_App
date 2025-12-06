@@ -23,8 +23,8 @@ public class RequestService {
         pickupDelivery.removeRequestFromCourier(requestId, courierId);
     }
 
-    public void loadRequests(String filepath) {
-        XMLParsers.parseRequests(filepath, pickupDelivery);
+    public void loadRequests(String filepath, long courierId) {
+        XMLParsers.parseRequests(filepath, courierId, pickupDelivery);
     }
 
     public PickupDelivery getPickupDelivery() {

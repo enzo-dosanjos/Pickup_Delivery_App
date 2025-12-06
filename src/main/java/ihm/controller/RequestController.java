@@ -24,7 +24,13 @@ public class RequestController {
     @PostMapping("/load")
     public void loadRequests(@RequestParam String filepath,
                              @RequestParam long courierId) {
-        requestService.loadRequests(filepath);
+        // check if courier exists
+        if (!planningService.courierExists(courierId)) {
+            throw new IllegalArgumentException("Courier ID " + courierId + " does not exist.");
+        }
+
+        // Load requests from the specified file for the given courier
+        requestService.loadRequests(filepath, courierId);
 
         // Recompute tours for the courier
         planningService.recomputeTourForCourier(courierId);
@@ -37,6 +43,11 @@ public class RequestController {
                            @RequestParam long deliveryIntersectionId,
                            @RequestParam long deliveryDurationInSeconds,
                            @RequestParam Long courierId) {
+        // check if courier exists
+        if (!planningService.courierExists(courierId)) {
+            throw new IllegalArgumentException("Courier ID " + courierId + " does not exist.");
+        }
+
         // Convert durations from seconds to Duration
         Duration pickupDuration = Duration.ofSeconds(pickupDurationInSeconds);
         Duration deliveryDuration = Duration.ofSeconds(deliveryDurationInSeconds);

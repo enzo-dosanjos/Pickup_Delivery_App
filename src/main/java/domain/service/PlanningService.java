@@ -26,6 +26,10 @@ public class PlanningService {
     }
 
     public void recomputeTourForCourier(long courierId) {
+        if (!requestService.getPickupDelivery().getRequestsPerCourier().containsKey(courierId)) {
+            throw new IllegalArgumentException("Courier ID " + courierId + " not found in requests.");
+        }
+        
         // Create a local copy to avoid concurrency issues
         PickupDelivery pickupDelivery = new PickupDelivery(requestService.getPickupDelivery());
         TreeMap<Long, Request> requests = pickupDelivery.getRequests();
@@ -134,5 +138,9 @@ public class PlanningService {
         tour = tourService.addRoadsToTour(tour, dijkstraTable, mapService.getMap());
 
         tourService.setTourForCourier(courierId, tour);
+    }
+
+    public boolean courierExists(long courierId) {
+        return tourService.getCouriers().stream().anyMatch(courier -> courier.getId() == courierId);
     }
 }

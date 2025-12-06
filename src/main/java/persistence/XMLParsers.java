@@ -66,7 +66,7 @@ public class XMLParsers {
         return map;
     }
 
-    public static boolean parseRequests(String filePath, PickupDelivery pickupDeliveryToFill) {
+    public static boolean parseRequests(String filePath, long courierId, PickupDelivery pickupDeliveryToFill) {
         try {
             // Initialise XML parser
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -108,9 +108,6 @@ public class XMLParsers {
                         Integer.parseInt(requestElement.getAttribute("deliveryDuration"))
                 );
 
-                // Use a default courierId as it's not in the XML
-                long defaultCourierId = 1L;
-
                 Request request = new Request(pickupIntersectionId, pickupDuration, deliveryIntersectionId, deliveryDuration);
 
                 // Check if pickupDelivery already has the request by checking the delivery ID, pickup ID and durations  // todo: remove
@@ -121,7 +118,7 @@ public class XMLParsers {
                     continue; // skip adding this request as it already exists
                 }
 
-                pickupDeliveryToFill.addRequestToCourier(defaultCourierId, request);
+                pickupDeliveryToFill.addRequestToCourier(courierId, request);
             }
 
         } catch (Exception e) {

@@ -1,7 +1,5 @@
 package domain.service;
 
-import domain.model.Map;
-import domain.model.PickupDelivery;
 import domain.model.Request;
 import org.junit.jupiter.api.Test;
 
@@ -16,7 +14,9 @@ class RequestServiceTest {
         String filePath = "src/test/resources/testRequest.xml";
         RequestService requestService = new RequestService();
 
-        requestService.loadRequests(filePath);
+        long courierId = 1L;
+
+        requestService.loadRequests(filePath, courierId);
 
         assertNotNull(requestService.getPickupDelivery());
     }
