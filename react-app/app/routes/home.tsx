@@ -78,6 +78,11 @@ export default function Home() {
     const [pickupName, setPickupName] = useState<string | null>(null);
     const [deliveryName, setDeliveryName] = useState<string | null>(null);
     const [warehouseId, setWarehouseId] = useState<number | null>(null);
+
+    // file paths
+    const [requestFilePath, setRequestFilePath] = useState<string>("src/main/resources/requests.xml");
+    const [courierFilePath, setCourierFilePath] = useState<string>("src/main/resources/couriers.xml");
+
     const fetchInitiated = useRef(false);
 
     // store intersectionMap globally for this component
@@ -159,37 +164,6 @@ export default function Home() {
                 }
                 setIntersections(transformedIntersections);
                 setRoadSegments(transformedRoadSegments);
-
-                // Add a courier
-                const courierParams = new URLSearchParams();
-                courierParams.append('id', '1');
-                courierParams.append('name', 'Courier 1');
-                courierParams.append('shiftDurationInSeconds', '28800'); // 8 hours in seconds
-                const courierResponse = await fetch("http://localhost:8080/api/tour/add-courier", {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: courierParams,
-                });
-                if (!courierResponse.ok) {
-                    throw new Error(`HTTP error! status: ${courierResponse.status}`);
-                }
-
-                // Load requests
-                const requestParams = new URLSearchParams();
-                requestParams.append('filepath', 'src/main/resources/requests.xml');
-                requestParams.append("courierId", "1"); // todo: make dynamic
-                const requestResponse = await fetch("http://localhost:8080/api/request/load", {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: requestParams,
-                });
-                if (!requestResponse.ok) {
-                    throw new Error(`HTTP error! status: ${requestResponse.status}`);
-                }
 
                 // Finally, fetch and display tours
                 await displayTour();
@@ -274,7 +248,58 @@ export default function Home() {
         });
 
         setTours(transformedTours);
-    }
+    };
+
+    const handleLoadCouriers = async () => {
+        try {
+            const params = new URLSearchParams();
+            params.append("filepath", courierFilePath);
+
+            const response = await fetch("http://localhost:8080/api/tour/load-couriers", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+                body: params,
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            console.log("Couriers loaded successfully");
+        } catch (e: any) {
+            console.error("Failed to load couriers:", e);
+            setError(`Failed to load couriers: ${e.message}`);
+        }
+    };
+
+    const handleLoadRequests = async () => {
+        try {
+            // Load requests
+            const requestParams = new URLSearchParams();
+            requestParams.append('filepath', 'src/main/resources/requests.xml');
+            requestParams.append("courierId", "1"); // todo: make dynamic
+            const requestResponse = await fetch("http://localhost:8080/api/request/load", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: requestParams,
+            });
+
+            if (!requestResponse.ok) {
+                throw new Error(`HTTP error! status: ${requestResponse.status}`);
+            }
+
+            console.log('Requests loaded successfully');
+            await displayTour();
+
+        } catch (e: any) {
+            console.error("Failed to load requests:", e);
+            setError(`Failed to load requests: ${e.message}`);
+        }
+    };
 
     const handleAddRequest = async () => {
         if (pickupId === null || deliveryId === null) {
@@ -414,6 +439,45 @@ export default function Home() {
                     Save Requests
                 </button>
             </div>
+
+            <div style={{ marginBottom: "15px" }}>
+                <div style={{ marginBottom: "8px" }}>
+                    <label style={{ marginRight: "8px" }}>
+                        Requests XML path:
+                        <input
+                            type="text"
+                            value={requestFilePath}
+                            onChange={(e) => setRequestFilePath(e.target.value)}
+                            style={{ marginLeft: "8px", width: "300px" }}
+                        />
+                    </label>
+                    <button
+                        onClick={handleLoadRequests}
+                        style={{ padding: "8px", marginLeft: "8px" }}
+                    >
+                        Load Requests
+                    </button>
+                </div>
+
+                <div>
+                    <label style={{ marginRight: "8px" }}>
+                        Couriers XML path:
+                        <input
+                            type="text"
+                            value={courierFilePath}
+                            onChange={(e) => setCourierFilePath(e.target.value)}
+                            style={{ marginLeft: "8px", width: "300px" }}
+                        />
+                    </label>
+                    <button
+                        onClick={handleLoadCouriers}
+                        style={{ padding: "8px", marginLeft: "8px" }}
+                    >
+                        Load Couriers
+                    </button>
+                </div>
+            </div>
+
             <br />
             {isPanelOpen && (
                 <ModificationPanel
