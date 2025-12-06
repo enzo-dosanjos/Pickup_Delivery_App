@@ -40,10 +40,10 @@ class XMLParsersTest {
 
         assertNotNull(pickupDelivery, "The pickupDelivery should not be null after parsing");
         assertEquals(342873658, pickupDelivery.getWarehouseAdressId(), "The warehouse address should match the expected value");
-        assertEquals(208769039, pickupDelivery.getRequests().get(pickupDelivery.getRequestsPerCourier().get(1L)[0]).getPickupIntersectionId(), "The first request address for courier 1 should match the expected value");
-        assertEquals(25173820, pickupDelivery.getRequests().get(pickupDelivery.getRequestsPerCourier().get(1L)[0]).getDeliveryIntersectionId(), "The first request delivery address for courier 1 should match the expected value");
-        assertEquals(180, pickupDelivery.getRequests().get(pickupDelivery.getRequestsPerCourier().get(1L)[0]).getPickupDuration().toMinutes(), "The first request pickup duration for courier 1 should match the expected value");
-        assertEquals(240, pickupDelivery.getRequests().get(pickupDelivery.getRequestsPerCourier().get(1L)[0]).getDeliveryDuration().toMinutes(), "The first request delivery duration for courier 1 should match the expected value");
+        assertEquals(208769039, pickupDelivery.getRequests().get(pickupDelivery.getRequestsPerCourier().get(1L).getFirst()).getPickupIntersectionId(), "The first request address for courier 1 should match the expected value");
+        assertEquals(25173820, pickupDelivery.getRequests().get(pickupDelivery.getRequestsPerCourier().get(1L).getFirst()).getDeliveryIntersectionId(), "The first request delivery address for courier 1 should match the expected value");
+        assertEquals(180, pickupDelivery.getRequests().get(pickupDelivery.getRequestsPerCourier().get(1L).getFirst()).getPickupDuration().toSeconds(), "The first request pickup duration for courier 1 should match the expected value");
+        assertEquals(240, pickupDelivery.getRequests().get(pickupDelivery.getRequestsPerCourier().get(1L).getFirst()).getDeliveryDuration().toSeconds(), "The first request delivery duration for courier 1 should match the expected value");
     }
 
     @Test

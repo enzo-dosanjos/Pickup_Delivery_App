@@ -33,8 +33,8 @@ public class TourController {
     }
 
     @PostMapping("/remove-courier")
-    public boolean removeCourier(@RequestParam long id) {
-        return tourService.removeCourier(id);
+    public boolean removeCourier(@RequestParam long courierId) {
+        return tourService.removeCourier(courierId);
     }
 
     @PostMapping("/load-couriers")

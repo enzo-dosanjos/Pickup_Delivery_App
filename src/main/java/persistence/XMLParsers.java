@@ -101,22 +101,14 @@ public class XMLParsers {
 
                 long pickupIntersectionId = Long.parseLong(requestElement.getAttribute("pickupAddress"));
                 long deliveryIntersectionId = Long.parseLong(requestElement.getAttribute("deliveryAddress"));
-                Duration pickupDuration = Duration.ofMinutes(
-                        Integer.parseInt(requestElement.getAttribute("pickupDuration"))
+                Duration pickupDuration = Duration.ofSeconds(
+                        Long.parseLong(requestElement.getAttribute("pickupDuration"))
                 );
-                Duration deliveryDuration = Duration.ofMinutes(
-                        Integer.parseInt(requestElement.getAttribute("deliveryDuration"))
+                Duration deliveryDuration = Duration.ofSeconds(
+                        Long.parseLong(requestElement.getAttribute("deliveryDuration"))
                 );
 
                 Request request = new Request(pickupIntersectionId, pickupDuration, deliveryIntersectionId, deliveryDuration);
-
-                // Check if pickupDelivery already has the request by checking the delivery ID, pickup ID and durations  // todo: remove
-                if (pickupDeliveryToFill.getRequests().values().stream().anyMatch(r ->
-                        r.getPickupIntersectionId() == pickupIntersectionId &&
-                        r.getDeliveryIntersectionId() == deliveryIntersectionId
-                )) {
-                    continue; // skip adding this request as it already exists
-                }
 
                 pickupDeliveryToFill.addRequestToCourier(courierId, request);
             }

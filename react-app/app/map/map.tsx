@@ -30,7 +30,7 @@ export type Tour = {
     totalDuration: number;
 };
 
-const startIcon = new L.Icon({
+const pickupIcon = new L.Icon({
     iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
     iconSize: [25, 41],
@@ -39,7 +39,7 @@ const startIcon = new L.Icon({
     shadowSize: [41, 41]
 });
 
-const endIcon = new L.Icon({
+const deliveryIcon = new L.Icon({
     iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
     iconSize: [25, 41],
@@ -135,10 +135,10 @@ export function Map(props: {
                     {tour.stops.map((stop, index) => {
                         const intersection = props.intersections.find(i => i.id === stop.intersectionId);
                         if (intersection) {
-                            let icon = endIcon; // default
+                            let icon = deliveryIcon; // default
 
                             if (stop.type === StopType.PICKUP) {
-                                icon = startIcon;
+                                icon = pickupIcon;
                             } else if (stop.type === StopType.WAREHOUSE) {
                                 icon = warehouseIcon;
                             }

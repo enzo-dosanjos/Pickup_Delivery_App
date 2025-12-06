@@ -1,7 +1,5 @@
 package domain.model;
 
-import persistence.XMLParsers;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.TreeMap;

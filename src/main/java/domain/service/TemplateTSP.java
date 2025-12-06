@@ -12,7 +12,7 @@ import java.util.Set;
 
 public abstract class TemplateTSP implements TSP {
 	
-	public Integer[] meilleureSolution;
+	private Integer[] meilleureSolution;
     protected Graphe g;
     private double coutMeilleureSolution;
     private int tpsLimite;
@@ -67,7 +67,7 @@ public abstract class TemplateTSP implements TSP {
 			return -1;
 		}
 	
-	    public double getMeilleureCoutSolution() {
+	    public double getCoutMeilleureSolution() {
 	        return coutMeilleureSolution;
 	    }
 		

@@ -6,10 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Set;
-import java.util.TreeMap;
+import java.util.*;
 
 @Service
 public class PlanningService {
@@ -33,10 +30,10 @@ public class PlanningService {
         // Create a local copy to avoid concurrency issues
         PickupDelivery pickupDelivery = new PickupDelivery(requestService.getPickupDelivery());
         TreeMap<Long, Request> requests = pickupDelivery.getRequests();
-        Long[] requestIdsForCourier = pickupDelivery.getRequestsPerCourier().get(courierId);
+        ArrayList<Long> requestIdsForCourier = pickupDelivery.getRequestsPerCourier().get(courierId);
 
         // 1. Build list of stops (warehouse + pickups + deliveries)
-        int nbStops = 2 * requestIdsForCourier.length + 1;
+        int nbStops = 2 * requestIdsForCourier.size() + 1;
         long[] stops = new long[nbStops];
 
         int idx = 0;
@@ -82,8 +79,8 @@ public class PlanningService {
             int pickupIndex = 1 + requestIndex * 2;
             int deliveryIndex = pickupIndex + 1;
 
-            serviceTimes[pickupIndex]   = r.getPickupDuration().getSeconds();   // Pickup duration
-            serviceTimes[deliveryIndex] = r.getDeliveryDuration().getSeconds(); // Delivery duration
+            serviceTimes[pickupIndex]   = r.getPickupDuration().toSeconds();   // Pickup duration
+            serviceTimes[deliveryIndex] = r.getDeliveryDuration().toSeconds(); // Delivery duration
 
             requestIndex++;
         }
@@ -93,7 +90,7 @@ public class PlanningService {
         // 6. execute TSP (SOP)
         tsp.chercheSolution(30000, dijkstraService.getGraph());
 
-        if (tsp.getMeilleureCoutSolution() == Integer.MAX_VALUE) {
+        if (tsp.getCoutMeilleureSolution() == Integer.MAX_VALUE) {
             throw new RuntimeException("TSP algorithm did not find a solution for courier " + courierId);
         }
 

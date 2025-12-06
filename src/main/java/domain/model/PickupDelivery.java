@@ -1,5 +1,6 @@
 package domain.model;
 
+import java.lang.reflect.Array;
 import java.util.*;
 import java.util.Map;
 
@@ -9,7 +10,7 @@ import static domain.model.StopType.*;
 public class PickupDelivery {
 
     private TreeMap<Long, Request> requests;
-    private TreeMap<Long, Long[]> requestsPerCourier;
+    private TreeMap<Long, ArrayList<Long>> requestsPerCourier;
     private long warehouseAdressId;
 
     public PickupDelivery() {
@@ -21,8 +22,8 @@ public class PickupDelivery {
     public PickupDelivery(PickupDelivery other) {
         this.requests = new TreeMap<>(other.requests);
         this.requestsPerCourier = new TreeMap<>();
-        for (Map.Entry<Long, Long[]> entry : other.requestsPerCourier.entrySet()) {
-            this.requestsPerCourier.put(entry.getKey(), Arrays.copyOf(entry.getValue(), entry.getValue().length));
+        for (Map.Entry<Long, ArrayList<Long>> entry : other.requestsPerCourier.entrySet()) {
+            this.requestsPerCourier.put(entry.getKey(), new ArrayList<>(entry.getValue()));
         }
         this.warehouseAdressId = other.warehouseAdressId;
     }
@@ -30,67 +31,47 @@ public class PickupDelivery {
     public boolean addRequestToCourier(long courierId, Request request) {
         requests.put(request.getId(), request);
 
-        Long[] requestsOfCourier = requestsPerCourier.get(courierId);
+        ArrayList<Long> requestsOfCourier = requestsPerCourier.get(courierId);
+
         if (requestsOfCourier == null) {
-            requestsOfCourier = new Long[] { request.getId() };
-        } else {
-            Long[] newRequestsOfCourier = new Long[requestsOfCourier.length + 1];
-            System.arraycopy(requestsOfCourier, 0, newRequestsOfCourier, 0, requestsOfCourier.length);
-            newRequestsOfCourier[requestsOfCourier.length] = request.getId();
-            requestsOfCourier = newRequestsOfCourier;
+            requestsOfCourier = new ArrayList<>();
         }
+
+        requestsOfCourier.add(request.getId());
 
         requestsPerCourier.put(courierId, requestsOfCourier);
 
         return true;
     }
 
-    public boolean removeRequestFromCourier(long requestId, long courierId) {
+    public boolean removeRequestFromCourier(long courierId, long requestId) {
         requests.remove(requestId);
 
-        Long[] requestsOfCourier = requestsPerCourier.get(courierId);
+        ArrayList<Long> requestsOfCourier = requestsPerCourier.get(courierId);
         if (requestsOfCourier == null) {
             return false;
         }
 
-        int indexToRemove = -1;
-        for (int i = 0; i < requestsOfCourier.length; i++) {
-            if (requestsOfCourier[i] == requestId) {
-                indexToRemove = i;
-                break;
-            }
-        }
-
-        if (indexToRemove == -1) {
-            return false;
-        }
-
-        Long[] newRequestsOfCourier = new Long[requestsOfCourier.length - 1];
-        for (int i = 0, j = 0; i < requestsOfCourier.length; i++) {
-            if (i != indexToRemove) {
-                newRequestsOfCourier[j++] = requestsOfCourier[i];
-            }
-        }
-
-        requestsPerCourier.put(courierId, newRequestsOfCourier);
+        requestsOfCourier.remove(requestId);
 
         return true;
     }
 
     public Request[] getRequestsForCourier(long courierId) {
-        Long[] requestIds = requestsPerCourier.get(courierId);
+        ArrayList<Long> requestIds = requestsPerCourier.get(courierId);
         if (requestIds == null) {
             return new Request[0];
         }
-        Request[] result = new Request[requestIds.length];
-        for (int i = 0; i < requestIds.length; i++) {
-            result[i] = requests.get(requestIds[i]);
+
+        Request[] result = new Request[requestIds.size()];
+        for (int i = 0; i < requestIds.size(); i++) {
+            result[i] = requests.get(requestIds.get(i));
         }
 
         return result;
     }
 
-    public Map<Long, Long[]> getRequestsPerCourier() {
+    public Map<Long, ArrayList<Long>> getRequestsPerCourier() {
         return requestsPerCourier;
     }
 
@@ -125,7 +106,7 @@ public class PickupDelivery {
         sb.append("PickupDelivery:\n");
         sb.append("Warehouse Address ID: ").append(warehouseAdressId).append("\n");
         sb.append("Requests per Courier:\n");
-        for (Map.Entry<Long, Long[]> entry : requestsPerCourier.entrySet()) {
+        for (Map.Entry<Long, ArrayList<Long>> entry : requestsPerCourier.entrySet()) {
             sb.append("Courier ID ").append(entry.getKey()).append(": ");
             for (Long requestId : entry.getValue()) {
                 sb.append(requests.get(requestId)).append(" ");

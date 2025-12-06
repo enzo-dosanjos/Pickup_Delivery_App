@@ -79,22 +79,6 @@ public class TourService {
         return true;
     }
 
-    public ArrayList<Courier> getCouriers() {
-        return couriers;
-    }
-
-    public int getNumCouriers() {
-        return numCouriers;
-    }
-
-    public TreeMap<Long, Tour> getTours() {
-        return tours;
-    }
-
-    public TreeMap<Long, HashMap<Long, Long>> getRequestOrder() {
-        return requestsOrder;
-    }
-
     public Tour convertGraphToTour(PickupDelivery pickupDelivery, LocalDateTime startTime, long courierId, Integer[] solution, Long[] vertices, double[][] costs) {
         long intersectionId;
         Integer previousTourStop = null;
@@ -206,5 +190,21 @@ public class TourService {
             tour.addRoadSegment(road); }
 
         return tour;
+    }
+
+    public ArrayList<Courier> getCouriers() {
+        return couriers;
+    }
+
+    public int getNumCouriers() {
+        return numCouriers;
+    }
+
+    public TreeMap<Long, Tour> getTours() {
+        return tours;
+    }
+
+    public TreeMap<Long, HashMap<Long, Long>> getRequestOrder() {
+        return requestsOrder;
     }
 }

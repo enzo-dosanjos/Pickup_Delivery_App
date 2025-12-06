@@ -73,7 +73,7 @@ public class RequestController {
     @PostMapping("/delete")
     public void deleteRequest(@RequestParam long requestId,
                               @RequestParam long courierId) {
-        requestService.deleteRequest(requestId, courierId);
+        requestService.deleteRequest(courierId, requestId);
         planningService.recomputeTourForCourier(courierId);
     }
 }

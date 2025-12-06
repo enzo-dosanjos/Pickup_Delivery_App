@@ -29,7 +29,7 @@ public class XMLWriters {
      * @param tour The Tour object to write.
      * @param filePath The path to the XML file.
      */
-    public static void exportTourToXml(Tour tour, String filePath) throws Exception {
+    public static void writeTour(Tour tour, String filePath) throws Exception {
         XMLStreamWriter writer = XMLOutputFactory.newInstance()
                 .createXMLStreamWriter(new FileOutputStream(filePath), "UTF-8");
 
@@ -87,17 +87,6 @@ public class XMLWriters {
     }
 
     /**
-     * Writes a collection of Tour objects to an XML file.
-     * This method is an extension that might be useful for saving all tours at once.
-     * @param tours The collection of Tour objects to write.
-     * @param filePath The path to the XML file.
-     */
-    public void writeTours(Collection<Tour> tours, String filePath) {
-        System.out.println("Writing multiple tours to: " + filePath);
-        // Implementation for writing multiple tours to XML
-    }
-
-    /**
      * Writes a PickupDelivery object (containing requests) to an XML file.
      * @param pickupDelivery The PickupDelivery object to write.
      * @param filePath The path to the XML file.
@@ -136,8 +125,6 @@ public class XMLWriters {
             DOMSource source = new DOMSource(doc);
             StreamResult result = new StreamResult(new File(filePath));
             transformer.transform(source, result);
-
-            System.out.println("Requests saved to: " + filePath);
 
         } catch (Exception e) {
             e.printStackTrace();

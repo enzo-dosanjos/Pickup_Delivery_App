@@ -22,9 +22,9 @@ class PickupDeliveryTest {
         pickupDelivery.addRequestToCourier(defaultCourierId, request1);
         pickupDelivery.addRequestToCourier(defaultCourierId, request2);
 
-        assertEquals(2, pickupDelivery.getRequestsPerCourier().get(defaultCourierId).length);
-        assertEquals(request1, pickupDelivery.getRequests().get(pickupDelivery.getRequestsPerCourier().get(defaultCourierId)[0]));
-        assertEquals(request2, pickupDelivery.getRequests().get(pickupDelivery.getRequestsPerCourier().get(defaultCourierId)[1]));
+        assertEquals(2, pickupDelivery.getRequestsPerCourier().get(defaultCourierId).size());
+        assertEquals(request1, pickupDelivery.getRequests().get(pickupDelivery.getRequestsPerCourier().get(defaultCourierId).get(0)));
+        assertEquals(request2, pickupDelivery.getRequests().get(pickupDelivery.getRequestsPerCourier().get(defaultCourierId).get(1)));
     }
 
     @Test
@@ -60,7 +60,7 @@ class PickupDeliveryTest {
         boolean added = pickupDelivery.addRequestToCourier(courierId, request);
 
         assertEquals(true, added);
-        assertEquals(1, pickupDelivery.getRequestsPerCourier().get(courierId).length);
-        assertEquals(request, pickupDelivery.getRequests().get(pickupDelivery.getRequestsPerCourier().get(courierId)[0]));
+        assertEquals(1, pickupDelivery.getRequestsPerCourier().get(courierId).size());
+        assertEquals(request, pickupDelivery.getRequests().get(pickupDelivery.getRequestsPerCourier().get(courierId).getFirst()));
     }
 }
