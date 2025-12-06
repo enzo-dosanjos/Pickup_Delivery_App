@@ -1,5 +1,5 @@
 import type { Route } from "./+types/home";
-import { Map as MapComponent, type Intersection as MapIntersection } from "../map/map";
+import { Map as MapComponent, type Intersection as MapIntersection, type Tour as MapTour, StopType as MapStopType } from "../map/map";
 import { useState, useEffect, useRef } from "react";
 import L from "leaflet";
 import { ModificationPanel } from "../components/ModificationPanel";
@@ -23,15 +23,8 @@ type ApiMapData = {
     adjencyList: Record<string, ApiRoadSegment[]>;
 };
 
-enum StopType {
-    PICKUP = "PICKUP",
-    DELIVERY = "DELIVERY",
-    INTERMEDIATE_INTERSECTION = "INTERMEDIATE_INTERSECTION",
-    WAREHOUSE = "WAREHOUSE",
-}
-
 type ApiTourStop = {
-    type: StopType;
+    type: MapStopType;
     requestID: number;
     intersectionId: number;
     arrivalTime: number;
@@ -75,7 +68,7 @@ export default function Home() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const [tours, setTours] = useState<ApiTour[]>([]);
+        const [tours, setTours] = useState<MapTour[]>([]);
     const [loadingTours, setLoadingTours] = useState(true);
 
     const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -88,7 +81,7 @@ export default function Home() {
     const fetchInitiated = useRef(false);
 
     // store intersectionMap globally for this component
-    const intersectionMapRef = useRef<IntersectionMap | null>(null);
+    const intersectionMapRef = useRef<Map<number, ApiIntersection> | null>(null);
 
     useEffect(() => {
         if (fetchInitiated.current) {
@@ -236,6 +229,14 @@ export default function Home() {
         }
         const intersectionMap = intersectionMapRef.current;
 
+        // Fetch warehouse ID
+        const warehouseResponse = await fetch('http://localhost:8080/api/request/warehouse');
+        if (!warehouseResponse.ok) {
+            throw new Error(`HTTP error! status: ${warehouseResponse.status}`);
+        }
+        const fetchedWarehouseId = await warehouseResponse.json();
+        setWarehouseId(fetchedWarehouseId);
+
         // Fetch tours from backend
         const toursResponse = await fetch("http://localhost:8080/api/tour/tours");
         if (!toursResponse.ok) {
@@ -249,22 +250,26 @@ export default function Home() {
         console.log("Raw tour data from API:", apiTours);
 
         // Transform Tour Data
-        const transformedTours: ApiTour[] = apiTours.map(tour => {
-            const transformedRoadSegments = tour.roadSegmentsTaken.map(segment => {
+        const transformedTours: MapTour[] = apiTours.map(tour => {
+            const transformedRoadSegments: L.LatLngExpression[][] = tour.roadSegmentsTaken.map(segment => {
                 const startIntersection = intersectionMap.get(segment.startId);
                 const endIntersection = intersectionMap.get(segment.endId);
                 if (startIntersection && endIntersection) {
                     return [
                         [startIntersection.lat, startIntersection.lng],
                         [endIntersection.lat, endIntersection.lng]
-                    ];
+                    ] as L.LatLngExpression[];
                 }
                 return null;
+
             }).filter((s): s is L.LatLngExpression[] => s !== null);
 
             return {
-                ...tour,
-                roadSegmentsTaken: transformedRoadSegments
+                courierId: tour.courierId,
+                stops: tour.stops,
+                roadSegmentsTaken: transformedRoadSegments,
+                totalDistance: tour.totalDistance,
+                totalDuration: tour.totalDuration,
             };
         });
 

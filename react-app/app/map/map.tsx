@@ -135,7 +135,14 @@ export function Map(props: {
                     {tour.stops.map((stop, index) => {
                         const intersection = props.intersections.find(i => i.id === stop.intersectionId);
                         if (intersection) {
-                            const icon = stop.type === StopType.PICKUP ? startIcon : endIcon;
+                            let icon = endIcon; // default
+
+                            if (stop.type === StopType.PICKUP) {
+                                icon = startIcon;
+                            } else if (stop.type === StopType.WAREHOUSE) {
+                                icon = warehouseIcon;
+                            }
+
                             return (
                                 <Marker key={`${tour.courierId}-${stop.intersectionId}-${index}`} position={intersection.position} icon={icon}>
                                     <Popup>
