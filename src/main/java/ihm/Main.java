@@ -1,12 +1,11 @@
 package ihm;
 
 import domain.model.*;
-import domain.model.Map;
+import domain.service.MapService;
 import domain.service.PlanningService;
 import domain.service.RequestService;
 import domain.service.TourService;
 import ihm.controller.RequestController;
-import persistence.XMLParsers;
 
 import java.time.Duration;
 import java.time.LocalTime;
@@ -18,7 +17,9 @@ public class Main {
         RequestService requestService = new RequestService();
         PickupDelivery pickupDelivery = requestService.getPickupDelivery();
         TourService tourService = new TourService();
-        PlanningService planningService = new PlanningService(requestService, tourService);
+        MapService mapService = new MapService();
+        mapService.loadMap("src/main/resources/grandPlan.xml");
+        PlanningService planningService = new PlanningService(requestService, tourService, mapService);
 
         Courier courier1 = new Courier(1L, "Courier 1", Duration.ofHours(8));
         tourService.addCourier(courier1);

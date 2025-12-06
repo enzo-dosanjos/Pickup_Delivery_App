@@ -1,24 +1,24 @@
 package ihm.controller;
 
 import domain.model.Map;
-import domain.service.PlanningService;
+import domain.service.MapService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 public class MapController {
 
-    private final PlanningService planningService;
+    private final MapService mapService;
 
     @Autowired
-    public MapController(PlanningService planningService) {
-        this.planningService = planningService;
+    public MapController(MapService mapService) {
+        this.mapService = mapService;
+        mapService.loadMap("src/main/resources/grandPlan.xml");
     }
 
     @RequestMapping("/api/map")
     public Map getMap() {
-        return planningService.getMap();
+        return mapService.getMap();
     }
 }

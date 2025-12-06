@@ -15,15 +15,14 @@ import java.util.TreeMap;
 public class PlanningService {
     private final RequestService requestService;
     private final TourService tourService;
-    private Map map;
+    private MapService mapService;
 
     @Autowired
-    public PlanningService(RequestService requestService, TourService tourService) {
+    public PlanningService(RequestService requestService, TourService tourService, MapService mapService) {
         this.requestService = requestService;
         this.tourService = tourService;
 
-        this.map = new Map();
-        map.loadMap("src/main/resources/grandPlan.xml");
+        this.mapService = mapService;
     }
 
     public void recomputeTourForCourier(long courierId) {
@@ -50,7 +49,7 @@ public class PlanningService {
 
         // 3. Distances with Dijkstra
         DijkstraTable dijkstraTable = new DijkstraTable();  // todo: store in DijkstraService
-        DijkstraService dijkstraService = new DijkstraService(map, graph);
+        DijkstraService dijkstraService = new DijkstraService(mapService.getMap(), graph);
         dijkstraService.computeShortestPath(dijkstraTable);
 
         // 4.Precedences
@@ -132,16 +131,8 @@ public class PlanningService {
         );
 
         // 9. add roads to tour
-        tour = tourService.addRoadsToTour(tour, dijkstraTable, map);
+        tour = tourService.addRoadsToTour(tour, dijkstraTable, mapService.getMap());
 
         tourService.setTourForCourier(courierId, tour);
-    }
-
-    public Map getMap() {
-        return map;
-    }
-
-    public void setMap(Map map) {
-        this.map = map;
     }
 }

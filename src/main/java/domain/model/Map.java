@@ -66,16 +66,6 @@ public class Map {
         return null;
     }
 
-    public void loadMap(String filePath) {
-        Map loaded = XMLParsers.parseMap(filePath);
-
-        this.intersections.clear();
-        this.intersections.putAll(loaded.getIntersections());
-
-        this.adjencyList.clear();
-        this.adjencyList.putAll(loaded.getAdjencyList());
-    }
-
     public ArrayList<RoadSegment> getRoadSegmentByName(String name) {
         // Iterate through all road segments in the adjacency list to find segments with the given partial or full name
         ArrayList<RoadSegment> roadSegments = new ArrayList<>();
