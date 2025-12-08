@@ -15,6 +15,8 @@ import java.util.*;
 @Service
 public class PlanningService {
 
+    private final TreeMap<Long, HashMap<String, Set<String>>> precsByCourier;
+
     private final RequestService requestService; // Services for handling requests and tours.
 
 
@@ -34,6 +36,7 @@ public class PlanningService {
         this.requestService = requestService;
         this.tourService = tourService;
 
+        this.precsByCourier = new TreeMap<>();
         this.mapService = mapService;
     }
 
@@ -48,12 +51,18 @@ public class PlanningService {
         if (!requestService.getPickupDelivery().getRequestsPerCourier().containsKey(courierId)) {
             throw new IllegalArgumentException("Courier ID " + courierId + " not found in requests.");
         }
-        
+
         // Create a local copy to avoid concurrency issues
         PickupDelivery pickupDelivery = new PickupDelivery(requestService.getPickupDelivery());
         TreeMap<Long, Request> requests = pickupDelivery.getRequests();
         ArrayList<Long> requestIdsForCourier = pickupDelivery.getRequestsPerCourier().get(courierId);
 
+
+        if (!precsByCourier.containsKey(courierId)) {
+            initPrecedences(courierId, requestIdsForCourier, pickupDelivery);
+        }
+
+        /*
         // 1. Build list of stops (warehouse + pickups + deliveries)
         int nbStops = 2 * requestIdsForCourier.size() + 1;
         long[] stops = new long[nbStops];
@@ -66,9 +75,14 @@ public class PlanningService {
             stops[idx++] = r.getPickupIntersectionId();
             stops[idx++] = r.getDeliveryIntersectionId();
         }
+        */
+
+        java.util.Map.Entry<long[], HashMap<Integer, Set<Integer>>> result = generateTspPrecedences(requestIdsForCourier, courierId, pickupDelivery);
+        long[] stops = result.getKey();
+        HashMap<Integer, Set<Integer>> tspPrecedences = result.getValue();
 
         // 2. build graph
-        GrapheComplet graph = new GrapheComplet(stops, nbStops);
+        GrapheComplet graph = new GrapheComplet(stops, stops.length);
 
         // 3. Distances with Dijkstra
         DijkstraTable dijkstraTable = new DijkstraTable();  // todo: store in DijkstraService
@@ -76,25 +90,31 @@ public class PlanningService {
         dijkstraService.computeShortestPath(dijkstraTable);
 
         // 4.Precedences
-        HashMap<Integer, Set<Integer>> precs = new HashMap<>();
-
-        int requestIndex = 0;
-        for (long reqId : requestIdsForCourier) {
-            int pickupIndex = 1 + requestIndex * 2;
-            int deliveryIndex = pickupIndex + 1;
-
-            precs.put(deliveryIndex, Set.of(pickupIndex));
-            requestIndex++;
-        }
-
         TSP1 tsp = new TSP1();
-        tsp.setPrecedences(precs);
+        /*
+        int requestIndex = 0;
+
+        /*
+        if (tsp.getPrecedences() == null){
+            HashMap<Integer, Set<Integer>> precs = new HashMap<>();
+            for (long reqId : requestIdsForCourier) {
+                int pickupIndex = 1 + requestIndex * 2;
+                int deliveryIndex = pickupIndex + 1;
+
+                precs.put(deliveryIndex, Set.of(pickupIndex));
+                requestIndex++;
+            }
+            tsp.setPrecedences(precs);
+        }
+        */
+        tsp.setPrecedences(tspPrecedences);
+
 
         // 5. Service times
         double[] serviceTimes = new double[dijkstraService.getGraph().getNbSommets()];
         Arrays.fill(serviceTimes, 0); // warehouse = 0
 
-        requestIndex = 0;
+        int requestIndex = 0;
         for (long reqId : requestIdsForCourier) {
             Request r = requests.get(reqId);
 
@@ -184,5 +204,116 @@ public class PlanningService {
      */
     public boolean courierExists(long courierId) {
         return tourService.getCouriers().stream().anyMatch(courier -> courier.getId() == courierId);
+    }
+
+    public void addConstraint(PickupDelivery pickupDelivery, long courierId, long precRequestId, long precIntersectionId, long followingRequestId, long followingIntersectionId) {
+        HashMap<String, Set<String>> precs = precsByCourier.get(courierId);
+        Request precRequest, followRequest;
+        char precType, followingType;
+
+        precRequest = pickupDelivery.findRequestById(precRequestId);
+        followRequest = pickupDelivery.findRequestById(followingRequestId);
+
+        if(precRequest.getPickupIntersectionId() == precIntersectionId){
+            precType = 'p';
+
+        } else {
+            precType = 'd';
+        }
+
+        if(followRequest.getPickupIntersectionId() == followingIntersectionId){
+            followingType = 'p';
+
+        } else {
+            followingType = 'd';
+        }
+        precs.computeIfAbsent(parseParams(followingRequestId, followingIntersectionId, followingType), k -> new HashSet<>()).add(parseParams(precRequestId, precIntersectionId, precType));
+        precsByCourier.put(courierId, precs);
+        recomputeTourForCourier(courierId);
+    }
+
+    public void initPrecedences(long courierId, ArrayList<Long> requestsId, PickupDelivery pickupDelivery) {
+        HashMap<String, Set<String>> precs = new HashMap<>();
+        Request request;
+        long delIntersectionId;
+        long puIntersectionId;
+        for (long requestId : requestsId) {
+            request = pickupDelivery.findRequestById(requestId);
+            puIntersectionId = request.getPickupIntersectionId();
+            delIntersectionId = request.getDeliveryIntersectionId();
+            precs.computeIfAbsent(parseParams(requestId, delIntersectionId, 'd'), k -> new HashSet<>()).add(parseParams(requestId, puIntersectionId, 'p'));
+            //precs.put(parseParams(requestId, delIntersectionId, 'd'), Set.of(parseParams(requestId, puIntersectionId, 'p')));
+        }
+        precsByCourier.put(courierId, precs);
+    }
+
+    public java.util.Map.Entry<long[], HashMap<Integer, Set<Integer>>> generateTspPrecedences(
+            ArrayList<Long> requestIdsForCourier,
+            long courierId,
+            PickupDelivery pickupDelivery) {
+
+        // Récupère les précédences pour ce courier
+        HashMap<String, Set<String>> precs = precsByCourier.get(courierId);
+
+        Request request;
+
+        // Utilisation d'une ArrayList
+        List<String> vertices = new ArrayList<>(requestIdsForCourier.size() * 2 +1);
+        vertices.add(parseParams(-1, pickupDelivery.getWarehouseAdressId(), 'w'));
+
+        for (long requestId : requestIdsForCourier) {
+            request = pickupDelivery.findRequestById(requestId);
+            vertices.add(parseParams(requestId, request.getPickupIntersectionId(), 'p'));
+            vertices.add(parseParams(requestId, request.getDeliveryIntersectionId(), 'd'));
+        }
+
+        HashMap<Integer, Set<Integer>> tspPrecs = new HashMap<>();
+
+        // Parcours de la liste des vertices
+        for (int i = 0; i < vertices.size(); i++) {
+            Set<String> precVertices = precs.get(vertices.get(i));
+            if (precVertices != null) {
+                for (String precVertix : precVertices) {
+                    int precVertixIndex = vertices.indexOf(precVertix);
+                    tspPrecs.computeIfAbsent(i, k -> new HashSet<>())
+                            .add(precVertixIndex);
+                }
+            }
+        }
+        long[] verticesIntersectionIds = extractIntersectionIds(vertices);
+
+        // Retourne la paire : List<String> et HashMap<Integer, Set<Integer>>
+        return java.util.Map.entry(verticesIntersectionIds, tspPrecs);
+    }
+
+    public String parseParams(long requestId, long intersectionID, char type) {
+        return requestId + "-" + intersectionID + "-" + type;
+    }
+
+    public long[] extractIntersectionIds(List<String> vertices) {
+        long[] intersectionIds = new long[vertices.size()];
+
+        for (int i = 0; i < vertices.size(); i++) {
+            String v = vertices.get(i);
+            String[] parts = v.split("-");
+            intersectionIds[i] = Long.parseLong(parts[1]);
+        }
+
+        return intersectionIds;
+    }
+
+    public static long parseRequest(String s) {
+        String[] parts = s.split("-");
+        return Long.parseLong(parts[0]);
+    }
+
+    public static long parseIntersection(String s) {
+        String[] parts = s.split("-");
+        return Long.parseLong(parts[1]);
+    }
+
+    public static char parseType(String s) {
+        String[] parts = s.split("-");
+        return parts[2].charAt(0);
     }
 }
