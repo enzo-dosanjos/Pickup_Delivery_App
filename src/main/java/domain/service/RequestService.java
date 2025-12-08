@@ -35,4 +35,8 @@ public class RequestService {
     public Request getRequestById(long requestId) {
         return pickupDelivery.findRequestById(requestId);
     }
+
+    public void setWarehouseAddress(long warehouseId) {
+        pickupDelivery.setWarehouseAdressId(warehouseId);
+    }
 }

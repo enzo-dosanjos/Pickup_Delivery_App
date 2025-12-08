@@ -51,7 +51,13 @@ public class RequestController {
                                         @RequestParam Long courierId) {
         // check if courier exists
         if (!planningService.courierExists(courierId)) {
-            throw new IllegalArgumentException("Courier ID " + courierId + " does not exist.");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Courier ID " + courierId + " does not exist.");
+        }
+
+        // Ensure warehouse is registered (when coming from manual add and no XML was loaded)
+        if (requestService.getPickupDelivery().getWarehouseAdressId() == -1) {
+            requestService.setWarehouseAddress(warehouseId);
         }
 
         // Convert durations from seconds to Duration
@@ -106,6 +112,8 @@ public class RequestController {
         try {
             planningService.recomputeTourForCourier(courierId);
             return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         } catch (RuntimeException e) {
             var otherCouriers = tourService.getCouriers().stream()
                     .filter(c -> c.getId() != courierId)
