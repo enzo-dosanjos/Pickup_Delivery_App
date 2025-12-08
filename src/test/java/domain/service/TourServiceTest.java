@@ -16,17 +16,25 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class TourServiceTest {
     @Test
-    void checkAddCourier() {
+    void checkAddAndRemoveCourier() {
         TourService service = new TourService();
 
         boolean result = service.addCourier(new Courier(1L, "1", null));
-        result = result &&  service.addCourier(new Courier(2L, "2", null));
+        result = result && service.addCourier(new Courier(2L, "2", null));
         assertTrue(result);
 
         assertEquals(2, service.getNumCouriers());
         assertNotNull(service.getCouriers());
         assertEquals(2, service.getCouriers().size());
+
+        result = service.removeCourier(1L);
+        assertTrue(result);
+
+        assertEquals(1, service.getNumCouriers());
+        assertNotNull(service.getCouriers());
+        assertEquals(1, service.getCouriers().size());
     }
+
     @Test
     void convertGraphToTourWithValidInput() {
         PickupDelivery pickupDelivery = new PickupDelivery();

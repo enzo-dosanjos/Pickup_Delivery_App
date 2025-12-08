@@ -10,10 +10,13 @@ import java.util.Map.Entry;
 import domain.model.*;
 import domain.model.dijkstra.CellInfo;
 import domain.model.dijkstra.DijkstraTable;
+import org.springframework.stereotype.Service;
+import persistence.XMLParsers;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 
+@Service
 public class TourService {
     private int numCouriers;
     private ArrayList<Courier> couriers;
@@ -37,6 +40,27 @@ public class TourService {
         return added;
     }
 
+    public boolean removeCourier(long courierId) {
+        for (int i = 0; i < couriers.size(); i++) {
+            if (couriers.get(i).getId() == courierId) {
+                couriers.remove(i);
+                numCouriers--;
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public void loadCouriers(String filepath) {
+        ArrayList<Courier> couriersToAdd = XMLParsers.parseCouriers(filepath);
+
+        for (Courier courier : couriersToAdd) {
+            boolean added = couriers.add(courier);
+            if (added) { numCouriers++; }
+        }
+    }
+
     public boolean updateRequestOrder(long requestBeforeId, long requestAfterId, long courierId)
     // Adds a constraint that requestBeforeId must be served before requestAfterId by the specified courier
     {
@@ -53,22 +77,6 @@ public class TourService {
         constraints.put(requestBeforeId, requestAfterId);
 
         return true;
-    }
-
-    public ArrayList<Courier> getCouriers() {
-        return couriers;
-    }
-
-    public int getNumCouriers() {
-        return numCouriers;
-    }
-
-    public TreeMap<Long, Tour> getTours() {
-        return tours;
-    }
-
-    public TreeMap<Long, HashMap<Long, Long>> getRequestOrder() {
-        return requestsOrder;
     }
 
     public Tour convertGraphToTour(PickupDelivery pickupDelivery, LocalDateTime startTime, long courierId, Integer[] solution, Long[] vertices, double[][] costs) {
@@ -97,7 +105,7 @@ public class TourService {
             if(first)
             {
                 stopType = StopType.WAREHOUSE;
-                requestId = 0;
+                requestId = -1;
                 arrivalTime = tour.getStartTime();
                 first = false;
             }
@@ -155,13 +163,12 @@ public class TourService {
         long currentIntersectionId;
 
         CellInfo info;
-
         RoadSegment road;
 
         //add all the visited intersections in order to a list
         for (int i = stops.size(); i > 0; i--) {
             if(i == stops.size()){
-                targetIntersectionId = stops.getFirst().getIntersectionId();
+                targetIntersectionId = stops.get(0).getIntersectionId();
             }
             else{
                 targetIntersectionId = stops.get(i).getIntersectionId();
@@ -175,13 +182,29 @@ public class TourService {
             }
         }
 
-        reverseIntersectPath.add(stops.getFirst().getIntersectionId());
+        reverseIntersectPath.add(stops.get(0).getIntersectionId());
         Collections.reverse(reverseIntersectPath);
 
         for (int i = 0; i < reverseIntersectPath.size()-1; i++){
             road = map.getRoadSegment(reverseIntersectPath.get(i), reverseIntersectPath.get(i+1));
-            tour.addRoadSegment(road, Duration.ZERO); }
+            tour.addRoadSegment(road); }
 
         return tour;
+    }
+
+    public ArrayList<Courier> getCouriers() {
+        return couriers;
+    }
+
+    public int getNumCouriers() {
+        return numCouriers;
+    }
+
+    public TreeMap<Long, Tour> getTours() {
+        return tours;
+    }
+
+    public TreeMap<Long, HashMap<Long, Long>> getRequestOrder() {
+        return requestsOrder;
     }
 }

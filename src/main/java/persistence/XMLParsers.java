@@ -9,6 +9,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 import java.time.Duration;
+import java.util.ArrayList;
 
 public class XMLParsers {
     public static Map parseMap(String filePath) {
@@ -65,7 +66,7 @@ public class XMLParsers {
         return map;
     }
 
-    public static boolean parseRequests(String filePath, PickupDelivery pickupDeliveryToFill) {
+    public static boolean parseRequests(String filePath, long courierId, PickupDelivery pickupDeliveryToFill) {
         try {
             // Initialise XML parser
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -100,18 +101,16 @@ public class XMLParsers {
 
                 long pickupIntersectionId = Long.parseLong(requestElement.getAttribute("pickupAddress"));
                 long deliveryIntersectionId = Long.parseLong(requestElement.getAttribute("deliveryAddress"));
-                Duration pickupDuration = Duration.ofMinutes(
-                        Integer.parseInt(requestElement.getAttribute("pickupDuration"))
+                Duration pickupDuration = Duration.ofSeconds(
+                        Long.parseLong(requestElement.getAttribute("pickupDuration"))
                 );
-                Duration deliveryDuration = Duration.ofMinutes(
-                        Integer.parseInt(requestElement.getAttribute("deliveryDuration"))
+                Duration deliveryDuration = Duration.ofSeconds(
+                        Long.parseLong(requestElement.getAttribute("deliveryDuration"))
                 );
-
-                // Use a default courierId as it's not in the XML
-                long defaultCourierId = 1L;
 
                 Request request = new Request(pickupIntersectionId, pickupDuration, deliveryIntersectionId, deliveryDuration);
-                pickupDeliveryToFill.addRequestToCourier(defaultCourierId, request);
+
+                pickupDeliveryToFill.addRequestToCourier(courierId, request);
             }
 
         } catch (Exception e) {
@@ -121,4 +120,38 @@ public class XMLParsers {
         return true;
     }
 
+    public static ArrayList<Courier> parseCouriers(String filePath) {
+        ArrayList<Courier> couriers = new ArrayList<>();
+
+        try {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setIgnoringComments(true);
+
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            Document doc = builder.parse(new File(filePath));
+            doc.getDocumentElement().normalize();
+
+            Element root = doc.getDocumentElement();
+
+            NodeList courierNodes = root.getElementsByTagName("courier");
+            for (int i = 0; i < courierNodes.getLength(); i++) {
+                Element courierElement = (Element) courierNodes.item(i);
+
+                long id = Long.parseLong(courierElement.getAttribute("id"));
+                String name = courierElement.getAttribute("name");
+
+                String shiftDurationMinutesStr = courierElement.getAttribute("shiftDurationMinutes");
+                long shiftDurationMinutes = Long.parseLong(shiftDurationMinutesStr);
+                Duration shiftDuration = Duration.ofMinutes(shiftDurationMinutes);
+
+                Courier courier = new Courier(id, name, shiftDuration);
+
+                couriers.add(courier);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return couriers;
+    }
 }

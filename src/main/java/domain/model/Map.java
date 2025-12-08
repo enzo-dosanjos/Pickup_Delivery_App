@@ -1,7 +1,5 @@
 package domain.model;
 
-import persistence.XMLParsers;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.TreeMap;
@@ -64,16 +62,6 @@ public class Map {
         }
 
         return null;
-    }
-
-    public void loadMap(String filePath) {
-        Map loaded = XMLParsers.parseMap(filePath);
-
-        this.intersections.clear();
-        this.intersections.putAll(loaded.getIntersections());
-
-        this.adjencyList.clear();
-        this.adjencyList.putAll(loaded.getAdjencyList());
     }
 
     public ArrayList<RoadSegment> getRoadSegmentByName(String name) {

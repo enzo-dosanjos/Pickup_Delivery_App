@@ -26,6 +26,6 @@ public class Courier {
     }
 
     public String toString() {
-        return "Courier{id=" + id + ", name='" + name + "', shiftDuration=" + shiftDuration + "}";
+        return "Courier{id=" + id + ", name='" + name + "', shiftDuration=" + shiftDuration.toMinutes() + "min}";
     }
 }
