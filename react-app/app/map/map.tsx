@@ -146,12 +146,12 @@ export function Map(props: {
                             return (
                                 <Marker key={`${tour.courierId}-${stop.intersectionId}-${index}`} position={intersection.position} icon={icon}>
                                     <Popup>
-                                        <div>
+                                        <div className="map-popup-content">
                                             Courier ID: {tour.courierId} <br />
                                             Stop Type: {stop.type} <br />
                                             Request ID: {stop.requestID} <br />
                                             Intersection ID: {stop.intersectionId} <br />
-                                            <button onClick={() => props.onDeleteRequest?.(stop.requestID, tour.courierId)}>
+                                            <button className="delete-button" onClick={() => props.onDeleteRequest?.(stop.requestID, tour.courierId)}>
                                                 Delete Request
                                             </button>
                                         </div>
