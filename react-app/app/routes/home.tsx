@@ -4,6 +4,8 @@ import { useState, useEffect, useRef } from "react";
 import L from "leaflet";
 import { ModificationPanel } from "../components/ModificationPanel";
 import "../components/ModificationPanel.css";
+import Modal from "../components/Modal";
+import "./home.css";
 
 // Define the types for the data we expect from the API
 type ApiIntersection = {
@@ -66,7 +68,13 @@ export default function Home() {
     const [intersectionIdToRoadName, setIntersectionIdToRoadName] = useState<Map<number, string>>(new Map());
     const [bounds, setBounds] = useState<L.LatLngExpression[]>([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalMessage, setModalMessage] = useState("");
+    const [isAddingRequest, setIsAddingRequest] = useState(false);
+    const [isLoadingCouriers, setIsLoadingCouriers] = useState(false);
+    const [isLoadingRequests, setIsLoadingRequests] = useState(false);
+    const [isSavingRequests, setIsSavingRequests] = useState(false);
+    const [isDeletingRequest, setIsDeletingRequest] = useState(false);
 
         const [tours, setTours] = useState<MapTour[]>([]);
     const [loadingTours, setLoadingTours] = useState(true);
@@ -88,6 +96,11 @@ export default function Home() {
     // store intersectionMap globally for this component
     const intersectionMapRef = useRef<Map<number, ApiIntersection> | null>(null);
 
+    const closeModal = () => {
+        setIsModalOpen(false);
+        setModalMessage("");
+    };
+    
     useEffect(() => {
         if (fetchInitiated.current) {
             return;
@@ -165,16 +178,20 @@ export default function Home() {
                 setIntersections(transformedIntersections);
                 setRoadSegments(transformedRoadSegments);
 
+                // Load couriers automatically
+                await handleLoadCouriers();
+
                 // Finally, fetch and display tours
                 await displayTour();
 
             } catch (e: any) {
                 console.error("Caught error object:", e);
                 if (e.message && e.message.includes("TSP algorithm did not find a solution")) {
-                    setError("Failed to fetch initial data: No tour could be found with the current requests. Please modify requests.");
+                    setModalMessage("Failed to fetch initial data: No tour could be found with the current requests. Please modify requests.");
                 } else {
-                    setError(`Failed to fetch data: ${e.message}`);
+                    setModalMessage(`Failed to fetch data: ${e.message}`);
                 }
+                setIsModalOpen(true);
             } finally {
                 setLoading(false);
                 setLoadingTours(false);
@@ -251,6 +268,7 @@ export default function Home() {
     };
 
     const handleLoadCouriers = async () => {
+        setIsLoadingCouriers(true);
         try {
             const params = new URLSearchParams();
             params.append("filepath", courierFilePath);
@@ -268,17 +286,23 @@ export default function Home() {
             }
 
             console.log("Couriers loaded successfully");
+            setModalMessage("Couriers loaded successfully!");
+            setIsModalOpen(true);
         } catch (e: any) {
             console.error("Failed to load couriers:", e);
-            setError(`Failed to load couriers: ${e.message}`);
+            setModalMessage(`Failed to load couriers: ${e.message}`);
+            setIsModalOpen(true);
+        } finally {
+            setIsLoadingCouriers(false);
         }
     };
 
     const handleLoadRequests = async () => {
+        setIsLoadingRequests(true);
         try {
             // Load requests
             const requestParams = new URLSearchParams();
-            requestParams.append('filepath', 'src/main/resources/requests.xml');
+            requestParams.append('filepath', requestFilePath);
             requestParams.append("courierId", "1"); // todo: make dynamic
             const requestResponse = await fetch("http://localhost:8080/api/request/load", {
                 method: 'POST',
@@ -289,15 +313,21 @@ export default function Home() {
             });
 
             if (!requestResponse.ok) {
-                throw new Error(`HTTP error! status: ${requestResponse.status}`);
+                const errorText = await requestResponse.text();
+                throw new Error(errorText || `HTTP error! status: ${requestResponse.status}`);
             }
 
             console.log('Requests loaded successfully');
+            setModalMessage("Requests loaded successfully!");
+            setIsModalOpen(true);
             await displayTour();
 
         } catch (e: any) {
             console.error("Failed to load requests:", e);
-            setError(`Failed to load requests: ${e.message}`);
+            setModalMessage(`Failed to load requests: ${e.message}`);
+            setIsModalOpen(true);
+        } finally {
+            setIsLoadingRequests(false);
         }
     };
 
@@ -306,6 +336,7 @@ export default function Home() {
             return;
         }
 
+        setIsAddingRequest(true);
         try {
             // First, get the warehouse ID from the backend
             const warehouseResponse = await fetch('http://localhost:8080/api/request/warehouse');
@@ -333,10 +364,16 @@ export default function Home() {
             });
 
             if (!response.ok) {
+                const errorText = await response.text();
+                if (errorText.includes("TSP algorithm did not find a solution")) {
+                    throw new Error("TSP algorithm did not find a solution");
+                }
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
             console.log('Request added successfully');
+            setModalMessage("Request added successfully!");
+            setIsModalOpen(true);
 
             // Finally, fetch and display tours
             await displayTour();
@@ -344,11 +381,13 @@ export default function Home() {
         } catch (e: any) {
             console.error("Failed to add request:", e);
             if (e.message && e.message.includes("TSP algorithm did not find a solution")) {
-                setError("Failed to add request: No tour could be found for this courier. Please try with different parameters or another courier.");
+                setModalMessage("Failed to add request: No tour could be found for this courier. Please try with different parameters or another courier.");
             } else {
-                setError(`Failed to add request: ${e.message}`);
+                setModalMessage(`Failed to add request: ${e.message}`);
             }
+            setIsModalOpen(true);
         } finally {
+            setIsAddingRequest(false);
             handleCancel();
         }
     };
@@ -367,6 +406,7 @@ export default function Home() {
     };
 
     const handleSaveRequests = async () => {
+        setIsSavingRequests(true);
         try {
             const params = new URLSearchParams();
             params.append('filepath', 'src/main/resources/requests_updated.xml');
@@ -384,13 +424,19 @@ export default function Home() {
             }
 
             console.log('Requests saved successfully');
+            setModalMessage("Requests saved successfully!");
+            setIsModalOpen(true);
         } catch (e: any) {
             console.error("Failed to save requests:", e);
-            setError(`Failed to save requests: ${e.message}`);
+            setModalMessage(`Failed to save requests: ${e.message}`);
+            setIsModalOpen(true);
+        } finally {
+            setIsSavingRequests(false);
         }
     };
 
     const handleDeleteRequest = async (requestId: number, courierId: number) => {
+        setIsDeletingRequest(true);
         try {
             const params = new URLSearchParams();
             params.append('requestId', requestId.toString());
@@ -405,18 +451,27 @@ export default function Home() {
             });
 
             if (!response.ok) {
+                const errorText = await response.text();
+                if (errorText.includes("TSP algorithm did not find a solution")) {
+                    throw new Error("TSP algorithm did not find a solution");
+                }
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
             console.log('Request deleted successfully');
+            setModalMessage("Request deleted successfully!");
+            setIsModalOpen(true);
 
         } catch (e: any) {
             console.error("Failed to delete request:", e);
             if (e.message && e.message.includes("TSP algorithm did not find a solution")) {
-                setError("Failed to delete request: Deleting this request would lead to no valid tour. Please try another action.");
+                setModalMessage("Failed to delete request: Deleting this request would lead to no valid tour. Please try another action.");
             } else {
-                setError(`Failed to delete request: ${e.message}`);
+                setModalMessage(`Failed to delete request: ${e.message}`);
             }
+            setIsModalOpen(true);
+        } finally {
+            setIsDeletingRequest(false);
         }
     };
 
@@ -424,19 +479,18 @@ export default function Home() {
         return <div>Loading data...</div>;
     }
 
-    if (error) {
-        return <div>Error: {error}</div>;
-    }
-
     return (
         <div>
+            {isModalOpen && (
+                <Modal message={modalMessage} onClose={closeModal} />
+            )}
             <h1>Welcome to our brand new pick-up & delivery app !</h1>
             <div>
                 <button onClick={openModificationPanel} style={{ marginBottom: '10px', padding: '10px', marginRight: '10px' }}>
                     Add a Request
                 </button>
-                <button onClick={handleSaveRequests} style={{ marginBottom: '10px', padding: '10px' }}>
-                    Save Requests
+                <button onClick={handleSaveRequests} style={{ marginBottom: '10px', padding: '10px' }} disabled={isSavingRequests}>
+                    {isSavingRequests ? "Saving..." : "Save Requests"}
                 </button>
             </div>
 
@@ -454,8 +508,9 @@ export default function Home() {
                     <button
                         onClick={handleLoadRequests}
                         style={{ padding: "8px", marginLeft: "8px" }}
+                        disabled={isLoadingRequests}
                     >
-                        Load Requests
+                        {isLoadingRequests ? "Loading..." : "Load Requests"}
                     </button>
                 </div>
 
@@ -472,8 +527,9 @@ export default function Home() {
                     <button
                         onClick={handleLoadCouriers}
                         style={{ padding: "8px", marginLeft: "8px" }}
+                        disabled={isLoadingCouriers}
                     >
-                        Load Couriers
+                        {isLoadingCouriers ? "Loading..." : "Load Couriers"}
                     </button>
                 </div>
             </div>
@@ -489,6 +545,7 @@ export default function Home() {
                     onCancel={handleCancel}
                     selectionMode={selectionMode}
                     setSelectionMode={setSelectionMode}
+                    isAddingRequest={isAddingRequest}
                 />
             )}
             {bounds.length > 0 && (

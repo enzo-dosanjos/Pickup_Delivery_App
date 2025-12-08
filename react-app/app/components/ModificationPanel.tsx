@@ -10,6 +10,7 @@ type ModificationPanelProps = {
     onCancel: () => void;
     selectionMode: 'pickup' | 'delivery' | null;
     setSelectionMode: (mode: 'pickup' | 'delivery') => void;
+    isAddingRequest: boolean;
 };
 
 export function ModificationPanel({
@@ -20,7 +21,8 @@ export function ModificationPanel({
     onAddRequest,
     onCancel,
     selectionMode,
-    setSelectionMode
+    setSelectionMode,
+    isAddingRequest
 }: ModificationPanelProps) {
     return (
         <div className="modification-panel">
@@ -31,6 +33,7 @@ export function ModificationPanel({
                 <button
                     className={`select-button ${selectionMode === 'pickup' ? 'active' : ''}`}
                     onClick={() => setSelectionMode('pickup')}
+                    disabled={isAddingRequest}
                 >
                     Select Pickup
                 </button>
@@ -41,20 +44,21 @@ export function ModificationPanel({
                 <button
                     className={`select-button ${selectionMode === 'delivery' ? 'active' : ''}`}
                     onClick={() => setSelectionMode('delivery')}
+                    disabled={isAddingRequest}
                 >
                     Select Delivery
                 </button>
             </div>
             <div className="actions">
-                <button className="cancel-button" onClick={onCancel}>
+                <button className="cancel-button" onClick={onCancel} disabled={isAddingRequest}>
                     Cancel
                 </button>
                 <button
                     className="add-button"
                     onClick={onAddRequest}
-                    disabled={pickupId === null || deliveryId === null}
+                    disabled={pickupId === null || deliveryId === null || isAddingRequest}
                 >
-                    Add Request
+                    {isAddingRequest ? "Adding..." : "Add Request"}
                 </button>
             </div>
         </div>
