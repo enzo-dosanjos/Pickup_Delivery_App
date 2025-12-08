@@ -151,9 +151,11 @@ export function Map(props: {
                                             Stop Type: {stop.type} <br />
                                             Request ID: {stop.requestID} <br />
                                             Intersection ID: {stop.intersectionId} <br />
-                                            <button className="delete-button" onClick={() => props.onDeleteRequest?.(stop.requestID, tour.courierId)}>
-                                                Delete Request
-                                            </button>
+                                            {stop.type !== StopType.WAREHOUSE && stop.requestID >= 0 && (
+                                                <button className="delete-button" onClick={() => props.onDeleteRequest?.(stop.requestID, tour.courierId)}>
+                                                    Delete Request
+                                                </button>
+                                            )}
                                         </div>
                                     </Popup>
                                 </Marker>

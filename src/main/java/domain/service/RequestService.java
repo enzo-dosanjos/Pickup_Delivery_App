@@ -31,4 +31,8 @@ public class RequestService {
     public PickupDelivery getPickupDelivery() {
         return pickupDelivery;
     }
+
+    public Request getRequestById(long requestId) {
+        return pickupDelivery.findRequestById(requestId);
+    }
 }

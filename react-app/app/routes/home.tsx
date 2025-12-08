@@ -459,6 +459,7 @@ export default function Home() {
             }
 
             console.log('Request deleted successfully');
+            await displayTour();
             setModalMessage("Request deleted successfully!");
             setIsModalOpen(true);
 

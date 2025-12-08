@@ -78,8 +78,28 @@ public class RequestController {
     @PostMapping("/delete")
     public ResponseEntity<?> deleteRequest(@RequestParam long requestId,
                                            @RequestParam long courierId) {
+        Request originalRequest = requestService.getRequestById(requestId);
+        if (originalRequest == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Request with ID " + requestId + " not found.");
+        }
+
+        // 1. Speculatively delete the request
         requestService.deleteRequest(courierId, requestId);
-        return recomputeTourAndHandleExceptions(courierId);
+
+        try {
+            // 2. Attempt to recompute the tour with the request deleted
+            planningService.recomputeTourForCourier(courierId);
+            // If recomputation succeeds, the deletion is confirmed.
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            // 3. If recomputation fails, roll back the deletion by re-adding the request
+            requestService.addRequest(courierId, originalRequest);
+            // And revert tour to its previous state
+            // (or indicate that the client should refresh its view as the tour for this courier is not valid anymore)
+            // For now, simply indicating that the deletion would lead to an unplannable tour
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("Deleting this request would lead to an unplannable tour for courier " + courierId + ". Deletion aborted. Error: " + e.getMessage());
+        }
     }
 
     private ResponseEntity<?> recomputeTourAndHandleExceptions(long courierId) {
