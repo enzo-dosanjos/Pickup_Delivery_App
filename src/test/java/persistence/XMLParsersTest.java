@@ -2,18 +2,23 @@ package persistence;
 
 import domain.model.*;
 import org.junit.jupiter.api.Test;
-import org.xml.sax.SAXException;
 
-import javax.xml.parsers.ParserConfigurationException;
-import java.io.IOException;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.TreeMap;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Unit tests for the {@link XMLParsers} class.
+ * Verifies the correctness of XML parsing for map and request data.
+ */
 class XMLParsersTest {
 
+    /**
+     * Tests that the {@code parseMap} method correctly loads intersections and road segments
+     * from a valid XML file.
+     */
     @Test
     void checkParseMapLoadsIntersectionsAndRoadSegments() {
         String filePath = "src/test/resources/testMap.xml";
@@ -29,6 +34,10 @@ class XMLParsersTest {
         assertEquals(2, map.getAdjencyList().size(), "There should be 2 road segments list for 5 intersections");
     }
 
+    /**
+     * Tests that the {@code parseRequests} method correctly loads warehouse and request data
+     * from a valid XML file.
+     */
     @Test
     void checkParseRequestsLoadsWarehouseRequests() {
         String filePath = "src/test/resources/testRequest.xml";
@@ -46,6 +55,10 @@ class XMLParsersTest {
         assertEquals(240, pickupDelivery.getRequests().get(pickupDelivery.getRequestsPerCourier().get(1L).getFirst()).getDeliveryDuration().toSeconds(), "The first request delivery duration for courier 1 should match the expected value");
     }
 
+    /**
+     * Tests that the {@code parseRequests} method returns false when the warehouse ID in the XML file
+     * does not match the existing warehouse ID in the {@link PickupDelivery} object.
+     */
     @Test
     void checkFalseReturnWhenDifferentWarehouseIds() {
         String filePath = "src/test/resources/testRequest.xml";

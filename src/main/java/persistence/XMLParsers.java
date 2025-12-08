@@ -11,7 +11,17 @@ import java.io.File;
 import java.time.Duration;
 import java.util.ArrayList;
 
+/**
+ * Utility class for parsing XML files to extract map and request data.
+ */
 public class XMLParsers {
+
+    /**
+     * Parses an XML file to create a Map object containing intersections and road segments.
+     *
+     * @param filePath the path to the XML file containing the map data
+     * @return a Map object populated with intersections and road segments
+     */
     public static Map parseMap(String filePath) {
         Map map = new Map();
 
@@ -66,6 +76,14 @@ public class XMLParsers {
         return map;
     }
 
+    /**
+     * Parses an XML file to populate a PickupDelivery object with requests and depot information.
+     *
+     * @param filePath the path to the XML file containing the requests data
+     * @param courierId the ID of the courier for whom the requests are being parsed
+     * @param pickupDeliveryToFill the PickupDelivery object to populate with parsed data
+     * @return true if the parsing was successful, false otherwise
+     */
     public static boolean parseRequests(String filePath, long courierId, PickupDelivery pickupDeliveryToFill) {
         try {
             // Initialise XML parser
@@ -115,6 +133,7 @@ public class XMLParsers {
 
         } catch (Exception e) {
             e.printStackTrace();
+            return false;
         }
 
         return true;

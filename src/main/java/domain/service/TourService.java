@@ -16,13 +16,25 @@ import persistence.XMLParsers;
 import java.time.Duration;
 import java.time.LocalDateTime;
 
+/**
+ * Service class for managing tours and couriers.
+ * Provides functionality to manage couriers, create tours, and handle requests.
+ */
 @Service
 public class TourService {
+    /** Number of couriers managed by the service. */
     private int numCouriers;
+
+    /** List of couriers managed by the service. */
     private ArrayList<Courier> couriers;
-    private TreeMap<Long,Tour> tours;
+
+    /** Map of tours associated with each courier ID. */
+    private TreeMap<Long, Tour> tours;
+
+    /** Map of request order constraints for each courier. */
     private TreeMap<Long, HashMap<Long, Long>> requestsOrder;
 
+    /** Initializes a new instance of the TourService class. */
     public TourService() {
         this.numCouriers = 0;
         this.couriers = new ArrayList<>();
@@ -30,16 +42,34 @@ public class TourService {
         this.requestsOrder = new TreeMap<>();
     }
 
+    /**
+     * Sets the tour for a specific courier.
+     *
+     * @param courierId the ID of the courier
+     * @param tour the tour to be assigned to the courier
+     */
     public void setTourForCourier(long courierId, Tour tour) {
         tours.put(courierId, tour);
     }
 
+    /**
+     * Adds a courier to the service.
+     *
+     * @param courier the courier to be added
+     * @return true if the courier was added successfully, false otherwise
+     */
     public boolean addCourier(Courier courier) {
         boolean added = couriers.add(courier);
         if (added) { numCouriers++; }
         return added;
     }
 
+    /**
+     * Removes a courier from the service by ID.
+     *
+     * @param courierId the ID of the courier to be removed
+     * @return true if the courier was removed successfully, false otherwise
+     */
     public boolean removeCourier(long courierId) {
         for (int i = 0; i < couriers.size(); i++) {
             if (couriers.get(i).getId() == courierId) {
@@ -52,6 +82,11 @@ public class TourService {
         return false;
     }
 
+    /**
+     * Loads couriers from an XML file and adds them to the service.
+     *
+     * @param filepath the path to the XML file containing courier data
+     */
     public void loadCouriers(String filepath) {
         ArrayList<Courier> couriersToAdd = XMLParsers.parseCouriers(filepath);
 
@@ -61,6 +96,15 @@ public class TourService {
         }
     }
 
+    /**
+     * Updates the request order for a specific courier.
+     * Adds a constraint that one request must be served before another.
+     *
+     * @param requestBeforeId the ID of the request that must be served first
+     * @param requestAfterId the ID of the request that must be served after
+     * @param courierId the ID of the courier
+     * @return true if the constraint was added successfully, false otherwise
+     */
     public boolean updateRequestOrder(long requestBeforeId, long requestAfterId, long courierId)
     // Adds a constraint that requestBeforeId must be served before requestAfterId by the specified courier
     {
@@ -79,6 +123,17 @@ public class TourService {
         return true;
     }
 
+    /**
+     * Converts a graph solution into a tour for a specific courier.
+     *
+     * @param pickupDelivery the pickup and delivery data
+     * @param startTime the start time of the tour
+     * @param courierId the ID of the courier
+     * @param solution the solution array representing the order of stops
+     * @param vertices the array of vertices in the graph
+     * @param costs the cost matrix for the graph
+     * @return the generated tour
+     */
     public Tour convertGraphToTour(PickupDelivery pickupDelivery, LocalDateTime startTime, long courierId, Integer[] solution, Long[] vertices, double[][] costs) {
         long intersectionId;
         Integer previousTourStop = null;
@@ -96,21 +151,16 @@ public class TourService {
         boolean first = true;
         Duration commuteDuration = Duration.ZERO;
 
-        for(Integer i : solution)
-        {
+        for (Integer i : solution) {
             duration = Duration.ZERO;
             intersectionId = vertices[i];
 
-
-            if(first)
-            {
+            if (first) {
                 stopType = StopType.WAREHOUSE;
                 requestId = -1;
                 arrivalTime = tour.getStartTime();
                 first = false;
-            }
-            else
-            {
+            } else {
                 Entry<Request, StopType> result = pickupDelivery.findRequestByIntersectionId(intersectionId);
 
                 if (result == null) {
@@ -120,15 +170,11 @@ public class TourService {
 
                 request = result.getKey();
                 stopType = result.getValue();
-                arrivalTime =  tour.getStartTime().plus(tour.getTotalDuration());
+                arrivalTime = tour.getStartTime().plus(tour.getTotalDuration());
 
-                if (stopType == StopType.PICKUP)
-                {
+                if (stopType == StopType.PICKUP) {
                     duration = request.getPickupDuration();
-                }
-
-                else if(stopType == StopType.DELIVERY)
-                {
+                } else if (stopType == StopType.DELIVERY) {
                     duration = request.getDeliveryDuration();
                 }
                 minutes = costs[previousTourStop][i];
@@ -143,9 +189,9 @@ public class TourService {
             tour.addStop(tourStop);
             tour.updateTotalDuration(duration.plus(commuteDuration));
             previousTourStop = i;
-
         }
-        //add commute time between last stop and warehouse
+
+        // Add commute time between last stop and warehouse
         minutes = costs[solution[solution.length - 1]][solution[0]];
         long wholeMinutes = (long) minutes;
         long seconds = Math.round((minutes - wholeMinutes) * 60);
@@ -154,7 +200,15 @@ public class TourService {
         return tour;
     }
 
-    public Tour addRoadsToTour(Tour tour, DijkstraTable table, Map map){
+    /**
+     * Adds road segments to a tour based on the Dijkstra table and map data.
+     *
+     * @param tour the tour to which road segments will be added
+     * @param table the Dijkstra table containing shortest path information
+     * @param map the map containing road segment data
+     * @return the updated tour with road segments added
+     */
+    public Tour addRoadsToTour(Tour tour, DijkstraTable table, Map map) {
         List<TourStop> stops = tour.getStops();
         List<Long> reverseIntersectPath = new ArrayList<>();
 
@@ -165,15 +219,14 @@ public class TourService {
         CellInfo info;
         RoadSegment road;
 
-        //add all the visited intersections in order to a list
+        // Add all the visited intersections in order to a list
         for (int i = stops.size(); i > 0; i--) {
-            if(i == stops.size()){
+            if (i == stops.size()) {
                 targetIntersectionId = stops.get(0).getIntersectionId();
-            }
-            else{
+            } else {
                 targetIntersectionId = stops.get(i).getIntersectionId();
             }
-            sourceIntersectionId = stops.get(i-1).getIntersectionId();
+            sourceIntersectionId = stops.get(i - 1).getIntersectionId();
             currentIntersectionId = targetIntersectionId;
             while (currentIntersectionId != sourceIntersectionId) {
                 reverseIntersectPath.add(currentIntersectionId);
@@ -185,25 +238,46 @@ public class TourService {
         reverseIntersectPath.add(stops.get(0).getIntersectionId());
         Collections.reverse(reverseIntersectPath);
 
-        for (int i = 0; i < reverseIntersectPath.size()-1; i++){
-            road = map.getRoadSegment(reverseIntersectPath.get(i), reverseIntersectPath.get(i+1));
-            tour.addRoadSegment(road); }
+        for (int i = 0; i < reverseIntersectPath.size() - 1; i++) {
+            road = map.getRoadSegment(reverseIntersectPath.get(i), reverseIntersectPath.get(i + 1));
+            tour.addRoadSegment(road);
+        }
 
         return tour;
     }
 
+    /**
+     * Retrieves the list of couriers managed by the service.
+     *
+     * @return the list of couriers
+     */
     public ArrayList<Courier> getCouriers() {
         return couriers;
     }
 
+    /**
+     * Retrieves the number of couriers managed by the service.
+     *
+     * @return the number of couriers
+     */
     public int getNumCouriers() {
         return numCouriers;
     }
 
+    /**
+     * Retrieves the map of tours associated with each courier ID.
+     *
+     * @return the map of tours
+     */
     public TreeMap<Long, Tour> getTours() {
         return tours;
     }
 
+    /**
+     * Retrieves the map of request order constraints for each courier.
+     *
+     * @return the map of request order constraints
+     */
     public TreeMap<Long, HashMap<Long, Long>> getRequestOrder() {
         return requestsOrder;
     }
