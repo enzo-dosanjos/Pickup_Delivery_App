@@ -207,4 +207,14 @@ public class TourService {
     public TreeMap<Long, HashMap<Long, Long>> getRequestOrder() {
         return requestsOrder;
     }
+
+    public ArrayList<Courier> getAvailableCouriers() {
+        ArrayList<Courier> availableCouriers = new ArrayList<>();
+        for (Courier courier : couriers) {
+            if (courier.isAvailable()) {
+                availableCouriers.add(courier);
+            }
+        }
+        return availableCouriers;
+    }
 }

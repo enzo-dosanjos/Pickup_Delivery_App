@@ -81,6 +81,8 @@ package "Domain" {
             - name : string
             - shiftDuration : time.Duration
             - availabilityStatus : AvailabilityStatus
+            + isAvailable() : boolean
+            + isBusy() : boolean
         }
 
         enum AvailabilityStatus {
@@ -255,6 +257,7 @@ package "Presentation" {
         + updateRequestOrder(requestBeforeId: long, requestAfterId: long, courierId: long) : void
         + showRequestDetails(instersectionId: long) : void
         + getTours() : Map<long, Tour>
+        + getAvailableCouriers() : List<Courier>
     }
 
     class MapController {
