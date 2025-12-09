@@ -2,7 +2,7 @@ import type { Route } from "./+types/home";
 import { Map as MapComponent, type Intersection as MapIntersection, type Tour as MapTour, StopType as MapStopType } from "../map/map";
 import { useState, useEffect, useRef } from "react";
 import L from "leaflet";
-import { ModificationPanel } from "../components/ModificationPanel";
+import { ModificationPanel, type Courier as PanelCourier } from "../components/ModificationPanel";
 import "../components/ModificationPanel.css";
 
 // Define the types for the data we expect from the API
@@ -50,7 +50,7 @@ type ApiRequest = {
 type ApiCourier = {
     id: number;
     name: string;
-    shiftDuration: number;
+    shiftDuration: string;
 }
 
 export function meta({}: Route.MetaArgs) {
@@ -67,8 +67,7 @@ export default function Home() {
     const [bounds, setBounds] = useState<L.LatLngExpression[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-
-        const [tours, setTours] = useState<MapTour[]>([]);
+    const [tours, setTours] = useState<MapTour[]>([]);
     const [loadingTours, setLoadingTours] = useState(true);
 
     const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -77,6 +76,11 @@ export default function Home() {
     const [deliveryId, setDeliveryId] = useState<number | null>(null);
     const [pickupName, setPickupName] = useState<string | null>(null);
     const [deliveryName, setDeliveryName] = useState<string | null>(null);
+    const defaultDuration = 120;
+    const [pickupDuration, setPickupDuration] = useState<number>(defaultDuration);
+    const [deliveryDuration, setDeliveryDuration] = useState<number>(defaultDuration);
+    const [couriersList, setCouriersList] = useState<PanelCourier[]>([]);
+    const [selectedCourier, setSelectedCourier] = useState<string>("0");
     const [warehouseId, setWarehouseId] = useState<number | null>(null);
 
     // file paths
@@ -268,6 +272,8 @@ export default function Home() {
             }
 
             console.log("Couriers loaded successfully");
+
+            fetchAvailableCouriers();
         } catch (e: any) {
             console.error("Failed to load couriers:", e);
             setError(`Failed to load couriers: ${e.message}`);
@@ -301,6 +307,28 @@ export default function Home() {
         }
     };
 
+    const fetchAvailableCouriers = async () =>
+    {
+        try {
+            // Fetch couriers from backend
+            const couriersResponse = await fetch("http://localhost:8080/api/tour/available-couriers");
+            if (!couriersResponse.ok) {
+                throw new Error(`HTTP error! status: ${couriersResponse.status}`);
+            }
+
+            // Backend returns ArrayList<Courier> -> JSON object: { "1": {..tour..}, "2": {..} }
+            const apiCouriers: ApiCourier[] = await couriersResponse.json();
+            console.log("Raw couriers data from API:", apiCouriers);
+
+            setCouriersList(apiCouriers);
+
+            console.log("Couriers list fetched successfully");
+        } catch (e: any) {
+            console.error("Failed to fetch couriers:", e);
+            setError(`Failed to fetch couriers: ${e.message}`);
+        }
+    }
+
     const handleAddRequest = async () => {
         if (pickupId === null || deliveryId === null) {
             return;
@@ -319,10 +347,10 @@ export default function Home() {
             const params = new URLSearchParams();
             params.append('warehouseId', fetchedWarehouseId.toString());
             params.append('pickupIntersectionId', pickupId.toString());
-            params.append('pickupDurationInSeconds', '300'); // Hardcoded duration
+            params.append('pickupDurationInSeconds', pickupDuration.toString());
             params.append('deliveryIntersectionId', deliveryId.toString());
-            params.append('deliveryDurationInSeconds', '300'); // Hardcoded duration
-            params.append('courierId', '1'); // Hardcoded courier ID
+            params.append('deliveryDurationInSeconds', deliveryDuration.toString());
+            params.append('courierId', selectedCourier);
 
             const response = await fetch('http://localhost:8080/api/request/add', {
                 method: 'POST',
@@ -349,20 +377,23 @@ export default function Home() {
                 setError(`Failed to add request: ${e.message}`);
             }
         } finally {
-            handleCancel();
+            handleClosePanel();
         }
     };
 
-    const handleCancel = () => {
+    const handleClosePanel = () => {
         setIsPanelOpen(false);
         setSelectionMode(null);
         setPickupId(null);
         setDeliveryId(null);
         setPickupName(null);
         setDeliveryName(null);
+        setPickupDuration(defaultDuration);
+        setDeliveryDuration(defaultDuration);
     };
 
     const openModificationPanel = () => {
+        fetchAvailableCouriers();
         setIsPanelOpen(true);
     };
 
@@ -485,8 +516,16 @@ export default function Home() {
                     deliveryId={deliveryId}
                     pickupName={pickupName}
                     deliveryName={deliveryName}
+                    defaultDuration={defaultDuration}
+                    pickupDuration={pickupDuration}
+                    deliveryDuration={deliveryDuration}
+                    setPickupDuration={setPickupDuration}
+                    setDeliveryDuration={setDeliveryDuration}
+                    couriersList={couriersList}
+                    selectedCourier={selectedCourier}
+                    setSelectedCourier={setSelectedCourier}
                     onAddRequest={handleAddRequest}
-                    onCancel={handleCancel}
+                    onCancel={handleClosePanel}
                     selectionMode={selectionMode}
                     setSelectionMode={setSelectionMode}
                 />

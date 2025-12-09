@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -57,5 +58,10 @@ public class TourController {
     @GetMapping("/tours")
     public Map<Long, Tour> getTours() {
         return tourService.getTours();
+    }
+
+    @GetMapping("/available-couriers")
+    public List<Courier> getAvailableCouriers() {
+        return tourService.getAvailableCouriers();
     }
 }
