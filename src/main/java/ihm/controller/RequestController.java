@@ -28,6 +28,12 @@ public class RequestController {
         this.tourService = tourService;
     }
 
+    @PostMapping("/save")
+    public ResponseEntity<?> saveRequests(@RequestParam String filepath) {
+        requestService.saveRequests(filepath);
+        return ResponseEntity.ok().build();
+    }
+
     @PostMapping("/load")
     public ResponseEntity<?> loadRequests(@RequestParam String filepath,
                                           @RequestParam long courierId) {
