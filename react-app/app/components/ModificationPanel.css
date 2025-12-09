@@ -57,7 +57,7 @@
 
 .modification-panel .cancel-button {
     background-color: #f1f1f1;
-    color: #333;
+    color: #333333;
 }
 
 .modification-panel .select-button {
@@ -68,4 +68,21 @@
 
 .modification-panel .select-button.active {
     background-color: #28a745;
+}
+
+.modification-panel select {
+    border-radius: 5px;
+    background-color: #f1f1f1;
+    color: #333333;
+    padding-left: 5px;
+    margin-left: 10px;
+}
+
+.modification-panel input {
+    width: 3rem;
+    border: thin solid #6c757d;
+    border-radius: 3px;
+    color: #333333;
+    padding-left: 5px;
+    margin-left: 10px;
 }
