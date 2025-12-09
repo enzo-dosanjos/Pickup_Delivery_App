@@ -140,9 +140,11 @@ public class XMLParsers {
                 long id = Long.parseLong(courierElement.getAttribute("id"));
                 String name = courierElement.getAttribute("name");
                 String shiftDurationMinutesStr = courierElement.getAttribute("shiftDurationMinutes");
+              
                 if (shiftDurationMinutesStr == null || shiftDurationMinutesStr.isBlank()) {
                     shiftDurationMinutesStr = courierElement.getAttribute("shiftDurationInMinutes");
                 }
+              
                 long shiftDurationMinutes = Long.parseLong(shiftDurationMinutesStr);
                 Duration shiftDuration = Duration.ofMinutes(shiftDurationMinutes);
 
