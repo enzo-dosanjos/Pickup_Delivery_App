@@ -39,6 +39,10 @@ public class Courier {
         return availabilityStatus;
     }
 
+    public void setAvailabilityStatus(AvailabilityStatus availabilityStatus) {
+        this.availabilityStatus = availabilityStatus;
+    }
+
     public String toString() {
         return "Courier{id=" + id + ", name='" + name + "', shiftDuration=" + shiftDuration.toMinutes() + "min "+ ", availabilityStatus=" + availabilityStatus + "}";
     }
