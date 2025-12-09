@@ -271,6 +271,8 @@ export default function Home() {
             }
 
             console.log("Couriers loaded successfully");
+
+            fetchAvailableCouriers();
         } catch (e: any) {
             console.error("Failed to load couriers:", e);
             setError(`Failed to load couriers: ${e.message}`);
