@@ -76,8 +76,9 @@ export default function Home() {
     const [deliveryId, setDeliveryId] = useState<number | null>(null);
     const [pickupName, setPickupName] = useState<string | null>(null);
     const [deliveryName, setDeliveryName] = useState<string | null>(null);
-    const [pickupDuration, setPickupDuration] = useState<number>(120);
-    const [deliveryDuration, setDeliveryDuration] = useState<number>(120);
+    const defaultDuration = 120;
+    const [pickupDuration, setPickupDuration] = useState<number>(defaultDuration);
+    const [deliveryDuration, setDeliveryDuration] = useState<number>(defaultDuration);
     const [couriersList, setCouriersList] = useState<PanelCourier[]>([]);
     const [selectedCourier, setSelectedCourier] = useState<string>("0");
     const [warehouseId, setWarehouseId] = useState<number | null>(null);
@@ -376,17 +377,19 @@ export default function Home() {
                 setError(`Failed to add request: ${e.message}`);
             }
         } finally {
-            handleCancel();
+            handleClosePanel();
         }
     };
 
-    const handleCancel = () => {
+    const handleClosePanel = () => {
         setIsPanelOpen(false);
         setSelectionMode(null);
         setPickupId(null);
         setDeliveryId(null);
         setPickupName(null);
         setDeliveryName(null);
+        setPickupDuration(defaultDuration);
+        setDeliveryDuration(defaultDuration);
     };
 
     const openModificationPanel = () => {
@@ -513,6 +516,7 @@ export default function Home() {
                     deliveryId={deliveryId}
                     pickupName={pickupName}
                     deliveryName={deliveryName}
+                    defaultDuration={defaultDuration}
                     pickupDuration={pickupDuration}
                     deliveryDuration={deliveryDuration}
                     setPickupDuration={setPickupDuration}
@@ -521,7 +525,7 @@ export default function Home() {
                     selectedCourier={selectedCourier}
                     setSelectedCourier={setSelectedCourier}
                     onAddRequest={handleAddRequest}
-                    onCancel={handleCancel}
+                    onCancel={handleClosePanel}
                     selectionMode={selectionMode}
                     setSelectionMode={setSelectionMode}
                 />

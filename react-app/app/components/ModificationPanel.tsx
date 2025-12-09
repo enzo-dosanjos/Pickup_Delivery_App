@@ -12,10 +12,11 @@ type ModificationPanelProps = {
     deliveryId: number | null;
     pickupName: string | null;
     deliveryName: string | null;
-    pickupDuration: number,
-    deliveryDuration: number,
-    setPickupDuration: (duration: number) => void,
-    setDeliveryDuration: (duration: number) => void,
+    defaultDuration: number | null;
+    pickupDuration: number;
+    deliveryDuration: number;
+    setPickupDuration: (duration: number) => void;
+    setDeliveryDuration: (duration: number) => void;
     couriersList: Courier[] | null;
     selectedCourier: string;
     setSelectedCourier: (courier: string) => void;
@@ -30,6 +31,7 @@ export function ModificationPanel({
     deliveryId,
     pickupName,
     deliveryName,
+    defaultDuration,
     pickupDuration,
     deliveryDuration,
     setPickupDuration,
@@ -52,7 +54,7 @@ export function ModificationPanel({
                 </div>
                 <div>
                     <span className="info-value">Duration (s):</span>
-                    <input name={"pickupDuration"} defaultValue={"120"}
+                    <input name={"pickupDuration"} defaultValue={defaultDuration?.toString()}
                            value={pickupDuration} onChange={(duration) => setPickupDuration(Number(duration.target.value))}
                     />
                 </div>
@@ -72,7 +74,7 @@ export function ModificationPanel({
                 </div>
                 <div>
                     <span className="info-value">Duration (s):</span>
-                    <input name={"deliveryDuration"} defaultValue={"120"}
+                    <input name={"deliveryDuration"} defaultValue={defaultDuration?.toString()}
                            value={deliveryDuration} onChange={(duration) => setDeliveryDuration(Number(duration.target.value))}
                     />
                 </div>
