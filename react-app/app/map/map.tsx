@@ -49,9 +49,10 @@ const deliveryIcon = new L.Icon({
 });
 
 const warehouseIcon = new L.Icon({
-    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png', // Using blue for warehouse for now
+    // House-shaped marker for the warehouse
+    iconUrl: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none'%3E%3Cpath fill='%231e88e5' d='M27.6 8.2a4 4 0 0 1 4.8 0l21 16.2a4 4 0 0 1 1.6 3.2V52a4 4 0 0 1-4 4h-10a4 4 0 0 1-4-4V40h-10v12a4 4 0 0 1-4 4h-10a4 4 0 0 1-4-4V27.6a4 4 0 0 1 1.6-3.2l21-16.2Z'/%3E%3Cpath fill='%23fff' d='M28 36h8v-8a4 4 0 0 0-8 0v8Z'/%3E%3C/svg%3E",
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-    iconSize: [25, 41],
+    iconSize: [41, 41],
     iconAnchor: [12, 41],
     popupAnchor: [1, -34],
     shadowSize: [41, 41]
