@@ -1,0 +1,11 @@
+.home .home-button {
+    background-color: #b1b1b1;
+    color: #333333;
+    padding: 5px;
+}
+
+.home input {
+    width: 300px;
+    margin-left: 10px;
+
+}

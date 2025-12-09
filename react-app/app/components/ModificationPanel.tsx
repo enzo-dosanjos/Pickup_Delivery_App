@@ -52,7 +52,7 @@ export function ModificationPanel({
                 </div>
                 <div>
                     <span className="info-value">Duration (s):</span>
-                    <input name={"pickupDuration"} defaultValue={"120"}
+                    <input name={"pickupDuration"} defaultValue={"120"} className={"panel-input"}
                            value={pickupDuration} onChange={(duration) => setPickupDuration(Number(duration.target.value))}
                     />
                 </div>
@@ -72,7 +72,7 @@ export function ModificationPanel({
                 </div>
                 <div>
                     <span className="info-value">Duration (s):</span>
-                    <input name={"deliveryDuration"} defaultValue={"120"}
+                    <input name={"deliveryDuration"} defaultValue={"120"} className={"panel-input"}
                            value={deliveryDuration} onChange={(duration) => setDeliveryDuration(Number(duration.target.value))}
                     />
                 </div>

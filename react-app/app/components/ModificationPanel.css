@@ -14,11 +14,7 @@
 .modification-panel h3 {
     margin-top: 0;
     font-size: 18px;
-    color: #333;
-}
-
-.modification-panel .info {
-    margin-bottom: 15px;
+    color: #333333;
 }
 
 .modification-panel .info-label {
@@ -38,11 +34,6 @@
 
 .modification-panel button {
     padding: 10px 15px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 600;
 }
 
 .modification-panel .add-button {
@@ -78,11 +69,6 @@
     margin-left: 10px;
 }
 
-.modification-panel input {
+.modification-panel .panel-input {
     width: 3rem;
-    border: thin solid #6c757d;
-    border-radius: 3px;
-    color: #333333;
-    padding-left: 5px;
-    margin-left: 10px;
 }

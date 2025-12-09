@@ -3,7 +3,7 @@ import { Map as MapComponent, type Intersection as MapIntersection, type Tour as
 import { useState, useEffect, useRef } from "react";
 import L from "leaflet";
 import { ModificationPanel, type Courier as PanelCourier } from "../components/ModificationPanel";
-import "../components/ModificationPanel.css";
+import "./home.css";
 
 // Define the types for the data we expect from the API
 type ApiIntersection = {
@@ -66,6 +66,7 @@ export default function Home() {
     const [intersectionIdToRoadName, setIntersectionIdToRoadName] = useState<Map<number, string>>(new Map());
     const [bounds, setBounds] = useState<L.LatLngExpression[]>([]);
     const [loading, setLoading] = useState(true);
+    const [couriersLoaded, setCouriersLoaded] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [tours, setTours] = useState<MapTour[]>([]);
     const [loadingTours, setLoadingTours] = useState(true);
@@ -270,6 +271,7 @@ export default function Home() {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
+            setCouriersLoaded(true);
             console.log("Couriers loaded successfully");
         } catch (e: any) {
             console.error("Failed to load couriers:", e);
@@ -455,18 +457,39 @@ export default function Home() {
     }
 
     return (
-        <div>
+        <div className={"home"}>
             <h1>Welcome to our brand new pick-up & delivery app !</h1>
             <div>
-                <button onClick={openModificationPanel} style={{ marginBottom: '10px', padding: '10px', marginRight: '10px' }}>
-                    Add a Request
+                <button onClick={openModificationPanel}
+                        className={"home-button"}>
+                    Add a request
                 </button>
-                <button onClick={handleSaveRequests} style={{ marginBottom: '10px', padding: '10px' }}>
-                    Save Requests
+                <button onClick={handleSaveRequests}
+                        className={"home-button"}>
+                    Save requests
                 </button>
             </div>
 
             <div style={{ marginBottom: "15px" }}>
+                {(!couriersLoaded) &&
+                    <div>
+                        <label style={{ marginRight: "8px" }}>
+                            Couriers XML path:&nbsp;
+                            <input
+                                type="text"
+                                value={courierFilePath}
+                                onChange={(e) => setCourierFilePath(e.target.value)}
+                            />
+                        </label>
+                        <button
+                            onClick={handleLoadCouriers}
+                            className={"home-button"}
+                        >
+                            Load Couriers
+                        </button>
+                    </div>
+                }
+
                 <div style={{ marginBottom: "8px" }}>
                     <label style={{ marginRight: "8px" }}>
                         Requests XML path:
@@ -474,32 +497,13 @@ export default function Home() {
                             type="text"
                             value={requestFilePath}
                             onChange={(e) => setRequestFilePath(e.target.value)}
-                            style={{ marginLeft: "8px", width: "300px" }}
                         />
                     </label>
                     <button
                         onClick={handleLoadRequests}
-                        style={{ padding: "8px", marginLeft: "8px" }}
+                        className={"home-button"}
                     >
                         Load Requests
-                    </button>
-                </div>
-
-                <div>
-                    <label style={{ marginRight: "8px" }}>
-                        Couriers XML path:
-                        <input
-                            type="text"
-                            value={courierFilePath}
-                            onChange={(e) => setCourierFilePath(e.target.value)}
-                            style={{ marginLeft: "8px", width: "300px" }}
-                        />
-                    </label>
-                    <button
-                        onClick={handleLoadCouriers}
-                        style={{ padding: "8px", marginLeft: "8px" }}
-                    >
-                        Load Couriers
                     </button>
                 </div>
             </div>
