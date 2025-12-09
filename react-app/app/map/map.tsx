@@ -143,6 +143,7 @@ export function Map(props: {
                             } else if (stop.type === StopType.WAREHOUSE) {
                                 icon = warehouseIcon;
                             }
+                            const stopOrder = index;
 
                             return (
                                 <Marker key={`${tour.courierId}-${stop.intersectionId}-${index}`} position={intersection.position} icon={icon}>
@@ -152,6 +153,7 @@ export function Map(props: {
                                             Stop Type: {stop.type} <br />
                                             Request ID: {stop.requestID} <br />
                                             Intersection ID: {stop.intersectionId} <br />
+                                            Order in tour: {stopOrder} <br />
                                             {stop.type !== StopType.WAREHOUSE && stop.requestID >= 0 && (
                                                 <button className="delete-button" onClick={() => props.onDeleteRequest?.(stop.requestID, tour.courierId)}>
                                                     Delete Request
