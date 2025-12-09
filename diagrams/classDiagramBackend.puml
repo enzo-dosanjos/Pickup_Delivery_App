@@ -153,6 +153,7 @@ package "Domain" {
             + deleteRequest(courierId: Long, requestId: long) : void
             + loadRequests(filepath: String) : void
             + saveRequests(filepath: String) : void
+            + getRequestById(requestId: long) : Request
         }
 
         class TourService {
@@ -237,6 +238,7 @@ package "Presentation" {
     class RequestController {
         - requestService : RequestService
         - planningService : PlanningService
+        - tourService : TourService
         + addRequest(warehouseId: Long, pickupIntersectionId: Long, pickupDurationInSeconds: long, deliveryIntersectionId: Long, deliveryDurationInSeconds: long, courierId: Long) : void
         + loadRequests(filepath: String, courrierId: long) : void
         + saveRequests(filepath: String) : void

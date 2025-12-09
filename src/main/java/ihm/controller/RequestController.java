@@ -107,8 +107,6 @@ public class RequestController {
             // 3. If recomputation fails, roll back the deletion by re-adding the request
             requestService.addRequest(courierId, originalRequest);
             // And revert tour to its previous state
-            // (or indicate that the client should refresh its view as the tour for this courier is not valid anymore)
-            // For now, simply indicating that the deletion would lead to an unplannable tour
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body("Deleting this request would lead to an unplannable tour for courier " + courierId + ". Deletion aborted. Error: " + e.getMessage());
         }
