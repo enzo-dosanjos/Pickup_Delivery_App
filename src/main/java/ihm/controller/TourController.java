@@ -1,6 +1,7 @@
 package ihm.controller;
 
 import domain.model.*;
+import domain.service.PlanningService;
 import domain.service.RequestService;
 import domain.service.TourService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +20,8 @@ import java.util.Map;
 @RequestMapping("/api/tour")
 public class TourController {
 
+    private final PlanningService planningService;
+
     private final TourService tourService; // The service responsible for managing tours and couriers.
 
     private final RequestService requestService; // The service responsible for managing requests.
@@ -30,9 +33,10 @@ public class TourController {
      * @param requestService the service responsible for managing requests
      */
     @Autowired
-    public TourController(TourService tourService, RequestService requestService) {
+    public TourController(TourService tourService, RequestService requestService, PlanningService planningService) {
         this.tourService = tourService;
         this.requestService = requestService;
+        this.planningService = planningService;
     }
 
     /**
@@ -74,26 +78,14 @@ public class TourController {
         tourService.loadCouriers(filepath);
     }
 
-    /**
-     * Updates the order of requests for a specific courier.
-     *
-     * @param requestBeforeId the ID of the request that should come before
-     * @param requestAfterId the ID of the request that should come after
-     * @param courierId the ID of the courier whose request order is to be updated
-     */
-    @PostMapping("/update-request-order")
-    public void updateRequestOrder(@RequestParam long requestBeforeId,
-                                   @RequestParam long requestAfterId,
-                                   @RequestParam long courierId) {
-        tourService.updateRequestOrder(requestBeforeId, requestAfterId, courierId);
-    }
 
 
     @PostMapping("/update-stop-order")
-    public void updateRequestOrder(@RequestParam long courierId,
+    public void updateStopOrder(@RequestParam long courierId,
                                    @RequestParam Integer precStopIndex,
                                    @RequestParam Integer followingStopIndex) {
         tourService.updateStopOrder(courierId, precStopIndex, followingStopIndex);
+        planningService.recomputeTourForCourier(courierId);
     }
 
     /**

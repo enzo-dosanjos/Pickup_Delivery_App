@@ -32,8 +32,6 @@ public class TourService {
     private TreeMap<Long, Tour> tours; //  Map of tours associated with each courier ID.
 
 
-    private TreeMap<Long, HashMap<Long, Long>> requestsOrder; // Map of request order constraints for each courier.
-
     private TreeMap<Long, HashMap<String, Set<String>>> precsByCourier;
 
 
@@ -42,7 +40,6 @@ public class TourService {
         this.numCouriers = 0;
         this.couriers = new ArrayList<>();
         this.tours = new TreeMap<>();
-        this.requestsOrder = new TreeMap<>();
         this.precsByCourier = new TreeMap<>();
     }
 
@@ -95,32 +92,6 @@ public class TourService {
         }
     }
 
-    /**
-     * Updates the request order for a specific courier.
-     * Adds a constraint that one request must be served before another.
-     *
-     * @param requestBeforeId the ID of the request that must be served first
-     * @param requestAfterId the ID of the request that must be served after
-     * @param courierId the ID of the courier
-     * @return true if the constraint was added successfully, false otherwise
-     */
-    public boolean updateRequestOrder(long requestBeforeId, long requestAfterId, long courierId)
-    // Adds a constraint that requestBeforeId must be served before requestAfterId by the specified courier
-    {
-        boolean courierExists = false;
-        for (Courier courier : couriers) {
-            if (courier.getId() == courierId) {
-                courierExists = true;
-            }
-        }
-        if (!courierExists) { return false; }
-
-        HashMap<Long, Long> constraints =
-                requestsOrder.computeIfAbsent(courierId, id -> new HashMap<>());
-        constraints.put(requestBeforeId, requestAfterId);
-
-        return true;
-    }
 
     /**
      * Generates a tour for a specific courier by using the solution calculated by TemplateTSP
@@ -359,11 +330,6 @@ public class TourService {
 
     public TreeMap<Long, Tour> getTours() {
         return tours;
-    }
-
-
-    public TreeMap<Long, HashMap<Long, Long>> getRequestOrder() {
-        return requestsOrder;
     }
 
     public TreeMap<Long, HashMap<String, Set<String>>> getPrecsByCourier() {
