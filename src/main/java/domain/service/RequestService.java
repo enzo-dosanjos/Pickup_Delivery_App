@@ -6,17 +6,30 @@ import org.springframework.stereotype.Service;
 import persistence.XMLParsers;
 import persistence.XMLWriters;
 
+
+/**
+ * Service class for managing requests and their association with couriers.
+ * Provides functionality to add requests, load requests from an XML file,
+ * and retrieve the current state of the PickupDelivery object.
+ */
 @Service
 public class RequestService {
 
-    private final PickupDelivery pickupDelivery;
-    private final XMLWriters xmlWriters;
+    private PickupDelivery pickupDelivery; // The PickupDelivery object that manages requests and their associations.
 
+    /**
+     * Constructs a new RequestService and initializes the PickupDelivery object.
+     */
     public RequestService() {
-        this.pickupDelivery = new PickupDelivery();
-        this.xmlWriters = new XMLWriters();
+        pickupDelivery = new PickupDelivery();
     }
 
+    /**
+     * Adds a request to a specific courier.
+     *
+     * @param courierId the ID of the courier to whom the request will be added
+     * @param request the request to be added
+     */
     public void addRequest(long courierId, Request request) {
         pickupDelivery.addRequestToCourier(courierId, request);
     }
@@ -25,12 +38,20 @@ public class RequestService {
         pickupDelivery.removeRequestFromCourier(courierId, requestId);
     }
 
-    public void loadRequests(String filepath, long courierId) {
-        XMLParsers.parseRequests(filepath, courierId, pickupDelivery);
+    /**
+     * Loads requests from an XML file and populates the PickupDelivery object.
+     *
+     * @param filepath the path to the XML file containing the requests
+     * @param courierId the ID of the courier for whom the requests are being loaded
+     * @return true if the requests were successfully loaded, false otherwise
+     */
+    public boolean loadRequests(String filepath, long courierId) {
+        return XMLParsers.parseRequests(filepath, courierId, pickupDelivery);
     }
 
+
     public void saveRequests(String filepath) {
-        xmlWriters.writeRequests(pickupDelivery, filepath);
+        XMLWriters.writeRequests(pickupDelivery, filepath);
     }
 
     public PickupDelivery getPickupDelivery() {
@@ -42,6 +63,6 @@ public class RequestService {
     }
 
     public void setWarehouseAddress(long warehouseId) {
-        pickupDelivery.setWarehouseAdressId(warehouseId);
+        pickupDelivery.setWarehouseAddressId(warehouseId);
     }
 }

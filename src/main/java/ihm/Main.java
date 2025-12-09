@@ -11,6 +11,10 @@ import java.time.Duration;
 import java.time.LocalTime;
 import java.util.*;
 
+/**
+ * Main class for the console-based IHM (Interface Homme-Machine) application.
+ * This application allows users to manage requests and tours for couriers.
+ */
 public class Main {
     public static void main(String[] args) {
         // Domain + services
@@ -52,6 +56,12 @@ public class Main {
             scanner.close();
     }
 
+    /**
+     * Handles the menu for loading requests from an XML file.
+     *
+     * @param scanner           The scanner for reading user input.
+     * @param requestController The controller for managing requests.
+     */
     private static void loadRequestsMenu(Scanner scanner, RequestController requestController) {
         System.out.print("Courier id: ");
         long id = Long.parseLong(scanner.nextLine().trim());
@@ -70,6 +80,12 @@ public class Main {
         }
     }
 
+    /**
+     * Handles the menu for adding a new request.
+     *
+     * @param scanner           The scanner for reading user input.
+     * @param requestController The controller for managing requests.
+     */
     private static void addRequestMenu(Scanner scanner, RequestController requestController) {
         try {
             System.out.print("Courier id: ");
@@ -108,6 +124,11 @@ public class Main {
         }
     }
 
+    /**
+     * Lists all current requests.
+     *
+     * @param pickupDelivery The PickupDelivery object containing the requests.
+     */
     private static void listRequests(PickupDelivery pickupDelivery) {
         TreeMap<Long, Request> requests = pickupDelivery.getRequests();
         if (requests.isEmpty()) {
@@ -127,6 +148,12 @@ public class Main {
         }
     }
 
+    /**
+     * Formats a Duration object into a readable time string.
+     *
+     * @param d The duration to format.
+     * @return A string representation of the duration in HH:mm:ss format.
+     */
     private static String formatDuration(Duration d) {
         long sec = d.getSeconds();
         long h = sec / 3600;

@@ -16,7 +16,6 @@ import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.util.Collection; // For writeTours method if needed
 
 /**
  * Utility class for writing application data (Map, Requests, Tours) to XML files.
@@ -91,7 +90,7 @@ public class XMLWriters {
      * @param pickupDelivery The PickupDelivery object to write.
      * @param filePath The path to the XML file.
      */
-    public void writeRequests(PickupDelivery pickupDelivery, String filePath) {
+    public static void writeRequests(PickupDelivery pickupDelivery, String filePath) {
         try {
             DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();
@@ -103,7 +102,7 @@ public class XMLWriters {
 
             // depot element
             Element depot = doc.createElement("depot");
-            depot.setAttribute("address", String.valueOf(pickupDelivery.getWarehouseAdressId()));
+            depot.setAttribute("address", String.valueOf(pickupDelivery.getWarehouseAddressId()));
             depot.setAttribute("departureTime", "8:0:0"); // Hardcoded as per file format
             rootElement.appendChild(depot);
 

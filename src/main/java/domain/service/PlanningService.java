@@ -8,12 +8,27 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDateTime;
 import java.util.*;
 
+/**
+ * Service class for planning and managing tours for couriers.
+ * Provides functionality to recompute tours based on requests and map data.
+ */
 @Service
 public class PlanningService {
-    private final RequestService requestService;
-    private final TourService tourService;
-    private MapService mapService;
 
+    private final RequestService requestService; // Services for handling requests and tours.
+
+
+    private final TourService tourService; // Service for handling tours.
+
+
+    private MapService mapService; // Service for handling map data.
+
+    /** Constructs a new PlanningService with the specified services.
+     *
+     * @param requestService the service for handling requests
+     * @param tourService the service for handling tours
+     * @param mapService the service for handling map data
+     */
     @Autowired
     public PlanningService(RequestService requestService, TourService tourService, MapService mapService) {
         this.requestService = requestService;
@@ -22,6 +37,13 @@ public class PlanningService {
         this.mapService = mapService;
     }
 
+    /**
+     * Recomputes the tour for a specific courier based on their requests.
+     *
+     * @param courierId the ID of the courier whose tour is to be recomputed
+     * @throws IllegalArgumentException if the courier ID is not found in requests
+     * @throws RuntimeException if the TSP algorithm does not find a solution
+     */
     public void recomputeTourForCourier(long courierId) {
         if (!requestService.getPickupDelivery().getRequestsPerCourier().containsKey(courierId)) {
             throw new IllegalArgumentException("Courier ID " + courierId + " not found in requests.");
@@ -37,7 +59,7 @@ public class PlanningService {
         long[] stops = new long[nbStops];
 
         int idx = 0;
-        stops[idx++] = pickupDelivery.getWarehouseAdressId();
+        stops[idx++] = pickupDelivery.getWarehouseAddressId();
 
         for (long reqId : requestIdsForCourier) {
             Request r = requests.get(reqId);
@@ -154,6 +176,12 @@ public class PlanningService {
         };
     }
 
+    /**
+     * Checks if a courier with the specified ID exists.
+     *
+     * @param courierId the ID of the courier to check
+     * @return true if the courier exists, false otherwise
+     */
     public boolean courierExists(long courierId) {
         return tourService.getCouriers().stream().anyMatch(courier -> courier.getId() == courierId);
     }
