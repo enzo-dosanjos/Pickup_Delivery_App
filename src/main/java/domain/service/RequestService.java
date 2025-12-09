@@ -6,14 +6,15 @@ import org.springframework.stereotype.Service;
 import persistence.XMLParsers;
 import persistence.XMLWriters;
 
-
 @Service
 public class RequestService {
 
-    private PickupDelivery pickupDelivery;
+    private final PickupDelivery pickupDelivery;
+    private final XMLWriters xmlWriters;
 
     public RequestService() {
-        pickupDelivery = new PickupDelivery();
+        this.pickupDelivery = new PickupDelivery();
+        this.xmlWriters = new XMLWriters();
     }
 
     public void addRequest(long courierId, Request request) {
@@ -26,6 +27,10 @@ public class RequestService {
 
     public void loadRequests(String filepath, long courierId) {
         XMLParsers.parseRequests(filepath, courierId, pickupDelivery);
+    }
+
+    public void saveRequests(String filepath) {
+        xmlWriters.writeRequests(pickupDelivery, filepath);
     }
 
     public PickupDelivery getPickupDelivery() {
