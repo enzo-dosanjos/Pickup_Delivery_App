@@ -1,12 +1,16 @@
 package ihm.controller;
 
-
-import domain.model.*;
-import domain.service.*;
+import domain.model.Request;
+import domain.service.PlanningService;
+import domain.service.RequestService;
+import domain.service.TourService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/request")
@@ -14,16 +18,25 @@ public class RequestController {
 
     private final RequestService requestService;
     private final PlanningService planningService;
+    
+    private final TourService tourService;
 
     @Autowired
-    public RequestController(RequestService requestService, PlanningService planningService) {
+    public RequestController(RequestService requestService, PlanningService planningService, TourService tourService) {
         this.requestService = requestService;
         this.planningService = planningService;
+        this.tourService = tourService;
+    }
+
+    @PostMapping("/save")
+    public ResponseEntity<?> saveRequests(@RequestParam String filepath) {
+        requestService.saveRequests(filepath);
+        return ResponseEntity.ok().build();
     }
 
     @PostMapping("/load")
-    public void loadRequests(@RequestParam String filepath,
-                             @RequestParam long courierId) {
+    public ResponseEntity<?> loadRequests(@RequestParam String filepath,
+                                          @RequestParam long courierId) {
         // check if courier exists
         if (!planningService.courierExists(courierId)) {
             throw new IllegalArgumentException("Courier ID " + courierId + " does not exist.");
@@ -32,20 +45,25 @@ public class RequestController {
         // Load requests from the specified file for the given courier
         requestService.loadRequests(filepath, courierId);
 
-        // Recompute tours for the courier
-        planningService.recomputeTourForCourier(courierId);
+        return recomputeTourAndHandleExceptions(courierId);
     }
 
     @PostMapping("/add")
-    public void addRequest(@RequestParam Long warehouseId,
-                           @RequestParam long pickupIntersectionId,
-                           @RequestParam long pickupDurationInSeconds,
-                           @RequestParam long deliveryIntersectionId,
-                           @RequestParam long deliveryDurationInSeconds,
-                           @RequestParam Long courierId) {
+    public ResponseEntity<?> addRequest(@RequestParam Long warehouseId,
+                                        @RequestParam long pickupIntersectionId,
+                                        @RequestParam long pickupDurationInSeconds,
+                                        @RequestParam long deliveryIntersectionId,
+                                        @RequestParam long deliveryDurationInSeconds,
+                                        @RequestParam Long courierId) {
         // check if courier exists
         if (!planningService.courierExists(courierId)) {
-            throw new IllegalArgumentException("Courier ID " + courierId + " does not exist.");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Courier ID " + courierId + " does not exist.");
+        }
+
+        // Ensure warehouse is registered (when coming from manual add and no XML was loaded)
+        if (requestService.getPickupDelivery().getWarehouseAdressId() == -1) {
+            requestService.setWarehouseAddress(warehouseId);
         }
 
         // Convert durations from seconds to Duration
@@ -61,8 +79,7 @@ public class RequestController {
         );
         requestService.addRequest(courierId, newRequest);
 
-        // Recompute the tour for the courier
-        planningService.recomputeTourForCourier(courierId);
+        return recomputeTourAndHandleExceptions(courierId);
     }
 
     @GetMapping("/warehouse")
@@ -71,9 +88,50 @@ public class RequestController {
     }
 
     @PostMapping("/delete")
-    public void deleteRequest(@RequestParam long requestId,
-                              @RequestParam long courierId) {
+    public ResponseEntity<?> deleteRequest(@RequestParam long requestId,
+                                           @RequestParam long courierId) {
+        Request originalRequest = requestService.getRequestById(requestId);
+        if (originalRequest == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Request with ID " + requestId + " not found.");
+        }
+
+        // 1. Speculatively delete the request
         requestService.deleteRequest(courierId, requestId);
-        planningService.recomputeTourForCourier(courierId);
+
+        try {
+            // 2. Attempt to recompute the tour with the request deleted
+            planningService.recomputeTourForCourier(courierId);
+            // If recomputation succeeds, the deletion is confirmed.
+            return ResponseEntity.ok().build();
+        } catch (RuntimeException e) {
+            // 3. If recomputation fails, roll back the deletion by re-adding the request
+            requestService.addRequest(courierId, originalRequest);
+            // And revert tour to its previous state
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("Deleting this request would lead to an unplannable tour for courier " + courierId + ". Deletion aborted. Error: " + e.getMessage());
+        }
+    }
+
+    private ResponseEntity<?> recomputeTourAndHandleExceptions(long courierId) {
+        try {
+            planningService.recomputeTourForCourier(courierId);
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (RuntimeException e) {
+            var otherCouriers = tourService.getCouriers().stream()
+                    .filter(c -> c.getId() != courierId)
+                    .collect(Collectors.toList());
+
+            if (!otherCouriers.isEmpty()) {
+                // There are other couriers available, suggest trying another one.
+                return ResponseEntity.status(HttpStatus.CONFLICT)
+                        .body("No tour found for the current courier. Please select another courier.");
+            } else {
+                // No other couriers available, the request is rejected.
+                return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                        .body("No tour found and no other couriers are available. The delivery request is rejected.");
+            }
+        }
     }
 }
