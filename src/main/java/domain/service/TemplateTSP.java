@@ -25,6 +25,9 @@ public abstract class TemplateTSP implements TSP {
     // Timps (seconds) pasee a chaque node 
     private double[] serviceTimes = null;
 
+	// Durée maximale en secondes (shift duration)
+    private double maxDuration = Double.MAX_VALUE;
+
     public void setPrecedences(Map<Integer, Set<Integer>> precedences) {
         if (precedences == null) this.precedences = new HashMap<>();
         else this.precedences = precedences;
@@ -41,6 +44,10 @@ public abstract class TemplateTSP implements TSP {
     public double[] getServiceTimes() {
         return serviceTimes;}
 	
+    public void setMaxDuration(double maxDuration) {
+        this.maxDuration = maxDuration;
+    }
+
 	public void chercheSolution(int tpsLimite, Graphe g){
 		if (tpsLimite <= 0) return;
 		tpsDebut = System.currentTimeMillis();	
@@ -129,8 +136,12 @@ public abstract class TemplateTSP implements TSP {
                     addCost += serviceTimes[prochainSommet];
                 }
 
-                branchAndBound(prochainSommet, nonVus, vus, coutVus + addCost);
-
+                double nouveauCout = coutVus + addCost;
+                
+                // Pruning: ne pas explorer si on dépasse la durée max
+                if (nouveauCout <= maxDuration || nouveauCout < coutMeilleureSolution) {
+                    branchAndBound(prochainSommet, nonVus, vus, nouveauCout);
+                }
                 
                 vus.remove(prochainSommet);
                 nonVus.add(prochainSommet);

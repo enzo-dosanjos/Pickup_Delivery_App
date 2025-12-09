@@ -5,6 +5,7 @@ import domain.model.dijkstra.DijkstraTable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -31,6 +32,18 @@ public class PlanningService {
         PickupDelivery pickupDelivery = new PickupDelivery(requestService.getPickupDelivery());
         TreeMap<Long, Request> requests = pickupDelivery.getRequests();
         ArrayList<Long> requestIdsForCourier = pickupDelivery.getRequestsPerCourier().get(courierId);
+        Courier courier = courierInCharge(courierId);
+        Duration shiftDuration = courier.getShiftDuration();
+
+        //----------------------------------------------------------------
+
+        System.out.println("========================================");
+        System.out.println("Computing tour for Courier #" + courierId);
+        System.out.println("Requests: " + requestIdsForCourier.size());
+        System.out.println("Shift Duration: " + formatDuration(shiftDuration.toSeconds()));
+        System.out.println("========================================");
+
+        //----------------------------------------------------------------
 
         // 1. Build list of stops (warehouse + pickups + deliveries)
         int nbStops = 2 * requestIdsForCourier.size() + 1;
@@ -87,12 +100,63 @@ public class PlanningService {
 
         tsp.setServiceTimes(serviceTimes);
 
+        // Set shift duration constraint
+        tsp.setMaxDuration(shiftDuration.toSeconds());
+
         // 6. execute TSP (SOP)
-        tsp.chercheSolution(30000, dijkstraService.getGraph());
+        System.out.println("Running TSP algorithm...");
+        long tspStartTime = System.currentTimeMillis();
+
+        tsp.chercheSolution(120000, dijkstraService.getGraph());
+
+        long tspEndTime = System.currentTimeMillis();
+        long tspExecutionTime = tspEndTime - tspStartTime;
+
+        System.out.println("TSP execution time: " + tspExecutionTime + " ms");
 
         if (tsp.getCoutMeilleureSolution() == Integer.MAX_VALUE) {
-            throw new RuntimeException("TSP algorithm did not find a solution for courier " + courierId);
+            System.err.println("No solution found!");
+            throw new RuntimeException("TSP algorithm did not find a solution for courier " + courierId);}
+
+        double tourDuration = tsp.getCoutMeilleureSolution();
+        
+        System.out.println("----------------------------------------");
+        System.out.println("Solution found!");
+        System.out.println(
+            "Tour duration: " + formatDuration(tourDuration)
+        );
+        System.out.println(
+            "Shift duration: " + formatDuration(shiftDuration.toSeconds())
+        );
+        
+        // Check if solution exceeds shift duration
+        if (tourDuration > shiftDuration.toSeconds()) {
+            double exceedSeconds = tourDuration - shiftDuration.toSeconds();
+            System.err.println("⚠️  WARNING: Tour exceeds shift duration!");
+            System.err.println(
+                "Exceeds by: " + formatDuration(exceedSeconds)
+            );
+        } else {
+            double remainingSeconds = shiftDuration.toSeconds() - tourDuration;
+            System.out.println(
+                "✓ Within shift duration (remaining: " + 
+                formatDuration(remainingSeconds) + ")"
+            );
         }
+        
+        // Print TSP solution
+        System.out.println("----------------------------------------");
+        System.out.println("Tour sequence:");
+        printTSPSolution(
+            tsp, 
+            stops, 
+            dijkstraService.getGraph(), 
+            serviceTimes
+        );
+        System.out.println("========================================");
+
+
+
 
         // 7. result
         double[] serviceTimesUsed = tsp.getServiceTimes();
@@ -139,5 +203,84 @@ public class PlanningService {
 
     public boolean courierExists(long courierId) {
         return tourService.getCouriers().stream().anyMatch(courier -> courier.getId() == courierId);
+    }
+
+    public Courier courierInCharge(long courierId) {
+        return tourService.getCouriers().stream()
+            .filter(courier -> courier.getId() == courierId)
+            .findFirst()
+            .orElse(null);
+    }
+
+
+    private void printTSPSolution(
+        TSP1 tsp, 
+        long[] stops, 
+        Graphe graph, 
+        double[] serviceTimes
+    ) {
+        double cumulativeTime = 0.0;
+        
+        for (int i = 0; i < graph.getNbSommets(); i++) {
+            int nodeIndex = tsp.getSolution(i);
+            long stopAddress = stops[nodeIndex];
+            
+            String stopType;
+            if (i == 0) {
+                stopType = "Depot";
+            } else if (nodeIndex % 2 == 1) {
+                stopType = "Pickup";
+            } else {
+                stopType = "Delivery";
+            }
+            
+            double travelTime = 0.0;
+            if (i > 0) {
+                int prevIndex = tsp.getSolution(i - 1);
+                travelTime = graph.getCout(prevIndex, nodeIndex);
+                cumulativeTime += travelTime;
+            }
+            
+            double serviceTime = serviceTimes[nodeIndex];
+            
+            System.out.printf(
+                "%2d. [%s] Stop #%d (Address: %d) | " +
+                "Travel: %s | Service: %s | Cumulative: %s%n",
+                i,
+                stopType,
+                nodeIndex,
+                stopAddress,
+                formatDuration(travelTime),
+                formatDuration(serviceTime),
+                formatDuration(cumulativeTime)
+            );
+            
+            cumulativeTime += serviceTime;
+        }
+        
+        // Return to depot
+        int lastIndex = tsp.getSolution(graph.getNbSommets() - 1);
+        double returnCost = graph.getCout(lastIndex, 0);
+        cumulativeTime += returnCost;
+        
+        System.out.printf(
+            "    Return to Depot | Travel: %s | Total: %s%n",
+            formatDuration(returnCost),
+            formatDuration(cumulativeTime)
+        );
+    }
+
+    private String formatDuration(double seconds) {
+        long hours = (long) (seconds / 3600);
+        long minutes = (long) ((seconds % 3600) / 60);
+        long secs = (long) (seconds % 60);
+        
+        if (hours > 0) {
+            return String.format("%dh %02dm %02ds", hours, minutes, secs);
+        } else if (minutes > 0) {
+            return String.format("%dm %02ds", minutes, secs);
+        } else {
+            return String.format("%ds", secs);
+        }
     }
 }
