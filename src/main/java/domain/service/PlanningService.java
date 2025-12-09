@@ -54,7 +54,7 @@ public class PlanningService {
         ArrayList<Long> requestIdsForCourier = pickupDelivery.getRequestsPerCourier().get(courierId);
 
 
-        if (!tourService.getPrecsByCourier().containsKey(courierId)) {
+        if (!tourService.getPrecedencesByCourier().containsKey(courierId)) {
             tourService.initPrecedences(courierId, requestIdsForCourier, pickupDelivery);
         }
 
@@ -206,7 +206,7 @@ public class PlanningService {
         long puIntersectionId, delIntersectionId;
 
         Request request = pickupDelivery.getRequests().get(newRequestId);
-        HashMap<String, Set<String>> precs = tourService.getPrecsByCourier().get(courierId);
+        HashMap<String, Set<String>> precs = tourService.getPrecedencesByCourier().get(courierId);
 
         puIntersectionId = request.getPickupIntersectionId();
         delIntersectionId = request.getDeliveryIntersectionId();

@@ -32,7 +32,7 @@ public class TourService {
     private TreeMap<Long, Tour> tours; //  Map of tours associated with each courier ID.
 
 
-    private TreeMap<Long, HashMap<String, Set<String>>> precsByCourier;
+    private TreeMap<Long, HashMap<String, Set<String>>> precedencesByCourier;
 
 
     /** Initializes a new instance of the TourService class. */
@@ -40,7 +40,7 @@ public class TourService {
         this.numCouriers = 0;
         this.couriers = new ArrayList<>();
         this.tours = new TreeMap<>();
-        this.precsByCourier = new TreeMap<>();
+        this.precedencesByCourier = new TreeMap<>();
     }
 
 
@@ -219,21 +219,21 @@ public class TourService {
         return tour;
     }
 
-    public void updateStopOrder(long courierId, Integer precStopIndex, Integer followingStopIndex) {
-        HashMap<String, Set<String>> precs = precsByCourier.get(courierId);
-        TourStop precStop, followStop;
+    public void updateStopOrder(long courierId, Integer prevStopIndex, Integer followingStopIndex) {
+        HashMap<String, Set<String>> precs = precedencesByCourier.get(courierId);
+        TourStop prevStop, followStop;
         Tour tour;
-        char precType, followingType;
+        char prevType, followingType;
 
         tour = tours.get(courierId);
-        precStop = tour.getStops().get(precStopIndex);
+        prevStop = tour.getStops().get(prevStopIndex);
         followStop  = tour.getStops().get(followingStopIndex);
 
-        if(precStop.getType() == StopType.PICKUP){
-            precType = 'p';
+        if(prevStop.getType() == StopType.PICKUP){
+            prevType = 'p';
 
         } else {
-            precType = 'd';
+            prevType = 'd';
         }
 
         if(followStop.getType() == StopType.PICKUP){
@@ -244,8 +244,8 @@ public class TourService {
         }
         precs.computeIfAbsent(parseParams(followStop.getRequestID(), followStop.getIntersectionId(), followingType),
                 k -> new HashSet<>())
-                .add(parseParams(precStop.getRequestID(), precStop.getIntersectionId(), precType));
-        precsByCourier.put(courierId, precs);
+                .add(parseParams(prevStop.getRequestID(), prevStop.getIntersectionId(), prevType));
+        precedencesByCourier.put(courierId, precs);
     }
 
     public void initPrecedences(long courierId, ArrayList<Long> requestsId, PickupDelivery pickupDelivery) {
@@ -260,7 +260,7 @@ public class TourService {
             precs.computeIfAbsent(parseParams(requestId, delIntersectionId, 'd'), k -> new HashSet<>()).add(parseParams(requestId, puIntersectionId, 'p'));
             //precs.put(parseParams(requestId, delIntersectionId, 'd'), Set.of(parseParams(requestId, puIntersectionId, 'p')));
         }
-        precsByCourier.put(courierId, precs);
+        precedencesByCourier.put(courierId, precs);
     }
 
     public java.util.Map.Entry<long[], HashMap<Integer, Set<Integer>>> generateTspPrecedences(
@@ -269,7 +269,7 @@ public class TourService {
             PickupDelivery pickupDelivery) {
 
         // Récupère les précédences pour ce courier
-        HashMap<String, Set<String>> precs = precsByCourier.get(courierId);
+        HashMap<String, Set<String>> precs = precedencesByCourier.get(courierId);
 
         Request request;
 
@@ -332,8 +332,8 @@ public class TourService {
         return tours;
     }
 
-    public TreeMap<Long, HashMap<String, Set<String>>> getPrecsByCourier() {
-        return precsByCourier;
+    public TreeMap<Long, HashMap<String, Set<String>>> getPrecedencesByCourier() {
+        return precedencesByCourier;
     }
 
     public ArrayList<Courier> getAvailableCouriers() {
