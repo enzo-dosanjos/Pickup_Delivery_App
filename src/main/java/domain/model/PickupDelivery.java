@@ -11,14 +11,14 @@ import static domain.model.StopType.*;
  */
 public class PickupDelivery {
 
-    /** A map of requests, keyed by their unique identifiers. */
-    private TreeMap<Long, Request> requests;
 
-    /** A map of courier IDs to their associated request IDs. */
-    private TreeMap<Long, ArrayList<Long>> requestsPerCourier;
+    private TreeMap<Long, Request> requests; // A map of request IDs to their associated Request objects.
 
-    /** The ID of the warehouse address. */
-    private long warehouseAdressId;
+
+    private TreeMap<Long, ArrayList<Long>> requestsPerCourier; // A map of courier IDs to a list of request IDs associated with that courier.
+
+
+    private long warehouseAddressId; // The ID of the warehouse address, used for pickup and delivery operations.
 
     /**
      * Constructs an empty PickupDelivery system.
@@ -26,7 +26,7 @@ public class PickupDelivery {
     public PickupDelivery() {
         requests = new TreeMap<>();
         requestsPerCourier = new TreeMap<>();
-        warehouseAdressId = -1;
+        warehouseAddressId = -1;
     }
 
     /**
@@ -40,7 +40,7 @@ public class PickupDelivery {
         for (Map.Entry<Long, ArrayList<Long>> entry : other.requestsPerCourier.entrySet()) {
             this.requestsPerCourier.put(entry.getKey(), new ArrayList<>(entry.getValue()));
         }
-        this.warehouseAdressId = other.warehouseAdressId;
+        this.warehouseAddressId = other.warehouseAddressId;
     }
 
     /**
@@ -86,12 +86,7 @@ public class PickupDelivery {
         return true;
     }
 
-    /**
-     * Retrieves all requests associated with a specific courier.
-     *
-     * @param courierId the ID of the courier
-     * @return an array of requests for the courier
-     */
+
     public Request[] getRequestsForCourier(long courierId) {
         ArrayList<Long> requestIds = requestsPerCourier.get(courierId);
         if (requestIds == null) {
@@ -106,40 +101,24 @@ public class PickupDelivery {
         return result;
     }
 
-    /**
-     * Retrieves the mapping of couriers to their associated request IDs.
-     *
-     * @return a map of courier IDs to request IDs
-     */
+
     public Map<Long, ArrayList<Long>> getRequestsPerCourier() {
         return requestsPerCourier;
     }
 
-    /**
-     * Retrieves all requests in the system.
-     *
-     * @return a TreeMap of requests, keyed by their IDs
-     */
+
     public TreeMap<Long, Request> getRequests() {
         return requests;
     }
 
-    /**
-     * Retrieves the ID of the warehouse address.
-     *
-     * @return the warehouse address ID
-     */
-    public long getWarehouseAdressId() {
-        return warehouseAdressId;
+
+    public long getWarehouseAddressId() {
+        return warehouseAddressId;
     }
 
-    /**
-     * Sets the ID of the warehouse address.
-     *
-     * @param warehouseAdressId the new warehouse address ID
-     */
-    public void setWarehouseAdressId(long warehouseAdressId) {
-        this.warehouseAdressId = warehouseAdressId;
+
+    public void setWarehouseAddressId(long warehouseAddressId) {
+        this.warehouseAddressId = warehouseAddressId;
     }
 
     /**
@@ -170,15 +149,11 @@ public class PickupDelivery {
         return null;
     }
 
-    /**
-     * Returns a string representation of the PickupDelivery system.
-     *
-     * @return a string describing the warehouse address, requests per courier, and their details
-     */
+
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("PickupDelivery:\n");
-        sb.append("Warehouse Address ID: ").append(warehouseAdressId).append("\n");
+        sb.append("Warehouse Address ID: ").append(warehouseAddressId).append("\n");
         sb.append("Requests per Courier:\n");
         for (Map.Entry<Long, ArrayList<Long>> entry : requestsPerCourier.entrySet()) {
             sb.append("Courier ID ").append(entry.getKey()).append(": ");

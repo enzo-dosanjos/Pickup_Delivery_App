@@ -10,8 +10,8 @@ import persistence.XMLParsers;
  */
 @Service
 public class MapService {
-    /** The map object managed by the service. */
-    private Map map;
+
+    private Map map; // The map object managed by the service.
 
     /**
      * Constructs a new MapService and initializes the map.
@@ -29,11 +29,7 @@ public class MapService {
         map = XMLParsers.parseMap(filePath);
     }
 
-    /**
-     * Retrieves the current map.
-     *
-     * @return the map object
-     */
+
     public Map getMap() {
         return map;
     }

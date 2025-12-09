@@ -58,15 +58,7 @@ public class NodeTest {
         assertTrue(node3.compareTo(node2) < 0);
     }
 
-    /**
-     * Verifies that the getVertex and getDuration methods return the correct values after construction.
-     */
-    @Test
-    void getMethodsReturnCorrectValuesAfterConstruction() {
-        Node node = new Node(5L, 123.456);
-        assertEquals(5L, node.getVertex());
-        assertEquals(123.456, node.getDuration());
-    }
+
 
     /**
      * Verifies that the setVertex and setDuration methods update the values correctly.

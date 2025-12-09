@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class MapController {
 
-    private final MapService mapService;
+    private final MapService mapService; // Service responsible for managing the map.
 
     /**
      * Constructs a MapController with the specified map service.
@@ -27,11 +27,7 @@ public class MapController {
         mapService.loadMap("src/main/resources/grandPlan.xml");
     }
 
-    /**
-     * Retrieves the current map.
-     *
-     * @return the current map
-     */
+
     @RequestMapping("/api/map")
     public Map getMap() {
         return mapService.getMap();

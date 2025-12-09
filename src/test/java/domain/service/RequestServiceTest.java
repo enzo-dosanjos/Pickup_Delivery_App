@@ -67,6 +67,7 @@ class RequestServiceTest {
 
     /**
      * Verifies that adding a request to a non-existent courier does not throw an exception.
+     * Instead, it should create a new courier entry in the PickupDelivery object.
      */
     @Test
     void addRequestToNonExistentCourier() {

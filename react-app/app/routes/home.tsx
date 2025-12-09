@@ -20,7 +20,7 @@ type ApiRoadSegment = {
 
 type ApiMapData = {
     intersections: Record<string, ApiIntersection>;
-    adjencyList: Record<string, ApiRoadSegment[]>;
+    adjacencyList: Record<string, ApiRoadSegment[]>;
 };
 
 type ApiTourStop = {
@@ -118,8 +118,8 @@ export default function Home() {
 
                 const nameMap = new Map<number, string>();
                 const transformedRoadSegments: L.LatLngExpression[][] = [];
-                for (const startIdStr in mapData.adjencyList) {
-                    const segments = mapData.adjencyList[startIdStr];
+                for (const startIdStr in mapData.adjacencyList) {
+                    const segments = mapData.adjacencyList[startIdStr];
                     const startId = parseInt(startIdStr, 10);
                     const startIntersection = intersectionMap.get(startId);
 

@@ -22,17 +22,17 @@ import java.time.LocalDateTime;
  */
 @Service
 public class TourService {
-    /** Number of couriers managed by the service. */
-    private int numCouriers;
 
-    /** List of couriers managed by the service. */
-    private ArrayList<Courier> couriers;
+    private int numCouriers; // Number of couriers managed by the service.
 
-    /** Map of tours associated with each courier ID. */
-    private TreeMap<Long, Tour> tours;
 
-    /** Map of request order constraints for each courier. */
-    private TreeMap<Long, HashMap<Long, Long>> requestsOrder;
+    private ArrayList<Courier> couriers; // List of couriers managed by the service.
+
+
+    private TreeMap<Long, Tour> tours; //  Map of tours associated with each courier ID.
+
+
+    private TreeMap<Long, HashMap<Long, Long>> requestsOrder; // Map of request order constraints for each courier.
 
     /** Initializes a new instance of the TourService class. */
     public TourService() {
@@ -42,12 +42,7 @@ public class TourService {
         this.requestsOrder = new TreeMap<>();
     }
 
-    /**
-     * Sets the tour for a specific courier.
-     *
-     * @param courierId the ID of the courier
-     * @param tour the tour to be assigned to the courier
-     */
+
     public void setTourForCourier(long courierId, Tour tour) {
         tours.put(courierId, tour);
     }
@@ -124,7 +119,8 @@ public class TourService {
     }
 
     /**
-     * Converts a graph solution into a tour for a specific courier.
+     * Generates a tour for a specific courier by using the solution calculated by TemplateTSP
+     * for the graph made by DijkstraService.
      *
      * @param pickupDelivery the pickup and delivery data
      * @param startTime the start time of the tour
@@ -202,6 +198,8 @@ public class TourService {
 
     /**
      * Adds road segments to a tour based on the Dijkstra table and map data.
+     * For each pair of consecutive stops in the tour, it retrieves the intermediary intersections
+     * from the Dijkstra table and adds the corresponding road segments to the tour.
      *
      * @param tour the tour to which road segments will be added
      * @param table the Dijkstra table containing shortest path information
@@ -246,38 +244,22 @@ public class TourService {
         return tour;
     }
 
-    /**
-     * Retrieves the list of couriers managed by the service.
-     *
-     * @return the list of couriers
-     */
+
     public ArrayList<Courier> getCouriers() {
         return couriers;
     }
 
-    /**
-     * Retrieves the number of couriers managed by the service.
-     *
-     * @return the number of couriers
-     */
+
     public int getNumCouriers() {
         return numCouriers;
     }
 
-    /**
-     * Retrieves the map of tours associated with each courier ID.
-     *
-     * @return the map of tours
-     */
+
     public TreeMap<Long, Tour> getTours() {
         return tours;
     }
 
-    /**
-     * Retrieves the map of request order constraints for each courier.
-     *
-     * @return the map of request order constraints
-     */
+
     public TreeMap<Long, HashMap<Long, Long>> getRequestOrder() {
         return requestsOrder;
     }

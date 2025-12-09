@@ -19,38 +19,22 @@ public class Node implements Comparable<Node> {
         this.duration = d;
     }
 
-    /**
-     * Retrieves the vertex identifier of this node.
-     *
-     * @return the vertex identifier
-     */
+
     public long getVertex() {
         return vertex;
     }
 
-    /**
-     * Updates the vertex identifier of this node.
-     *
-     * @param vertex the new vertex identifier
-     */
+
     public void setVertex(long vertex) {
         this.vertex = vertex;
     }
 
-    /**
-     * Retrieves the duration or cost associated with this node.
-     *
-     * @return the duration or cost
-     */
+
     public double getDuration() {
         return duration;
     }
 
-    /**
-     * Updates the duration or cost associated with this node.
-     *
-     * @param duration the new duration or cost
-     */
+
     public void setDuration(double duration) {
         this.duration = duration;
     }

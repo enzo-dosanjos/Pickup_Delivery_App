@@ -12,11 +12,11 @@ import java.util.Iterator;
  */
 public class IteratorSeq implements Iterator<Integer> {
 
-    /** Array of candidate vertices to iterate over. */
-    private Integer[] candidats;
 
-    /** Number of remaining candidates to iterate over. */
-    private int nbCandidats;
+    private Integer[] candidats; // Array of candidate vertices to iterate over.
+
+
+    private int nbCandidats; // Number of remaining candidates to iterate over.
 
     /**
      * Constructs an iterator for iterating over the vertices in `nonVus` that

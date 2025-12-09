@@ -1,8 +1,11 @@
 package domain.model.dijkstra;
 
 /**
- * Represents information about a cell in the Dijkstra algorithm.
- * Stores the duration, predecessor, and visited status of the cell.
+ * Represents information about a cell in our DijkstraTable used for our Dijkstra algorithm.
+ * It stores all the information needed to use Dijkstra's algorithm repetitively on each node
+ * of a graph to find the shortest paths.
+ *
+ * Stores the duration (of travel from node A to B), predecessor (in the travel from A to B), and visited status of the cell.
  */
 public class CellInfo {
     private double duration; // The duration or cost associated with this cell (from the start node)
@@ -22,56 +25,31 @@ public class CellInfo {
         this.visited = visited;
     }
 
-    /**
-     * Gets the duration or cost associated with this cell.
-     *
-     * @return the duration of the cell (double in seconds)
-     */
     public double getDuration() {
         return duration;
     }
 
-    /**
-     * Sets the duration or cost associated with this cell.
-     *
-     * @param duration the new duration of the cell (double in seconds)
-     */
+
     public void setDuration(double duration) {
         this.duration = duration;
     }
 
-    /**
-     * Gets the predecessor node ID in the path.
-     *
-     * @return the predecessor node ID (long)
-     */
+
     public long getPredecessor() {
         return predecessor;
     }
 
-    /**
-     * Sets the predecessor node ID in the path.
-     *
-     * @param predecessor the new predecessor node ID (long)
-     */
+
     public void setPredecessor(long predecessor) {
         this.predecessor = predecessor;
     }
 
-    /**
-     * Checks whether the cell has been visited.
-     *
-     * @return true if the cell has been visited, false otherwise
-     */
+
     public boolean isVisited() {
         return visited;
     }
 
-    /**
-     * Sets the visited status of the cell.
-     *
-     * @param visited the new visited status of the cell (boolean)
-     */
+
     public void setVisited(boolean visited) {
         this.visited = visited;
     }

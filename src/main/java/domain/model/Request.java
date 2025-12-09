@@ -7,20 +7,20 @@ import java.util.UUID;
  * Represents a request for a pickup and delivery operation.
  */
 public class Request {
-    /** The unique identifier for the request. */
-    private final long id;
 
-    /** The intersection ID where the pickup occurs. */
-    private final long pickupIntersectionId;
+    private final long id; // The unique identifier for the request.
 
-    /** The duration of the pickup operation. */
-    private final Duration pickupDuration;
 
-    /** The intersection ID where the delivery occurs. */
-    private final long deliveryIntersectionId;
+    private final long pickupIntersectionId; // The intersection ID where the pickup occurs.
 
-    /** The duration of the delivery operation. */
-    private final Duration deliveryDuration;
+
+    private final Duration pickupDuration; // The duration of the pickup operation.
+
+
+    private final long deliveryIntersectionId; // The intersection ID where the delivery occurs.
+
+
+    private final Duration deliveryDuration; // The duration of the delivery operation.
 
     /**
      * Constructs a new Request with the specified pickup and delivery details.
@@ -47,56 +47,32 @@ public class Request {
         return UUID.randomUUID().getMostSignificantBits();
     }
 
-    /**
-     * Retrieves the unique identifier of the request.
-     *
-     * @return the request ID
-     */
+
     public long getId() {
         return id;
     }
 
-    /**
-     * Retrieves the intersection ID for the pickup.
-     *
-     * @return the pickup intersection ID
-     */
+
     public long getPickupIntersectionId() {
         return pickupIntersectionId;
     }
 
-    /**
-     * Retrieves the duration of the pickup operation.
-     *
-     * @return the pickup duration
-     */
+
     public Duration getPickupDuration() {
         return pickupDuration;
     }
 
-    /**
-     * Retrieves the intersection ID for the delivery.
-     *
-     * @return the delivery intersection ID
-     */
+
     public long getDeliveryIntersectionId() {
         return deliveryIntersectionId;
     }
 
-    /**
-     * Retrieves the duration of the delivery operation.
-     *
-     * @return the delivery duration
-     */
+
     public Duration getDeliveryDuration() {
         return deliveryDuration;
     }
 
-    /**
-     * Returns a string representation of the request, including its details.
-     *
-     * @return a string describing the request
-     */
+
     public String toString() {
         return "Request ID: " + id +
                ", Pickup at: " + pickupIntersectionId + " (Duration: " + pickupDuration.toMinutes() + " mins)" +

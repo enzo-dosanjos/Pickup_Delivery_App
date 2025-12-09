@@ -13,11 +13,11 @@ import java.util.PriorityQueue;
  * Service class for calculating the shortest paths using Dijkstra's algorithm.
  */
 public class DijkstraService {
-    /** The map containing intersections and road segments. */
-    private final Map map;
 
-    /** The complete graph representation used for storing shortest path costs. */
-    private GrapheComplet g;
+    private final Map map; // The map containing intersections and road segments.
+
+
+    private GrapheComplet g; // The complete graph representation used for storing shortest path costs.
 
     /**
      * Computes the shortest paths between all intersections that need to be visited.
@@ -35,9 +35,9 @@ public class DijkstraService {
             }
         }
 
-        // Compute shortest paths for each vertex in the graph
+        // Compute the shortest paths for each warehouse/pickup/delivery stop of this tour
         for (int i = 0; i < g.getNbSommets(); i++) {
-            Dijkstra(i, dijkstraTable);
+            dijkstra(i, dijkstraTable);
         }
     }
 
@@ -47,10 +47,10 @@ public class DijkstraService {
      * @param start the index of the starting vertex
      * @param dijkstraTable the table used to store the shortest path information
      */
-    private void Dijkstra(int start, DijkstraTable dijkstraTable) {
+    private void dijkstra(int start, DijkstraTable dijkstraTable) {
         this.g.setCout(start, start, 0L);
         long[] sommets = this.g.getSommets();
-        HashMap<Long, RoadSegment[]> adjencyList = map.getAdjencyList();
+        HashMap<Long, RoadSegment[]> adjacencyList = map.getAdjacencyList();
         PriorityQueue<Node> pq = new PriorityQueue<>();
         pq.add(new Node(sommets[start], 0));
 
@@ -62,7 +62,7 @@ public class DijkstraService {
             if (currentCell == null || currentCell.isVisited()) continue;
 
             currentCell.setVisited(true);
-            RoadSegment[] neighbors = adjencyList.get(currentVertex);
+            RoadSegment[] neighbors = adjacencyList.get(currentVertex);
 
             if (neighbors != null) {
                 for (RoadSegment segment : neighbors) {
@@ -102,11 +102,7 @@ public class DijkstraService {
         this.g = g;
     }
 
-    /**
-     * Retrieves the complete graph representation.
-     *
-     * @return the complete graph
-     */
+
     public GrapheComplet getGraph() {
         return g;
     }

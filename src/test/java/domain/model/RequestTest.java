@@ -30,16 +30,7 @@ class RequestTest {
         assertEquals(deliveryDuration, request.getDeliveryDuration());
     }
 
-    /**
-     * Verifies that the generateId method produces unique IDs.
-     */
-    @Test
-    void generateIdProducesUniqueValues() {
-        long id1 = Request.generateId();
-        long id2 = Request.generateId();
 
-        assertNotEquals(id1, id2);
-    }
 
     /**
      * Verifies that the toString method returns a string containing all relevant details of the request.

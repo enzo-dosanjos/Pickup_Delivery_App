@@ -18,8 +18,9 @@ import java.util.Map;
 @RequestMapping("/api/tour")
 public class TourController {
 
-    private final TourService tourService;
-    private final RequestService requestService;
+    private final TourService tourService; // The service responsible for managing tours and couriers.
+
+    private final RequestService requestService; // The service responsible for managing requests.
 
     /**
      * Constructs a TourController with the specified tour and request services.
@@ -97,11 +98,7 @@ public class TourController {
         return requestService.getPickupDelivery().findRequestByIntersectionId(instersectionId);  // todo: create a service method
     }
 
-    /**
-     * Retrieves all tours in the system.
-     *
-     * @return a map of courier IDs to their corresponding tours
-     */
+
     @GetMapping("/tours")
     public Map<Long, Tour> getTours() {
         return tourService.getTours();

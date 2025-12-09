@@ -14,8 +14,8 @@ import persistence.XMLParsers;
 @Service
 public class RequestService {
 
-    /** The PickupDelivery object that manages requests and their associations. */
-    private PickupDelivery pickupDelivery;
+
+    private PickupDelivery pickupDelivery; // The PickupDelivery object that manages requests and their associations.
 
     /**
      * Constructs a new RequestService and initializes the PickupDelivery object.
@@ -49,11 +49,7 @@ public class RequestService {
         return XMLParsers.parseRequests(filepath, courierId, pickupDelivery);
     }
 
-    /**
-     * Retrieves the current PickupDelivery object.
-     *
-     * @return the PickupDelivery object
-     */
+
     public PickupDelivery getPickupDelivery() {
         return pickupDelivery;
     }

@@ -18,19 +18,9 @@ public interface TSP {
      */
     public void chercheSolution(int tpsLimite, Graphe g);
 
-    /**
-     * Retrieves the i-th vertex visited in the solution calculated by {@code chercheSolution}.
-     *
-     * @param i the index of the vertex in the solution path
-     * @return the i-th vertex in the solution, or -1 if {@code chercheSolution} has not been called,
-     *         or if i is out of bounds (i < 0 or i >= g.getNbSommets())
-     */
+
     public Integer getSolution(int i);
 
-    /**
-     * Calculates the total cost of the arcs in the solution found by {@code chercheSolution}.
-     *
-     * @return the total cost of the solution, or -1 if {@code chercheSolution} has not been called
-     */
+
     public double getCoutSolution();
 }

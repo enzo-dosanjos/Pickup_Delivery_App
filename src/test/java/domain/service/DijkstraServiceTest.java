@@ -15,17 +15,17 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class DijkstraServiceTest {
 
-    /** The DijkstraService instance under test. */
-    private DijkstraService dijkstraService;
 
-    /** The map containing intersections and road segments. */
-    private Map map;
+    private DijkstraService dijkstraService; // The DijkstraService instance under test.
 
-    /** The complete graph representation used for storing shortest path costs. */
-    private GrapheComplet grapheComplet;
 
-    /** The table used to store the shortest path information. */
-    private DijkstraTable dijkstraTable;
+    private Map map; // The map containing intersections and road segments.
+
+
+    private GrapheComplet grapheComplet; // The complete graph representation used for storing shortest path costs.
+
+
+    private DijkstraTable dijkstraTable; // The table used to store the shortest path information.
 
     /**
      * Verifies that computeShortestPath works correctly with an empty map.

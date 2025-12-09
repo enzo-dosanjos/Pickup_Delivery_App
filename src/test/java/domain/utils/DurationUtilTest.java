@@ -1,7 +1,6 @@
-package domain;
+package domain.utils;
 
 import domain.model.RoadSegment;
-import domain.utils.DurationUtil;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;

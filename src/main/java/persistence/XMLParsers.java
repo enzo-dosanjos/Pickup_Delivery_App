@@ -12,7 +12,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 
 /**
- * Utility class for parsing XML files to extract map and request data.
+ * Data access class for parsing XML files to extract map and request data.
  */
 public class XMLParsers {
 
@@ -102,11 +102,11 @@ public class XMLParsers {
                 Element depotElement = (Element) depotElements.item(i);
 
                 long warehouseAddress = Long.parseLong(depotElement.getAttribute("address"));
-                if (pickupDeliveryToFill.getWarehouseAdressId() == -1) {
-                    pickupDeliveryToFill.setWarehouseAdressId(warehouseAddress);
+                if (pickupDeliveryToFill.getWarehouseAddressId() == -1) {
+                    pickupDeliveryToFill.setWarehouseAddressId(warehouseAddress);
                 }
 
-                if (pickupDeliveryToFill.getWarehouseAdressId() != warehouseAddress) {
+                if (pickupDeliveryToFill.getWarehouseAddressId() != warehouseAddress) {
                     return false;
                 }
                 // Ignore departureTime for now as it's not in the Request model
@@ -139,6 +139,12 @@ public class XMLParsers {
         return true;
     }
 
+    /**
+     * Parses an XML file to create a list of Courier objects.
+     *
+     * @param filePath the path to the XML file containing courier data
+     * @return an ArrayList of Courier objects
+     */
     public static ArrayList<Courier> parseCouriers(String filePath) {
         ArrayList<Courier> couriers = new ArrayList<>();
 

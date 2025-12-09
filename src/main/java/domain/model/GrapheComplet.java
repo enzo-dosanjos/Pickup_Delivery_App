@@ -7,14 +7,14 @@ import java.util.Arrays;
  */
 public class GrapheComplet implements Graphe {
 
-    /** Array of vertex identifiers. */
-    long[] sommets;
 
-    /** The number of vertices in the graph. */
-    int nbSommets;
+    long[] sommets; // Array of vertex identifiers. The position in the array is used as the intersection's unique ID to link the vertices in the graph to the intersection.
 
-    /** A 2D array representing the cost of edges between vertices. */
-    double[][] cout;
+
+    int nbSommets; // The number of vertices in the graph, which is also the size of the cost matrix.
+
+
+    double[][] cout; // Cost matrix representing the costs between each pair of vertices. The cost from vertex i to vertex j is stored in cout[i][j].
 
     /**
      * Constructs a complete graph with the specified number of vertices.
@@ -42,32 +42,17 @@ public class GrapheComplet implements Graphe {
         for (int i = 0; i < nbSommets; i++) Arrays.fill(cout[i], Double.MAX_VALUE);
     }
 
-    /**
-     * Retrieves the array of vertex identifiers.
-     *
-     * @return the array of vertex identifiers
-     */
+
     public long[] getSommets() {
         return sommets;
     }
 
-    /**
-     * Retrieves the number of vertices in the graph.
-     *
-     * @return the number of vertices
-     */
     @Override
     public int getNbSommets() {
         return nbSommets;
     }
 
-    /**
-     * Retrieves the cost of the edge between two vertices.
-     *
-     * @param i the source vertex
-     * @param j the destination vertex
-     * @return the cost of the edge if valid; -1 if the vertices are out of bounds
-     */
+
     @Override
     public double getCout(int i, int j) {
         if (i < 0 || i >= nbSommets || j < 0 || j >= nbSommets)
@@ -75,29 +60,19 @@ public class GrapheComplet implements Graphe {
         return cout[i][j];
     }
 
-    /**
-     * Retrieves the entire cost matrix.
-     *
-     * @return the 2D array representing edge costs
-     */
+
     public double[][] getCout() {
         return cout;
     }
 
-    /**
-     * Updates the cost of the edge between two vertices.
-     *
-     * @param i the source vertex
-     * @param j the destination vertex
-     * @param newVal the new cost value
-     */
+
     public void setCout(int i, int j, double newVal) {
         cout[i][j] = newVal;
     }
 
     /**
      * Checks if there is an edge between two vertices.
-     * An edge exists if the vertices are within bounds and are not the same.
+     * Since the graph is complete, an edge exists if the vertices are within bounds and are not the same.
      *
      * @param i the source vertex
      * @param j the destination vertex
@@ -110,11 +85,7 @@ public class GrapheComplet implements Graphe {
         return i != j;
     }
 
-    /**
-     * Returns a string representation of the graph, including vertices and edge costs.
-     *
-     * @return the string representation of the graph
-     */
+
     @Override
     public String toString() {
         return "GrapheComplet{" +

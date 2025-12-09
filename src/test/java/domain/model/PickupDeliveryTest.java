@@ -128,9 +128,9 @@ class PickupDeliveryTest {
     @Test
     public void checkSetAndGetWarehouseAddressId() {
         PickupDelivery pickupDelivery = new PickupDelivery();
-        pickupDelivery.setWarehouseAdressId(123L);
+        pickupDelivery.setWarehouseAddressId(123L);
 
-        assertEquals(123L, pickupDelivery.getWarehouseAdressId());
+        assertEquals(123L, pickupDelivery.getWarehouseAddressId());
     }
 
     /**
@@ -141,7 +141,7 @@ class PickupDeliveryTest {
         PickupDelivery pickupDelivery = new PickupDelivery();
         Request request = new Request(100L, Duration.ofMinutes(10), 200L, Duration.ofMinutes(15));
         pickupDelivery.addRequestToCourier(1L, request);
-        pickupDelivery.setWarehouseAdressId(123L);
+        pickupDelivery.setWarehouseAddressId(123L);
 
         String result = pickupDelivery.toString();
 
@@ -172,7 +172,7 @@ class PickupDeliveryTest {
         Request request2 = new Request(101L, Duration.ofMinutes(12), 201L, Duration.ofMinutes(18));
         pickupDelivery.addRequestToCourier(1L, request1);
         pickupDelivery.addRequestToCourier(2L, request2);
-        pickupDelivery.setWarehouseAdressId(123L);
+        pickupDelivery.setWarehouseAddressId(123L);
         String result = pickupDelivery.toString();
         assertEquals("PickupDelivery:\nWarehouse Address ID: 123\nRequests per Courier:\nCourier ID 1: " +
                 request1 + " \nCourier ID 2: " +

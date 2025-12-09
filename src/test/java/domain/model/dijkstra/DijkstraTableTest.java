@@ -82,7 +82,7 @@ public class DijkstraTableTest {
      * Verifies that the remove method does not throw an exception when removing non-existent cells.
      */
     @Test
-    void removeHandlesNonExistentCellsGracefully() {
+    void removeHandlesNonExistentCells() {
         DijkstraTable dijkstraTable = new DijkstraTable();
         dijkstraTable.remove(1L, 2L);
         assertNull(dijkstraTable.get(1L, 2L));

@@ -3,24 +3,24 @@ package domain.model;
 import java.time.LocalDateTime;
 
 /**
- * Represents a stop in a delivery or pickup tour.
+ * Represents a stop in a pickup and delivery tour.
  * Each stop is characterized by its type, request ID, intersection ID, arrival time, and departure time.
  */
 public class TourStop {
-    /** The type of the stop (e.g., PICKUP, DELIVERY, etc.). */
-    private final StopType type;
 
-    /** The unique identifier for the request associated with the stop. */
-    private final long requestID;
+    private final StopType type; // The type of the stop (e.g., PICKUP, DELIVERY, etc.).
 
-    /** The ID of the intersection where the stop is located. */
-    private final long intersectionId;
 
-    /** The time when the courier arrives at the stop. */
-    private LocalDateTime arrivalTime;
+    private final long requestID; // The unique identifier for the request associated with the stop.
 
-    /** The time when the courier departs from the stop. */
-    private LocalDateTime departureTime;
+
+    private final long intersectionId; // The ID of the intersection where the stop is located.
+
+
+    private LocalDateTime arrivalTime; // The time when the courier arrives at the stop.
+
+
+    private LocalDateTime departureTime; // The time when the courier departs from the stop.
 
     /**
      * Constructs a new TourStop with the specified details.
@@ -39,74 +39,42 @@ public class TourStop {
         this.departureTime = departureTime;
     }
 
-    /**
-     * Retrieves the type of the stop.
-     *
-     * @return the type of the stop
-     */
+
     public StopType getType() {
         return type;
     }
 
-    /**
-     * Retrieves the request ID associated with the stop.
-     *
-     * @return the request ID
-     */
+
     public long getRequestID() {
         return requestID;
     }
 
-    /**
-     * Retrieves the intersection ID of the stop.
-     *
-     * @return the intersection ID
-     */
+
     public long getIntersectionId() {
         return intersectionId;
     }
 
-    /**
-     * Retrieves the arrival time at the stop.
-     *
-     * @return the arrival time
-     */
+
     public LocalDateTime getArrivalTime() {
         return arrivalTime;
     }
 
-    /**
-     * Retrieves the departure time from the stop.
-     *
-     * @return the departure time
-     */
+
     public LocalDateTime getDepartureTime() {
         return departureTime;
     }
 
-    /**
-     * Updates the arrival time at the stop.
-     *
-     * @param arrivalTime the new arrival time
-     */
+
     public void setArrivalTime(LocalDateTime arrivalTime) {
         this.arrivalTime = arrivalTime;
     }
 
-    /**
-     * Updates the departure time from the stop.
-     *
-     * @param departureTime the new departure time
-     */
+
     public void setDepartureTime(LocalDateTime departureTime) {
         this.departureTime = departureTime;
     }
 
-    /**
-     * Returns a string representation of the TourStop, including its type, request ID, intersection ID, arrival time, and departure time.
-     *
-     * @return a string representation of the TourStop
-     */
+
     public String toString() {
         return "TourStop [type=" + type + ", requestID=" + requestID + ", intersectionId=" + intersectionId
                 + ", arrivalTime=" + arrivalTime + ", departureTime=" + departureTime + "]";

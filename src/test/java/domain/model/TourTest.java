@@ -13,6 +13,26 @@ import static org.junit.jupiter.api.Assertions.*;
 public class TourTest {
 
     /**
+     * Tests the constructor and getter methods of the {@link Tour} class.
+     * Verifies that the fields are correctly initialized.
+     */
+    @Test
+    void checkConstructorAndGetters() {
+        long courierId = 1L; // Unique identifier for the courier
+        LocalDateTime startTime = LocalDateTime.now(); // Start time of the tour
+        Tour tour = new Tour(courierId, startTime);
+        // Assert that the courier ID and start time match the expected values
+        assertEquals(courierId, tour.getCourierId());
+        assertEquals(startTime, tour.getStartTime());
+        // Assert that the stops list is initialized as empty
+        assertTrue(tour.getStops().isEmpty());
+        // Assert that the total distance is initialized to zero
+        assertEquals(0.0, tour.getTotalDistance());
+        // Assert that the total duration is initialized to zero
+        assertEquals(Duration.ZERO, tour.getTotalDuration());
+    }
+
+    /**
      * Verifies that adding a stop to the tour updates the list of stops.
      */
     @Test
@@ -95,7 +115,7 @@ public class TourTest {
 
         assertTrue(result.contains("Courier ID: 1"));
         assertTrue(result.contains("Stops:"));
-        assertTrue(result.contains("Total Distance: 0.0 km"));
+        assertTrue(result.contains("Total Distance: 0.0 m"));
         assertTrue(result.contains("Total Duration: 0 minutes"));
     }
 }

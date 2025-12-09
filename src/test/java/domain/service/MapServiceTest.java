@@ -1,7 +1,6 @@
 package domain.service;
 
 import domain.model.Intersection;
-import domain.model.Map;
 import domain.model.RoadSegment;
 import org.junit.jupiter.api.Test;
 
@@ -27,11 +26,11 @@ class MapServiceTest {
         mapService.getMap().addRoadSegment(1L, s1);
 
         assertEquals(2, mapService.getMap().getIntersections().size(), "Precondition: Map should have 2 intersections");
-        assertEquals(1, mapService.getMap().getAdjencyList().size(), "Precondition: Map should have 1 adjacency entry");
+        assertEquals(1, mapService.getMap().getAdjacencyList().size(), "Precondition: Map should have 1 adjacency entry");
 
         mapService.loadMap("src/test/resources/empty_test_map.xml");
 
         assertTrue(mapService.getMap().getIntersections().isEmpty(), "Intersections should be updated");
-        assertTrue(mapService.getMap().getAdjencyList().isEmpty(), "Adjacency list should be updated");
+        assertTrue(mapService.getMap().getAdjacencyList().isEmpty(), "Adjacency list should be updated");
     }
 }

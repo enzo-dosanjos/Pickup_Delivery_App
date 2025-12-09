@@ -6,8 +6,8 @@ import domain.model.RoadSegment;
  * Utility class for calculating durations based on road segments and courier speed.
  */
 public class DurationUtil {
-    // Constant representing the courier's speed in kilometers per hour.
-    private static final double COURIER_SPEED_KMH = 15.0;
+
+    private static final double COURIER_SPEED_KMH = 15.0; // Constant representing the courier's speed in kilometers per hour.
 
     /**
      * Computes the duration (in minutes) required to traverse a given road segment

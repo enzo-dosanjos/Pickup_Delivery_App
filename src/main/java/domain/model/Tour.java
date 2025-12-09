@@ -9,23 +9,23 @@ import java.util.List;
  * Represents a delivery tour for a courier, including stops, road segments, total distance, and duration.
  */
 public class Tour {
-    /** The ID of the courier assigned to the tour. */
-    private final long courierId;
 
-    /** The list of stops included in the tour. */
-    private ArrayList<TourStop> stops;
+    private final long courierId; // The ID of the courier assigned to the tour.
 
-    /** The list of road segments taken during the tour. */
-    private ArrayList<RoadSegment> roadSegmentsTaken;
 
-    /** The total distance covered during the tour, in kilometers. */
-    private double totalDistance;
+    private ArrayList<TourStop> stops; // The list of stops included in the tour.
 
-    /** The start time of the tour. */
-    private LocalDateTime startTime;
 
-    /** The total duration of the tour. */
-    private Duration totalDuration;
+    private ArrayList<RoadSegment> roadSegmentsTaken; // The list of road segments taken during the tour.
+
+
+    private double totalDistance; // The total distance covered during the tour, in meters.
+
+
+    private LocalDateTime startTime; // The start time of the tour.
+
+
+    private Duration totalDuration; // The total duration of the tour.
 
     /**
      * Constructs a new Tour for the specified courier, starting at the given time.
@@ -64,7 +64,7 @@ public class Tour {
     /**
      * Updates the total distance of the tour by adding the specified distance.
      *
-     * @param distance the distance to be added, in kilometers
+     * @param distance the distance to be added, in meters
      */
     public void updateTotalDistance(double distance) {
         totalDistance += distance;
@@ -79,66 +79,37 @@ public class Tour {
         totalDuration = totalDuration.plus(duration);
     }
 
-    /**
-     * Retrieves the ID of the courier assigned to the tour.
-     *
-     * @return the courier ID
-     */
+
     public long getCourierId() {
         return courierId;
     }
 
-    /**
-     * Retrieves the list of stops included in the tour.
-     *
-     * @return the list of stops
-     */
+
     public List<TourStop> getStops() {
         return stops;
     }
 
-    /**
-     * Retrieves the total distance covered during the tour.
-     *
-     * @return the total distance, in kilometers
-     */
+
     public double getTotalDistance() {
         return totalDistance;
     }
 
-    /**
-     * Retrieves the start time of the tour.
-     *
-     * @return the start time
-     */
+
     public LocalDateTime getStartTime() {
         return startTime;
     }
 
-    /**
-     * Retrieves the total duration of the tour.
-     *
-     * @return the total duration
-     */
+
     public Duration getTotalDuration() {
         return totalDuration;
     }
 
-    /**
-     * Retrieves the list of road segments taken during the tour.
-     *
-     * @return the list of road segments
-     */
+
     public ArrayList<RoadSegment> getRoadSegmentsTaken() {
         return roadSegmentsTaken;
     }
 
-    /**
-     * Retrieves a stop from the tour by its intersection ID.
-     *
-     * @param intersectionId the intersection ID of the stop to retrieve
-     * @return the TourStop with the specified intersection ID, or null if not found
-     */
+
     public TourStop getStopByIntersectionId(long intersectionId) {
     for (TourStop stop : stops) {
         if (stop.getIntersectionId() == intersectionId) {
@@ -149,11 +120,7 @@ public class Tour {
     return null;
 }
 
-    /**
-     * Returns a string representation of the tour, including courier ID, stops, total distance, and duration.
-     *
-     * @return a string describing the tour
-     */
+
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("Tour for Courier ID: ").append(courierId).append("\n");
@@ -161,7 +128,7 @@ public class Tour {
         for (TourStop stop : stops) {
             sb.append(" - ").append(stop.toString()).append("\n");
         }
-        sb.append("Total Distance: ").append(totalDistance).append(" km\n");
+        sb.append("Total Distance: ").append(totalDistance).append(" m\n");
         sb.append("Total Duration: ").append(totalDuration.toMinutes()).append(" minutes\n");
         return sb.toString();
     }

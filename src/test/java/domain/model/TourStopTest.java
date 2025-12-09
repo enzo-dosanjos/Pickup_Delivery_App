@@ -12,6 +12,24 @@ import static org.junit.jupiter.api.Assertions.*;
 public class TourStopTest {
 
     /**
+     * Tests the constructor and getter methods of the {@link TourStop} class.
+     * Verifies that the fields are correctly initialized.
+     */
+    @Test
+    void checkConstructorAndGetters() {
+        LocalDateTime arrivalTime = LocalDateTime.now();
+        LocalDateTime departureTime = arrivalTime.plusMinutes(5);
+        TourStop stop = new TourStop(StopType.PICKUP, 101L, 51L, arrivalTime, departureTime);
+
+        // Assert that the type, requestID, intersectionId, arrivalTime, and departureTime match the expected values
+        assertEquals(StopType.PICKUP, stop.getType());
+        assertEquals(101L, stop.getRequestID());
+        assertEquals(51L, stop.getIntersectionId());
+        assertEquals(arrivalTime, stop.getArrivalTime());
+        assertEquals(departureTime, stop.getDepartureTime());
+    }
+
+    /**
      * Verifies that the arrival time can be updated correctly.
      */
     @Test

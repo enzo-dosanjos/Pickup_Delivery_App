@@ -44,7 +44,7 @@ class MapTest {
         boolean result = map.addRoadSegment(1L, segment);
 
         assertFalse(result);
-        assertTrue(map.getAdjencyList().isEmpty());
+        assertTrue(map.getAdjacencyList().isEmpty());
     }
 
     /**
@@ -63,7 +63,7 @@ class MapTest {
 
         assertTrue(result);
 
-        HashMap<Long, RoadSegment[]> adj = map.getAdjencyList();
+        HashMap<Long, RoadSegment[]> adj = map.getAdjacencyList();
         assertTrue(adj.containsKey(1L));
         assertEquals(1, adj.get(1L).length);
         assertSame(s1, adj.get(1L)[0]);
@@ -88,7 +88,7 @@ class MapTest {
         map.addRoadSegment(1L, s1);
         map.addRoadSegment(1L, s2);
 
-        RoadSegment[] segments = map.getAdjencyList().get(1L);
+        RoadSegment[] segments = map.getAdjacencyList().get(1L);
         assertEquals(2, segments.length);
         assertSame(s1, segments[0]);
         assertSame(s2, segments[1]);
@@ -173,7 +173,7 @@ class MapTest {
         boolean result = map.addRoadSegment(1L, segment);
 
         assertFalse(result, "addRoadSegment should fail when startId does not match");
-        assertTrue(map.getAdjencyList().isEmpty(), "No segment should be added");
+        assertTrue(map.getAdjacencyList().isEmpty(), "No segment should be added");
     }
 
     /**
@@ -190,7 +190,7 @@ class MapTest {
         boolean result = map.addRoadSegment(1L, segment);
 
         assertFalse(result, "addRoadSegment should fail when end intersection is unknown");
-        assertTrue(map.getAdjencyList().isEmpty(), "No segment should be added");
+        assertTrue(map.getAdjacencyList().isEmpty(), "No segment should be added");
     }
 
     /**

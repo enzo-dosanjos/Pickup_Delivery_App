@@ -48,7 +48,7 @@ class TourServiceTest {
     @Test
     void convertGraphToTourWithValidInput() {
         PickupDelivery pickupDelivery = new PickupDelivery();
-        pickupDelivery.setWarehouseAdressId(1L);
+        pickupDelivery.setWarehouseAddressId(1L);
         Request request1 = new Request(2L, Duration.ofMinutes(5), 3L, Duration.ofMinutes(10));
         Request request2 = new Request(4L, Duration.ofMinutes(3), 5L, Duration.ofMinutes(8));
         pickupDelivery.addRequestToCourier(123L, request1);

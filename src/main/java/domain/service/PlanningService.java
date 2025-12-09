@@ -14,14 +14,14 @@ import java.util.*;
  */
 @Service
 public class PlanningService {
-    /** Services for handling requests and tours. */
-    private final RequestService requestService;
 
-    /** Service for handling tours. */
-    private final TourService tourService;
+    private final RequestService requestService; // Services for handling requests and tours.
 
-    /** Service for handling map data. */
-    private MapService mapService;
+
+    private final TourService tourService; // Service for handling tours.
+
+
+    private MapService mapService; // Service for handling map data.
 
     /** Constructs a new PlanningService with the specified services.
      *
@@ -59,7 +59,7 @@ public class PlanningService {
         long[] stops = new long[nbStops];
 
         int idx = 0;
-        stops[idx++] = pickupDelivery.getWarehouseAdressId();
+        stops[idx++] = pickupDelivery.getWarehouseAddressId();
 
         for (long reqId : requestIdsForCourier) {
             Request r = requests.get(reqId);

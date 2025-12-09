@@ -11,65 +11,49 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Abstract class providing a template for solving the Traveling Salesman Problem (TSP) using
+ * Abstract class providing a template for solving the Sequential Ordering Problem (SOP,
+ * an asymmetrical Traveling Salesman Problem (TSP) with precedence constraints)  using
  * the branch-and-bound method. Subclasses must implement the `bound` and `iterator` methods.
  */
 public abstract class TemplateTSP implements TSP {
 
-    /** Array storing the best solution found so far. */
-    private Integer[] meilleureSolution;
 
-    /** The graph representing the problem. */
-    protected Graphe g;
+    private Integer[] meilleureSolution; // Array storing the best solution found so far.
 
-    /** The cost of the best solution found so far. */
-    private double coutMeilleureSolution;
 
-    /** Time limit for the solution search in milliseconds. */
-    private int tpsLimite;
+    protected Graphe g; // The graph representing the problem.
 
-    /** Start time of the solution search. */
-    private long tpsDebut;
 
-    /** Map storing precedence constraints for nodes. */
-    private Map<Integer, Set<Integer>> precedences = new HashMap<>();
+    private double coutMeilleureSolution; // The cost of the best solution found so far.
 
-    /** Array storing the service times for each node. */
-    private double[] serviceTimes = null;
 
-    /**
-     * Sets the precedence constraints for nodes.
-     *
-     * @param precedences a map where the key is a node and the value is a set of its precedence nodes
-     */
+    private int tpsLimite; // Time limit for the solution search in milliseconds.
+
+
+    private long tpsDebut; // Start time of the solution search.
+
+
+    private Map<Integer, Set<Integer>> precedences = new HashMap<>(); // Map storing precedence constraints for nodes.
+
+
+    private double[] serviceTimes = null; // Array storing the service times for each node.
+
     public void setPrecedences(Map<Integer, Set<Integer>> precedences) {
         if (precedences == null) this.precedences = new HashMap<>();
         else this.precedences = precedences;
     }
 
-    /**
-     * Retrieves the precedence constraints for nodes.
-     *
-     * @return a map of precedence constraints
-     */
+
     public Map<Integer, Set<Integer>> getPrecedences() {
         return this.precedences;
     }
 
-    /**
-     * Sets the service times for nodes.
-     *
-     * @param serviceTimes an array of service times for each node
-     */
+
     public void setServiceTimes(double[] serviceTimes) {
         this.serviceTimes = serviceTimes;
     }
 
-    /**
-     * Retrieves the service times for nodes.
-     *
-     * @return an array of service times
-     */
+
     public double[] getServiceTimes() {
         return serviceTimes;
     }
@@ -80,6 +64,7 @@ public abstract class TemplateTSP implements TSP {
      * @param tpsLimite the time limit in milliseconds
      * @param g the graph representing the problem
      */
+    @Override
     public void chercheSolution(int tpsLimite, Graphe g) {
         if (tpsLimite <= 0) return;
         tpsDebut = System.currentTimeMillis();
@@ -94,34 +79,21 @@ public abstract class TemplateTSP implements TSP {
         branchAndBound(0, nonVus, vus, 0);
     }
 
-    /**
-     * Retrieves the solution at the specified index.
-     *
-     * @param i the index of the solution
-     * @return the solution at the specified index, or -1 if the index is invalid
-     */
+@Override
     public Integer getSolution(int i) {
         if (g != null && i >= 0 && i < g.getNbSommets())
             return meilleureSolution[i];
         return -1;
     }
 
-    /**
-     * Retrieves the cost of the best solution found.
-     *
-     * @return the cost of the best solution, or -1 if no solution exists
-     */
+@Override
     public double getCoutSolution() {
         if (g != null)
             return coutMeilleureSolution;
         return -1;
     }
 
-    /**
-     * Retrieves the cost of the best solution found.
-     *
-     * @return the cost of the best solution
-     */
+
     public double getCoutMeilleureSolution() {
         return coutMeilleureSolution;
     }

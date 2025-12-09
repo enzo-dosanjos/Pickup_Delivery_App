@@ -17,8 +17,9 @@ import java.time.Duration;
 @RequestMapping("/api/request")
 public class RequestController {
 
-    private final RequestService requestService;
-    private final PlanningService planningService;
+    private final RequestService requestService; // Service for managing requests
+
+    private final PlanningService planningService; // Service for managing tours and planning
 
     /**
      * Constructs a RequestController with the specified request and tour services.
@@ -91,14 +92,10 @@ public class RequestController {
         planningService.recomputeTourForCourier(courierId);
     }
 
-    /**
-     * Retrieves the warehouse address ID associated with the pickup and delivery service.
-     *
-     * @return the warehouse address ID
-     */
+
     @GetMapping("/warehouse")
     public long getWarehouseAddress() {
-        return requestService.getPickupDelivery().getWarehouseAdressId();
+        return requestService.getPickupDelivery().getWarehouseAddressId();
     }
 
     /**

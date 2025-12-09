@@ -30,7 +30,7 @@ package "Domain" {
 
         class Map {
             - intersections : TreeMap<long, Intersection>  (key: intersection id)
-            - adjencyList : HashMap<long, RoadSegment[]>  (key: starting intersection id)
+            - adjacencyList : HashMap<long, RoadSegment[]>  (key: starting intersection id)
             + addIntersection(intersection: Intersection) : boolean
             + addRoadSegment(startIntersectionId: Long, roadSegment: RoadSegment) : boolean
             + getRoadSegment(startId: long, endId: long) : RoadSegment

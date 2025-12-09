@@ -11,14 +11,16 @@ public enum StopType {
     /** Represents a delivery stop with a type value of 2. */
     DELIVERY(2),
 
-    /** Represents an intermediate stop with a type value of 3. */
+    /** Represents an intermediate stop with a type value of 3.
+     * An intermediate stop is not a real stop, but rather an intersection by witch
+     * the coursier will pass between two real stops (Pickup, Delivery or Warehouse)*/
     INTERMEDIATE(3),
 
-    /** Represents a warehouse stop with a type value of 0. */
+    /** Represents the warehouse stop with a type value of 0. */
     WAREHOUSE(0);
 
-    /** The integer value associated with the stop type. */
-    final int type;
+
+    final int type; // The integer value associated with the stop type.
 
     /**
      * Constructs a StopType with the specified integer value.
@@ -29,11 +31,7 @@ public enum StopType {
         this.type = type;
     }
 
-    /**
-     * Retrieves the integer value associated with the stop type.
-     *
-     * @return the integer value of the stop type
-     */
+
     public int getType() {
         return type;
     }

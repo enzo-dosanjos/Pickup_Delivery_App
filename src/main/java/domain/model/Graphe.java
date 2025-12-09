@@ -6,20 +6,10 @@ package domain.model;
  */
 public interface Graphe {
 
-    /**
-     * Retrieves the number of vertices in the graph.
-     *
-     * @return the number of vertices in <code>this</code> graph
-     */
+
     public abstract int getNbSommets();
 
-    /**
-     * Retrieves the cost of the edge between two vertices.
-     *
-     * @param i the source vertex
-     * @param j the destination vertex
-     * @return the cost of the edge (i, j) if it exists; -1 otherwise
-     */
+
     public abstract double getCout(int i, int j);
 
     /**
