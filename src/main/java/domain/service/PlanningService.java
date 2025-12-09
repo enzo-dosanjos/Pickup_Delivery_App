@@ -213,4 +213,19 @@ public class PlanningService {
         precs.computeIfAbsent(tourService.parseParams(newRequestId, delIntersectionId, 'd'), k -> new HashSet<>()).add(tourService.parseParams(newRequestId, puIntersectionId, 'p'));
     }
 
+    public void deletePrecedences(long courierId, long requestId) {
+        HashMap<String, Set<String>> precs = tourService.getPrecedencesByCourier().get(courierId);
+
+        // Remove keys starting with requestId
+        precs.keySet().removeIf(key -> key.startsWith(String.valueOf(requestId)));
+
+        // Remove values starting with requestId
+        precs.values().forEach(set -> set.removeIf(value -> value.startsWith((String.valueOf(requestId)))));
+
+        // Clean empty entries
+        precs.entrySet().removeIf(entry -> entry.getValue().isEmpty());
+    }
+
+
+
 }

@@ -131,6 +131,7 @@ public class RequestController {
         }
 
         // 1. Speculatively delete the request
+        planningService.deletePrecedences(courierId, requestId);
         requestService.deleteRequest(courierId, requestId);
 
         try {

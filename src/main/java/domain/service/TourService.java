@@ -227,25 +227,35 @@ public class TourService {
 
         tour = tours.get(courierId);
         prevStop = tour.getStops().get(prevStopIndex);
-        followStop  = tour.getStops().get(followingStopIndex);
+        followStop = tour.getStops().get(followingStopIndex);
 
-        if(prevStop.getType() == StopType.PICKUP){
-            prevType = 'p';
-
-        } else {
-            prevType = 'd';
+        // checking if the stops are not the warehouse
+        if (prevStop.getRequestID() == -1 || followStop.getRequestID() == -1) {
+            throw new IllegalArgumentException(
+                    "Impossible to create precedence with warehouse."
+            );
         }
 
-        if(followStop.getType() == StopType.PICKUP){
-            followingType = 'p';
-
-        } else {
-            followingType = 'd';
+        // checking if the stops come from different requests
+        if (prevStop.getRequestID() == followStop.getRequestID()) {
+            throw new IllegalArgumentException(
+                    "Impossible to create precedence between 2 stops belonging to the same request (requestId = "
+                            + prevStop.getRequestID() + ")."
+            );
         }
-        precs.computeIfAbsent(parseParams(followStop.getRequestID(), followStop.getIntersectionId(), followingType),
-                k -> new HashSet<>())
+
+        // Find types
+        prevType = (prevStop.getType() == StopType.PICKUP) ? 'p' : 'd';
+        followingType = (followStop.getType() == StopType.PICKUP) ? 'p' : 'd';
+
+        // Add precedence
+        precs.computeIfAbsent(
+                        parseParams(followStop.getRequestID(), followStop.getIntersectionId(), followingType),
+                        k -> new HashSet<>())
                 .add(parseParams(prevStop.getRequestID(), prevStop.getIntersectionId(), prevType));
+
         precedencesByCourier.put(courierId, precs);
+
     }
 
     public void initPrecedences(long courierId, ArrayList<Long> requestsId, PickupDelivery pickupDelivery) {
