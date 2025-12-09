@@ -1,9 +1,8 @@
 package ihm.controller;
 
-import domain.model.Request;
-import domain.service.PlanningService;
-import domain.service.RequestService;
-import domain.service.TourService;
+
+import domain.model.*;
+import domain.service.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -104,6 +103,10 @@ public class RequestController {
         );
         requestService.addRequest(courierId, newRequest);
 
+        //update precedences
+        planningService.updatePrecedences(courierId, newRequest.getId(), requestService.getPickupDelivery());
+
+        // Recompute the tour for the courier
         return recomputeTourAndHandleExceptions(courierId);
     }
 

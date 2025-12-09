@@ -88,6 +88,14 @@ public class TourController {
         tourService.updateRequestOrder(requestBeforeId, requestAfterId, courierId);
     }
 
+
+    @PostMapping("/update-stop-order")
+    public void updateRequestOrder(@RequestParam long courierId,
+                                   @RequestParam Integer precStopIndex,
+                                   @RequestParam Integer followingStopIndex) {
+        tourService.updateStopOrder(courierId, precStopIndex, followingStopIndex);
+    }
+
     /**
      * Shows the details of a request based on the specified intersection ID.
      *

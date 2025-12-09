@@ -91,6 +91,8 @@ export default function Home() {
     const [couriersList, setCouriersList] = useState<PanelCourier[]>([]);
     const [selectedCourier, setSelectedCourier] = useState<string>("0");
     const [warehouseId, setWarehouseId] = useState<number | null>(null);
+    const [prevStopIndex, setPrevStopIndex] = useState("");
+    const [nextStopIndex, setNextStopIndex] = useState("");
 
     // file paths
     const [requestFilePath, setRequestFilePath] = useState<string>("src/main/resources/requests.xml");
@@ -426,6 +428,40 @@ export default function Home() {
         }
     };
 
+    const handleUpdateStopOrder = async (
+        courierId: number,
+        precStopIndex: number,
+        followingStopIndex: number
+    ) => {
+        try {
+            const params = new URLSearchParams();
+            params.append("courierId", courierId.toString());
+            params.append("precStopIndex", precStopIndex.toString());
+            params.append("followingStopIndex", followingStopIndex.toString());
+
+            const response = await fetch("http://localhost:8080/api/tour/update-stop-order", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+                body: params,
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            console.log("Stop order updated successfully");
+
+            // Recharge les tours pour voir le changement
+            await displayTour();
+
+        } catch (e: any) {
+            console.error("Failed to update stop order:", e);
+            setError(`Failed to update stop order: ${e.message}`);
+        }
+    };
+
     const handleClosePanel = () => {
         setIsPanelOpen(false);
         setSelectionMode(null);
@@ -517,6 +553,10 @@ export default function Home() {
         return <div>Loading data...</div>;
     }
 
+    if (error) {
+        return <div>Error: {error}</div>;
+    }
+
     return (
         <div>
             {isModalOpen && (
@@ -529,6 +569,55 @@ export default function Home() {
                 </button>
                 <button onClick={handleSaveRequests} style={{ marginBottom: '10px', padding: '10px' }} disabled={isSavingRequests}>
                     {isSavingRequests ? "Saving..." : "Save Requests"}
+                </button>
+                <label>
+                    First stop index (must come BEFORE):
+                    <input
+                        type="number"
+                        value={prevStopIndex}
+                        onChange={(e) => setPrevStopIndex(e.target.value)}
+
+                    />
+                </label>
+
+
+                <label>
+                    Second stop index (must come AFTER):
+                    <input
+                        type="number"
+                        value={nextStopIndex}
+                        onChange={(e) => setNextStopIndex(e.target.value)}
+
+                    />
+                </label>
+
+
+                <button
+                    onClick={() => {
+                        const t = tours[0];
+                        if (!t) {
+                            alert("No tour available.");
+                            return;
+                        }
+
+                        const prevIndex = parseInt(prevStopIndex, 10);
+                        const nextIndex = parseInt(nextStopIndex, 10);
+
+                        if (isNaN(prevIndex) || isNaN(nextIndex)) {
+                            alert("Please enter valid indices.");
+                            return;
+                        }
+
+                        const confirmed = window.confirm(
+                            `Confirm update stop order?\nStop ${prevIndex} must come BEFORE stop ${nextIndex}`
+                        );
+
+                        if (!confirmed) return;
+
+                        handleUpdateStopOrder(t.courierId, prevIndex, nextIndex);
+                    }}
+                >
+                    Apply Update
                 </button>
             </div>
 
