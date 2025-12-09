@@ -90,7 +90,7 @@ public class XMLWriters {
      * @param pickupDelivery The PickupDelivery object to write.
      * @param filePath The path to the XML file.
      */
-    public void writeRequests(PickupDelivery pickupDelivery, String filePath) {
+    public static void writeRequests(PickupDelivery pickupDelivery, String filePath) {
         try {
             DocumentBuilderFactory dbFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder dBuilder = dbFactory.newDocumentBuilder();

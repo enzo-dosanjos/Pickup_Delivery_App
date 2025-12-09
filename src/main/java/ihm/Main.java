@@ -29,7 +29,7 @@ public class Main {
         tourService.addCourier(courier1);
 
         // Controller
-        RequestController requestController = new RequestController(requestService, planningService);
+        RequestController requestController = new RequestController(requestService, planningService, tourService);
 
         Scanner scanner = new Scanner(System.in);
         boolean running = true;

@@ -157,6 +157,23 @@ public class PlanningService {
         tour = tourService.addRoadsToTour(tour, dijkstraTable, mapService.getMap());
 
         tourService.setTourForCourier(courierId, tour);
+
+        // 10. Set courier's availability status to BUSY or AVAILABLE depending on tour duration
+        ArrayList<Courier> couriers = tourService.getCouriers();
+        int i;
+        for(i = 0; i < couriers.size(); i++) {
+            if (couriers.get(i).getId() == courierId) {
+                break;
+            }
+        }
+
+        if (i >= couriers.size()) {
+            return;
+        } else if (couriers.get(i).getShiftDuration().minus(tour.getTotalDuration()).toMinutes() < 30) {
+            tourService.getCouriers().get(i).setAvailabilityStatus(AvailabilityStatus.BUSY);
+        } else {
+            tourService.getCouriers().get(i).setAvailabilityStatus(AvailabilityStatus.AVAILABLE);
+        };
     }
 
     /**

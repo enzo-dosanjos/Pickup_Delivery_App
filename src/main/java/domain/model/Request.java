@@ -1,7 +1,7 @@
 package domain.model;
 
 import java.time.Duration;
-import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Represents a request for a pickup and delivery operation.
@@ -10,15 +10,11 @@ public class Request {
 
     private final long id; // The unique identifier for the request.
 
-
     private final long pickupIntersectionId; // The intersection ID where the pickup occurs.
-
 
     private final Duration pickupDuration; // The duration of the pickup operation.
 
-
     private final long deliveryIntersectionId; // The intersection ID where the delivery occurs.
-
 
     private final Duration deliveryDuration; // The duration of the delivery operation.
 
@@ -38,13 +34,16 @@ public class Request {
         this.deliveryDuration = deliveryDuration;
     }
 
+    private static final AtomicLong ID_GENERATOR = new AtomicLong(1);
+
     /**
      * Generates a unique identifier for the request.
      *
      * @return a unique long value
      */
     public static long generateId() {
-        return UUID.randomUUID().getMostSignificantBits();
+        // Use a monotonically increasing counter to stay within JS safe integer range
+        return ID_GENERATOR.getAndIncrement();
     }
 
 

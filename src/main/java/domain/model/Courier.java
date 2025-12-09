@@ -9,6 +9,7 @@ public class Courier {
     private final long id; // Unique identifier for the courier
     private final String name; // Name of the courier
     private final Duration shiftDuration; // Duration of the courier's shift
+    private AvailabilityStatus availabilityStatus; // Availability status of the courier
 
     /**
      * Constructs a new Courier instance.
@@ -21,6 +22,15 @@ public class Courier {
         this.id = id;
         this.name = name;
         this.shiftDuration = shiftDuration;
+        this.availabilityStatus = AvailabilityStatus.AVAILABLE;
+    }
+
+    public Boolean isAvailable() {
+        return availabilityStatus == AvailabilityStatus.AVAILABLE;
+    }
+
+    public Boolean isBusy() {
+        return availabilityStatus == AvailabilityStatus.BUSY;
     }
 
     public long getId() {
@@ -35,7 +45,15 @@ public class Courier {
         return shiftDuration;
     }
 
+    public AvailabilityStatus getAvailabilityStatus() {
+        return availabilityStatus;
+    }
+
+    public void setAvailabilityStatus(AvailabilityStatus availabilityStatus) {
+        this.availabilityStatus = availabilityStatus;
+    }
+
     public String toString() {
-        return "Courier{id=" + id + ", name='" + name + "', shiftDuration=" + shiftDuration.toMinutes() + "min}";
+        return "Courier{id=" + id + ", name='" + name + "', shiftDuration=" + shiftDuration.toMinutes() + "min "+ ", availabilityStatus=" + availabilityStatus + "}";
     }
 }

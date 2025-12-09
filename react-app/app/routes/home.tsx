@@ -2,8 +2,10 @@ import type { Route } from "./+types/home";
 import { Map as MapComponent, type Intersection as MapIntersection, type Tour as MapTour, StopType as MapStopType } from "../map/map";
 import { useState, useEffect, useRef } from "react";
 import L from "leaflet";
-import { ModificationPanel } from "../components/ModificationPanel";
+import { ModificationPanel, type Courier as PanelCourier } from "../components/ModificationPanel";
 import "../components/ModificationPanel.css";
+import Modal from "../components/Modal";
+import "./home.css";
 
 // Define the types for the data we expect from the API
 type ApiIntersection = {
@@ -50,7 +52,7 @@ type ApiRequest = {
 type ApiCourier = {
     id: number;
     name: string;
-    shiftDuration: number;
+    shiftDuration: string;
 }
 
 export function meta({}: Route.MetaArgs) {
@@ -67,8 +69,14 @@ export default function Home() {
     const [bounds, setBounds] = useState<L.LatLngExpression[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-
-        const [tours, setTours] = useState<MapTour[]>([]);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [modalMessage, setModalMessage] = useState("");
+    const [isAddingRequest, setIsAddingRequest] = useState(false);
+    const [isLoadingCouriers, setIsLoadingCouriers] = useState(false);
+    const [isLoadingRequests, setIsLoadingRequests] = useState(false);
+    const [isSavingRequests, setIsSavingRequests] = useState(false);
+    const [isDeletingRequest, setIsDeletingRequest] = useState(false);
+    const [tours, setTours] = useState<MapTour[]>([]);
     const [loadingTours, setLoadingTours] = useState(true);
 
     const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -77,6 +85,11 @@ export default function Home() {
     const [deliveryId, setDeliveryId] = useState<number | null>(null);
     const [pickupName, setPickupName] = useState<string | null>(null);
     const [deliveryName, setDeliveryName] = useState<string | null>(null);
+    const defaultDuration = 120;
+    const [pickupDuration, setPickupDuration] = useState<number>(defaultDuration);
+    const [deliveryDuration, setDeliveryDuration] = useState<number>(defaultDuration);
+    const [couriersList, setCouriersList] = useState<PanelCourier[]>([]);
+    const [selectedCourier, setSelectedCourier] = useState<string>("0");
     const [warehouseId, setWarehouseId] = useState<number | null>(null);
 
     // file paths
@@ -87,6 +100,11 @@ export default function Home() {
 
     // store intersectionMap globally for this component
     const intersectionMapRef = useRef<Map<number, ApiIntersection> | null>(null);
+
+    const closeModal = () => {
+        setIsModalOpen(false);
+        setModalMessage("");
+    };
 
     useEffect(() => {
         if (fetchInitiated.current) {
@@ -171,10 +189,11 @@ export default function Home() {
             } catch (e: any) {
                 console.error("Caught error object:", e);
                 if (e.message && e.message.includes("TSP algorithm did not find a solution")) {
-                    setError("Failed to fetch initial data: No tour could be found with the current requests. Please modify requests.");
+                    setModalMessage("Failed to fetch initial data: No tour could be found with the current requests. Please modify requests.");
                 } else {
-                    setError(`Failed to fetch data: ${e.message}`);
+                    setModalMessage(`Failed to fetch data: ${e.message}`);
                 }
+                setIsModalOpen(true);
             } finally {
                 setLoading(false);
                 setLoadingTours(false);
@@ -183,6 +202,12 @@ export default function Home() {
 
         fetchData();
     }, []);
+
+    useEffect(() => {
+        if (couriersList && couriersList.length > 0) {
+            setSelectedCourier(couriersList[0].id.toString());
+        }
+    }, [couriersList]);
 
     const handleMapClick = (intersectionId: number) => {
         const roadName = intersectionIdToRoadName.get(intersectionId) || `Intersection ${intersectionId}`;
@@ -251,6 +276,7 @@ export default function Home() {
     };
 
     const handleLoadCouriers = async () => {
+        setIsLoadingCouriers(true);
         try {
             const params = new URLSearchParams();
             params.append("filepath", courierFilePath);
@@ -268,18 +294,28 @@ export default function Home() {
             }
 
             console.log("Couriers loaded successfully");
+
+            fetchAvailableCouriers();
+
+            setModalMessage("Couriers loaded successfully!");
+            setIsModalOpen(true);
         } catch (e: any) {
             console.error("Failed to load couriers:", e);
-            setError(`Failed to load couriers: ${e.message}`);
+            setModalMessage(`Failed to load couriers: ${e.message}`);
+            setIsModalOpen(true);
+        } finally {
+            setIsLoadingCouriers(false);
         }
     };
 
     const handleLoadRequests = async () => {
+        setIsLoadingRequests(true);
         try {
             // Load requests
             const requestParams = new URLSearchParams();
-            requestParams.append('filepath', 'src/main/resources/requests.xml');
-            requestParams.append("courierId", "1"); // todo: make dynamic
+            requestParams.append("filepath", requestFilePath);
+            requestParams.append("courierId", selectedCourier);
+
             const requestResponse = await fetch("http://localhost:8080/api/request/load", {
                 method: 'POST',
                 headers: {
@@ -289,23 +325,52 @@ export default function Home() {
             });
 
             if (!requestResponse.ok) {
-                throw new Error(`HTTP error! status: ${requestResponse.status}`);
+                const errorText = await requestResponse.text();
+                throw new Error(errorText || `HTTP error! status: ${requestResponse.status}`);
             }
 
             console.log('Requests loaded successfully');
+            setModalMessage("Requests loaded successfully!");
+            setIsModalOpen(true);
             await displayTour();
 
         } catch (e: any) {
             console.error("Failed to load requests:", e);
-            setError(`Failed to load requests: ${e.message}`);
+            setModalMessage(`Failed to load requests: ${e.message}`);
+            setIsModalOpen(true);
+        } finally {
+            setIsLoadingRequests(false);
         }
     };
+
+    const fetchAvailableCouriers = async () =>
+    {
+        try {
+            // Fetch couriers from backend
+            const couriersResponse = await fetch("http://localhost:8080/api/tour/available-couriers");
+            if (!couriersResponse.ok) {
+                throw new Error(`HTTP error! status: ${couriersResponse.status}`);
+            }
+
+            // Backend returns ArrayList<Courier> -> JSON object: { "1": {..tour..}, "2": {..} }
+            const apiCouriers: ApiCourier[] = await couriersResponse.json();
+            console.log("Raw couriers data from API:", apiCouriers);
+
+            setCouriersList(apiCouriers);
+
+            console.log("Couriers list fetched successfully");
+        } catch (e: any) {
+            console.error("Failed to fetch couriers:", e);
+            setError(`Failed to fetch couriers: ${e.message}`);
+        }
+    }
 
     const handleAddRequest = async () => {
         if (pickupId === null || deliveryId === null) {
             return;
         }
 
+        setIsAddingRequest(true);
         try {
             // First, get the warehouse ID from the backend
             const warehouseResponse = await fetch('http://localhost:8080/api/request/warehouse');
@@ -319,10 +384,10 @@ export default function Home() {
             const params = new URLSearchParams();
             params.append('warehouseId', fetchedWarehouseId.toString());
             params.append('pickupIntersectionId', pickupId.toString());
-            params.append('pickupDurationInSeconds', '300'); // Hardcoded duration
+            params.append('pickupDurationInSeconds', pickupDuration.toString());
             params.append('deliveryIntersectionId', deliveryId.toString());
-            params.append('deliveryDurationInSeconds', '300'); // Hardcoded duration
-            params.append('courierId', '1'); // Hardcoded courier ID
+            params.append('deliveryDurationInSeconds', deliveryDuration.toString());
+            params.append('courierId', selectedCourier);
 
             const response = await fetch('http://localhost:8080/api/request/add', {
                 method: 'POST',
@@ -333,10 +398,16 @@ export default function Home() {
             });
 
             if (!response.ok) {
+                const errorText = await response.text();
+                if (errorText.includes("TSP algorithm did not find a solution")) {
+                    throw new Error("TSP algorithm did not find a solution");
+                }
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
             console.log('Request added successfully');
+            setModalMessage("Request added successfully!");
+            setIsModalOpen(true);
 
             // Finally, fetch and display tours
             await displayTour();
@@ -344,29 +415,35 @@ export default function Home() {
         } catch (e: any) {
             console.error("Failed to add request:", e);
             if (e.message && e.message.includes("TSP algorithm did not find a solution")) {
-                setError("Failed to add request: No tour could be found for this courier. Please try with different parameters or another courier.");
+                setModalMessage("Failed to add request: No tour could be found for this courier. Please try with different parameters or another courier.");
             } else {
-                setError(`Failed to add request: ${e.message}`);
+                setModalMessage(`Failed to add request: ${e.message}`);
             }
+            setIsModalOpen(true);
         } finally {
-            handleCancel();
+            setIsAddingRequest(false);
+            handleClosePanel();
         }
     };
 
-    const handleCancel = () => {
+    const handleClosePanel = () => {
         setIsPanelOpen(false);
         setSelectionMode(null);
         setPickupId(null);
         setDeliveryId(null);
         setPickupName(null);
         setDeliveryName(null);
+        setPickupDuration(defaultDuration);
+        setDeliveryDuration(defaultDuration);
     };
 
     const openModificationPanel = () => {
+        fetchAvailableCouriers();
         setIsPanelOpen(true);
     };
 
     const handleSaveRequests = async () => {
+        setIsSavingRequests(true);
         try {
             const params = new URLSearchParams();
             params.append('filepath', 'src/main/resources/requests_updated.xml');
@@ -384,13 +461,19 @@ export default function Home() {
             }
 
             console.log('Requests saved successfully');
+            setModalMessage("Requests saved successfully!");
+            setIsModalOpen(true);
         } catch (e: any) {
             console.error("Failed to save requests:", e);
-            setError(`Failed to save requests: ${e.message}`);
+            setModalMessage(`Failed to save requests: ${e.message}`);
+            setIsModalOpen(true);
+        } finally {
+            setIsSavingRequests(false);
         }
     };
 
     const handleDeleteRequest = async (requestId: number, courierId: number) => {
+        setIsDeletingRequest(true);
         try {
             const params = new URLSearchParams();
             params.append('requestId', requestId.toString());
@@ -405,18 +488,28 @@ export default function Home() {
             });
 
             if (!response.ok) {
+                const errorText = await response.text();
+                if (errorText.includes("TSP algorithm did not find a solution")) {
+                    throw new Error("TSP algorithm did not find a solution");
+                }
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
             console.log('Request deleted successfully');
+            await displayTour();
+            setModalMessage("Request deleted successfully!");
+            setIsModalOpen(true);
 
         } catch (e: any) {
             console.error("Failed to delete request:", e);
             if (e.message && e.message.includes("TSP algorithm did not find a solution")) {
-                setError("Failed to delete request: Deleting this request would lead to no valid tour. Please try another action.");
+                setModalMessage("Failed to delete request: Deleting this request would lead to no valid tour. Please try another action.");
             } else {
-                setError(`Failed to delete request: ${e.message}`);
+                setModalMessage(`Failed to delete request: ${e.message}`);
             }
+            setIsModalOpen(true);
+        } finally {
+            setIsDeletingRequest(false);
         }
     };
 
@@ -424,19 +517,18 @@ export default function Home() {
         return <div>Loading data...</div>;
     }
 
-    if (error) {
-        return <div>Error: {error}</div>;
-    }
-
     return (
         <div>
+            {isModalOpen && (
+                <Modal message={modalMessage} onClose={closeModal} />
+            )}
             <h1>Welcome to our brand new pick-up & delivery app !</h1>
             <div>
                 <button onClick={openModificationPanel} style={{ marginBottom: '10px', padding: '10px', marginRight: '10px' }}>
                     Add a Request
                 </button>
-                <button onClick={handleSaveRequests} style={{ marginBottom: '10px', padding: '10px' }}>
-                    Save Requests
+                <button onClick={handleSaveRequests} style={{ marginBottom: '10px', padding: '10px' }} disabled={isSavingRequests}>
+                    {isSavingRequests ? "Saving..." : "Save Requests"}
                 </button>
             </div>
 
@@ -451,11 +543,18 @@ export default function Home() {
                             style={{ marginLeft: "8px", width: "300px" }}
                         />
                     </label>
+                    <span className="info-label">Courier:</span>
+                    <select id={"courier"} value={selectedCourier} onFocus={fetchAvailableCouriers} onChange={(e) => setSelectedCourier(e.target.value)}>
+                        {couriersList?.map(courier => (
+                            <option key={courier.id.toString()} value={courier.id.toString()}>{courier.name}</option>
+                        ))}
+                    </select>
                     <button
                         onClick={handleLoadRequests}
                         style={{ padding: "8px", marginLeft: "8px" }}
+                        disabled={isLoadingRequests}
                     >
-                        Load Requests
+                        {isLoadingRequests ? "Loading..." : "Load Requests"}
                     </button>
                 </div>
 
@@ -472,8 +571,9 @@ export default function Home() {
                     <button
                         onClick={handleLoadCouriers}
                         style={{ padding: "8px", marginLeft: "8px" }}
+                        disabled={isLoadingCouriers}
                     >
-                        Load Couriers
+                        {isLoadingCouriers ? "Loading..." : "Load Couriers"}
                     </button>
                 </div>
             </div>
@@ -485,10 +585,19 @@ export default function Home() {
                     deliveryId={deliveryId}
                     pickupName={pickupName}
                     deliveryName={deliveryName}
+                    defaultDuration={defaultDuration}
+                    pickupDuration={pickupDuration}
+                    deliveryDuration={deliveryDuration}
+                    setPickupDuration={setPickupDuration}
+                    setDeliveryDuration={setDeliveryDuration}
+                    couriersList={couriersList}
+                    selectedCourier={selectedCourier}
+                    setSelectedCourier={setSelectedCourier}
                     onAddRequest={handleAddRequest}
-                    onCancel={handleCancel}
+                    onCancel={handleClosePanel}
                     selectionMode={selectionMode}
                     setSelectionMode={setSelectionMode}
+                    isAddingRequest={isAddingRequest}
                 />
             )}
             {bounds.length > 0 && (

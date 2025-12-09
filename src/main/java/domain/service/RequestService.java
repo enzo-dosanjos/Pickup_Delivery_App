@@ -4,6 +4,7 @@ import domain.model.PickupDelivery;
 import domain.model.Request;
 import org.springframework.stereotype.Service;
 import persistence.XMLParsers;
+import persistence.XMLWriters;
 
 
 /**
@@ -13,7 +14,6 @@ import persistence.XMLParsers;
  */
 @Service
 public class RequestService {
-
 
     private PickupDelivery pickupDelivery; // The PickupDelivery object that manages requests and their associations.
 
@@ -50,7 +50,19 @@ public class RequestService {
     }
 
 
+    public void saveRequests(String filepath) {
+        XMLWriters.writeRequests(pickupDelivery, filepath);
+    }
+
     public PickupDelivery getPickupDelivery() {
         return pickupDelivery;
+    }
+
+    public Request getRequestById(long requestId) {
+        return pickupDelivery.findRequestById(requestId);
+    }
+
+    public void setWarehouseAddress(long warehouseId) {
+        pickupDelivery.setWarehouseAddressId(warehouseId);
     }
 }

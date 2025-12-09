@@ -173,4 +173,16 @@ class TourServiceTest {
 
         assertEquals(5, updatedTour.getRoadSegmentsTaken().size());
     }
+
+    @Test
+    void checkGetAvailableCouriers() {
+        TourService service = new TourService();
+        service.addCourier(new Courier(1L, "Courier 1", Duration.ofHours(8)));
+        service.addCourier(new Courier(2L, "Courier 2", Duration.ofHours(8)));
+        assertEquals(2, service.getAvailableCouriers().size());
+
+        service.getCouriers().get(1).setAvailabilityStatus(AvailabilityStatus.BUSY);
+        assertEquals(1, service.getAvailableCouriers().size());
+        assertEquals(1L, service.getAvailableCouriers().getFirst().getId());
+    }
 }
