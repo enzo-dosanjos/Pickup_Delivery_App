@@ -107,7 +107,23 @@ public class PlanningService {
         System.out.println("Running TSP algorithm...");
         long tspStartTime = System.currentTimeMillis();
 
-        tsp.chercheSolution(120000, dijkstraService.getGraph());
+
+        
+        int timeLimit;
+        long NO_IMPROVEMENT_TIMEOUT;
+        if (nbStops <= 10) {
+            timeLimit = 7500; // 10s not many stops
+            NO_IMPROVEMENT_TIMEOUT = 2000;
+        } else if (nbStops <= 15) {
+            timeLimit = 20000; // 30s
+            NO_IMPROVEMENT_TIMEOUT = 2000;
+        } else {
+            timeLimit = 45000; // 45s many
+            NO_IMPROVEMENT_TIMEOUT = 2000;
+        }
+        tsp.setNO_IMPROVEMENT_TIMEOUT(NO_IMPROVEMENT_TIMEOUT);
+
+        tsp.chercheSolution(timeLimit, dijkstraService.getGraph());
 
         long tspEndTime = System.currentTimeMillis();
         long tspExecutionTime = tspEndTime - tspStartTime;

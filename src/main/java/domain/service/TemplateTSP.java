@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -28,6 +29,15 @@ public abstract class TemplateTSP implements TSP {
 	// Durée maximale en secondes (shift duration)
     private double maxDuration = Double.MAX_VALUE;
 
+	private long lastImprovementTime;
+	private long NO_IMPROVEMENT_TIMEOUT = 4000;
+
+	private boolean stopSearch = false;
+
+	public void setNO_IMPROVEMENT_TIMEOUT(long noImp){
+		this.NO_IMPROVEMENT_TIMEOUT = noImp;
+	}
+
     public void setPrecedences(Map<Integer, Set<Integer>> precedences) {
         if (precedences == null) this.precedences = new HashMap<>();
         else this.precedences = precedences;
@@ -48,9 +58,11 @@ public abstract class TemplateTSP implements TSP {
         this.maxDuration = maxDuration;
     }
 
-	public void chercheSolution(int tpsLimite, Graphe g){
+	public void chercheSolution(int tpsLimite,Graphe g ){
 		if (tpsLimite <= 0) return;
 		tpsDebut = System.currentTimeMillis();	
+		this.lastImprovementTime = tpsDebut;
+		this.stopSearch = false;
 		this.tpsLimite = tpsLimite;
 		this.g = g;
 		meilleureSolution = new Integer[g.getNbSommets()];
@@ -58,7 +70,22 @@ public abstract class TemplateTSP implements TSP {
 		for (int i=1; i<g.getNbSommets(); i++) nonVus.add(i);
 		Collection<Integer> vus = new ArrayList<Integer>(g.getNbSommets());
 		vus.add(0); // le premier sommet visite est 0
-		coutMeilleureSolution = Integer.MAX_VALUE;
+		
+		System.out.println("Running Nearest Neighbor heuristic...");
+    	double heuristicCost = nearestNeighborHeuristic();
+    
+		if (heuristicCost < Double.MAX_VALUE) {
+			coutMeilleureSolution = heuristicCost;
+			System.out.println(
+				"NN initial solution: " + 
+				String.format("%.2f", heuristicCost / 3600.0) + "h");
+			} 
+		else{
+				coutMeilleureSolution = Integer.MAX_VALUE;
+				System.out.println("Nearest Neigbour heuristic failed, using no initial bound.");
+			}
+
+    	System.out.println("Starting Branch & Bound optimization...");
 		branchAndBound(0, nonVus, vus, 0);
 	}
 	
@@ -104,17 +131,40 @@ public abstract class TemplateTSP implements TSP {
 	 * @param coutVus la somme des couts des arcs du chemin passant par tous les sommets de vus dans l'ordre ou ils ont ete visites
 	 */	
 	private void branchAndBound(int sommetCrt, Collection<Integer> nonVus, Collection<Integer> vus, double coutVus){
-		if (System.currentTimeMillis() - tpsDebut > tpsLimite) return;
+		
+		long currentTime = System.currentTimeMillis();
+
+		if (stopSearch) return;
+		    //Timeout for we are if not getting a better solution in some time
+    	if (currentTime - lastImprovementTime > NO_IMPROVEMENT_TIMEOUT) {
+        if (!stopSearch) {
+                System.out.println("No improvement for " + (NO_IMPROVEMENT_TIMEOUT/1000) + "s, stopping...");
+                stopSearch = true;
+            }
+            return;
+    	}
+		
+		 if (currentTime - tpsDebut > tpsLimite) {
+            if (!stopSearch) {
+                System.out.println("Global Time limit reached");
+                stopSearch = true;
+            }
+            return;
+        }
+
 	    if (nonVus.size() == 0){ // tous les sommets ont ete visites
 	    	if (g.estArc(sommetCrt,0)){ // on peut retourner au sommet de depart (0)
-	    		if (coutVus+g.getCout(sommetCrt,0) < coutMeilleureSolution){ // on a trouve une solution meilleure que meilleureSolution
-	    			vus.toArray(meilleureSolution);
-	    			coutMeilleureSolution = coutVus+g.getCout(sommetCrt,0);
-	    		}
+				double newCost = coutVus+g.getCout(sommetCrt,0);
+				if (newCost < coutMeilleureSolution){
+					vus.toArray(meilleureSolution);
+					coutMeilleureSolution = newCost;
+					lastImprovementTime = System.currentTimeMillis();
+				}
 	    	}
 	    } else if (coutVus+bound(sommetCrt,nonVus) < coutMeilleureSolution){
 	        Iterator<Integer> it = iterator(sommetCrt, nonVus, g);
 	        while (it.hasNext()){
+				if (stopSearch) return;
 	        	Integer prochainSommet = it.next();
 				// --- PRECEDENCE ---
                 Set<Integer> preds = precedences.getOrDefault(prochainSommet, Collections.emptySet());
@@ -147,6 +197,91 @@ public abstract class TemplateTSP implements TSP {
                 nonVus.add(prochainSommet);
 	        }	    
 	    }
+	}
+
+	protected double nearestNeighborHeuristic() {
+		int n = g.getNbSommets();
+		boolean[] visited = new boolean[n];
+		List<Integer> route = new ArrayList<>();
+		
+		int current = 0;
+		visited[0] = true;
+		route.add(0);
+		
+		double totalCost = 0.0;
+		
+		//make tour
+		while (route.size() < n) {
+			int nearest = -1;
+			double minCost = Double.MAX_VALUE;
+			
+			// search closest node
+			for (int next = 1; next < n; next++) {
+				if (visited[next]) continue;
+				
+				// Verifie precedence
+				Set<Integer> preds = precedences.getOrDefault(next, Collections.emptySet());
+				boolean precedencesOk = true;
+				for (Integer pred : preds) {
+					if (!visited[pred]) {
+						precedencesOk = false;
+						break;
+					}
+				}
+				if (!precedencesOk) continue;
+				
+				// Verifie arc
+				if (!g.estArc(current, next)) continue;
+				
+				double cost = g.getCout(current, next);
+				
+				// service time
+				if (serviceTimes != null && next < serviceTimes.length) {
+					cost += serviceTimes[next];
+				}
+				
+				// Verificar shift duration constraint
+				if (totalCost + cost > maxDuration) continue;
+				
+				if (cost < minCost) {
+					minCost = cost;
+					nearest = next;
+				}
+			}
+			
+			// if there is no nearset
+			if (nearest == -1) {
+				return Double.MAX_VALUE;
+			}
+			
+			visited[nearest] = true;
+			route.add(nearest);
+			totalCost += minCost;
+			current = nearest;
+		}
+		
+
+		if (!g.estArc(current, 0)) {
+			return Double.MAX_VALUE;
+		}
+		
+		double returnCost = g.getCout(current, 0);
+		totalCost += returnCost;
+		
+		// vererifie shift duration
+		if (totalCost > maxDuration) {
+			System.out.println(
+				"NN heuristic found solution but exceeds shift duration: " +
+				String.format("%.2f", totalCost / 3600.0) + "h"
+			);
+		}
+		
+		// save heuristic
+		for (int i = 0; i < route.size(); i++) {
+			meilleureSolution[i] = route.get(i);
+		}
+		
+		return totalCost;
 	}
 }
 
