@@ -5,6 +5,8 @@ import domain.service.PlanningService;
 import domain.service.RequestService;
 import domain.service.TourService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
@@ -81,11 +83,40 @@ public class TourController {
 
 
     @PostMapping("/update-stop-order")
-    public void updateStopOrder(@RequestParam long courierId,
-                                   @RequestParam Integer precStopIndex,
-                                   @RequestParam Integer followingStopIndex) {
-        tourService.updateStopOrder(courierId, precStopIndex, followingStopIndex);
-        planningService.recomputeTourForCourier(courierId);
+    /**
+     * Updates the order of stops for a courier's tour and recomputes the tour.
+     * If the update is invalid (e.g., involves the warehouse or stops from the same request),
+     * an appropriate error response is returned.
+     *
+     * @param courierId The ID of the courier whose stop order is being updated.
+     * @param precStopIndex The index of the preceding stop in the tour.
+     * @param followingStopIndex The index of the following stop in the tour.
+     * @return A ResponseEntity indicating the result of the operation:
+     *         - 200 OK if the update and recomputation succeed.
+     *         - 400 BAD REQUEST if the update is invalid.
+     *         - 409 CONFLICT if an error occurs during tour recomputation.
+     */
+    public ResponseEntity<?> updateStopOrder(@RequestParam long courierId,
+                                             @RequestParam Integer precStopIndex,
+                                             @RequestParam Integer followingStopIndex) {
+        try {
+            // Updating Stops order
+            tourService.updateStopOrder(courierId, precStopIndex, followingStopIndex);
+            // Recomputing tour
+            planningService.recomputeTourForCourier(courierId);
+
+            // If no exceptions arose
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            // Validation exceptions (ex: warehouse or same request)
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Impossible to update stops order : " + e.getMessage());
+        } catch (RuntimeException e) {
+            // PlanningService exceptions (recomputeTourForCourier)
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("Error when recomputing tour for courier " + courierId + ". " +
+                            "Tour update cancelled. Details : " + e.getMessage());
+        }
     }
 
     /**

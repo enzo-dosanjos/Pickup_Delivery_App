@@ -57,21 +57,7 @@ public class PlanningService {
         if (!tourService.getPrecedencesByCourier().containsKey(courierId)) {
             tourService.initPrecedences(courierId, requestIdsForCourier, pickupDelivery);
         }
-
-        /*
-        // 1. Build list of stops (warehouse + pickups + deliveries)
-        int nbStops = 2 * requestIdsForCourier.size() + 1;
-        long[] stops = new long[nbStops];
-
-        int idx = 0;
-        stops[idx++] = pickupDelivery.getWarehouseAddressId();
-
-        for (long reqId : requestIdsForCourier) {
-            Request r = requests.get(reqId);
-            stops[idx++] = r.getPickupIntersectionId();
-            stops[idx++] = r.getDeliveryIntersectionId();
-        }
-        */
+        // 1. Generate TSP precedences and stops
 
         java.util.Map.Entry<long[], HashMap<Integer, Set<Integer>>> result = tourService.generateTspPrecedences(requestIdsForCourier, courierId, pickupDelivery);
         long[] stops = result.getKey();
@@ -87,22 +73,6 @@ public class PlanningService {
 
         // 4.Precedences
         TSP1 tsp = new TSP1();
-        /*
-        int requestIndex = 0;
-
-        /*
-        if (tsp.getPrecedences() == null){
-            HashMap<Integer, Set<Integer>> precs = new HashMap<>();
-            for (long reqId : requestIdsForCourier) {
-                int pickupIndex = 1 + requestIndex * 2;
-                int deliveryIndex = pickupIndex + 1;
-
-                precs.put(deliveryIndex, Set.of(pickupIndex));
-                requestIndex++;
-            }
-            tsp.setPrecedences(precs);
-        }
-        */
         tsp.setPrecedences(tspPrecedences);
 
 
@@ -202,6 +172,13 @@ public class PlanningService {
         return tourService.getCouriers().stream().anyMatch(courier -> courier.getId() == courierId);
     }
 
+    /**
+     * Updates the precedence constraints for a courier by adding a new request.
+     *
+     * @param courierId The ID of the courier.
+     * @param newRequestId The ID of the new request to add.
+     * @param pickupDelivery The pickup and delivery data.
+     */
     public void updatePrecedences(long courierId, long newRequestId, PickupDelivery pickupDelivery) {
         long puIntersectionId, delIntersectionId;
 
@@ -213,16 +190,22 @@ public class PlanningService {
         precs.computeIfAbsent(tourService.parseParams(newRequestId, delIntersectionId, 'd'), k -> new HashSet<>()).add(tourService.parseParams(newRequestId, puIntersectionId, 'p'));
     }
 
+    /**
+     * Deletes the precedence constraints for a specific request of a courier.
+     *
+     * @param courierId The ID of the courier.
+     * @param requestId The ID of the request whose precedences need to be removed.
+     */
     public void deletePrecedences(long courierId, long requestId) {
         HashMap<String, Set<String>> precs = tourService.getPrecedencesByCourier().get(courierId);
 
-        // Remove keys starting with requestId
+        // Remove keys starting with the request ID
         precs.keySet().removeIf(key -> key.startsWith(String.valueOf(requestId)));
 
-        // Remove values starting with requestId
-        precs.values().forEach(set -> set.removeIf(value -> value.startsWith((String.valueOf(requestId)))));
+        // Remove values starting with the request ID
+        precs.values().forEach(set -> set.removeIf(value -> value.startsWith(String.valueOf(requestId))));
 
-        // Clean empty entries
+        // Clean up empty entries
         precs.entrySet().removeIf(entry -> entry.getValue().isEmpty());
     }
 

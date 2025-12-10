@@ -219,6 +219,13 @@ public class TourService {
         return tour;
     }
 
+    /**
+     * Updates the stop order for a courier's tour and adds precedence constraints.
+     *
+     * @param courierId The ID of the courier.
+     * @param prevStopIndex The index of the previous stop.
+     * @param followingStopIndex The index of the following stop.
+     */
     public void updateStopOrder(long courierId, Integer prevStopIndex, Integer followingStopIndex) {
         HashMap<String, Set<String>> precs = precedencesByCourier.get(courierId);
         TourStop prevStop, followStop;
@@ -229,14 +236,14 @@ public class TourService {
         prevStop = tour.getStops().get(prevStopIndex);
         followStop = tour.getStops().get(followingStopIndex);
 
-        // checking if the stops are not the warehouse
+        // Checking if the stops are not the warehouse
         if (prevStop.getRequestID() == -1 || followStop.getRequestID() == -1) {
             throw new IllegalArgumentException(
                     "Impossible to create precedence with warehouse."
             );
         }
 
-        // checking if the stops come from different requests
+        // Checking if the stops come from different requests
         if (prevStop.getRequestID() == followStop.getRequestID()) {
             throw new IllegalArgumentException(
                     "Impossible to create precedence between 2 stops belonging to the same request (requestId = "
@@ -248,16 +255,31 @@ public class TourService {
         prevType = (prevStop.getType() == StopType.PICKUP) ? 'p' : 'd';
         followingType = (followStop.getType() == StopType.PICKUP) ? 'p' : 'd';
 
+        String prevParse = parseParams(prevStop.getRequestID(), prevStop.getIntersectionId(), prevType);
+        String followParse = parseParams(followStop.getRequestID(), followStop.getIntersectionId(), followingType);
+
+        if ((precs.containsKey(prevParse) && precs.get(prevParse).contains(followParse)) || (precs.containsKey(followParse) && precs.get(followParse).contains(prevParse))) {
+            throw new IllegalArgumentException(
+                    "Impossible to create precedence between 2 stops already linked by precedence : "
+                            + prevStopIndex + " and " + followingStopIndex
+            );
+        }
         // Add precedence
         precs.computeIfAbsent(
-                        parseParams(followStop.getRequestID(), followStop.getIntersectionId(), followingType),
+                        followParse,
                         k -> new HashSet<>())
-                .add(parseParams(prevStop.getRequestID(), prevStop.getIntersectionId(), prevType));
+                .add(prevParse);
 
         precedencesByCourier.put(courierId, precs);
-
     }
 
+    /**
+     * Initializes precedence constraints for a courier based on their requests.
+     *
+     * @param courierId The ID of the courier.
+     * @param requestsId The list of request IDs.
+     * @param pickupDelivery The pickup and delivery data.
+     */
     public void initPrecedences(long courierId, ArrayList<Long> requestsId, PickupDelivery pickupDelivery) {
         HashMap<String, Set<String>> precs = new HashMap<>();
         Request request;
@@ -268,24 +290,29 @@ public class TourService {
             puIntersectionId = request.getPickupIntersectionId();
             delIntersectionId = request.getDeliveryIntersectionId();
             precs.computeIfAbsent(parseParams(requestId, delIntersectionId, 'd'), k -> new HashSet<>()).add(parseParams(requestId, puIntersectionId, 'p'));
-            //precs.put(parseParams(requestId, delIntersectionId, 'd'), Set.of(parseParams(requestId, puIntersectionId, 'p')));
         }
         precedencesByCourier.put(courierId, precs);
     }
 
+    /**
+     * Generates TSP precedences for a courier based on their requests.
+     *
+     * @param requestIdsForCourier The list of request IDs for the courier.
+     * @param courierId The ID of the courier.
+     * @param pickupDelivery The pickup and delivery data.
+     * @return A map entry containing intersection IDs and precedence constraints.
+     */
     public java.util.Map.Entry<long[], HashMap<Integer, Set<Integer>>> generateTspPrecedences(
             ArrayList<Long> requestIdsForCourier,
             long courierId,
             PickupDelivery pickupDelivery) {
 
-        // Récupère les précédences pour ce courier
         HashMap<String, Set<String>> precs = precedencesByCourier.get(courierId);
 
         Request request;
 
-        // Utilisation d'une ArrayList
-        List<String> vertices = new ArrayList<>(requestIdsForCourier.size() * 2 +1);
-        vertices.add(parseParams(-1, pickupDelivery.getWarehouseAdressId(), 'w'));
+        List<String> vertices = new ArrayList<>(requestIdsForCourier.size() * 2 + 1);
+        vertices.add(parseParams(-1, pickupDelivery.getWarehouseAddressId(), 'w'));
 
         for (long requestId : requestIdsForCourier) {
             request = pickupDelivery.findRequestById(requestId);
@@ -295,7 +322,6 @@ public class TourService {
 
         HashMap<Integer, Set<Integer>> tspPrecs = new HashMap<>();
 
-        // Parcours de la liste des vertices
         for (int i = 0; i < vertices.size(); i++) {
             Set<String> precVertices = precs.get(vertices.get(i));
             if (precVertices != null) {
@@ -308,14 +334,27 @@ public class TourService {
         }
         long[] verticesIntersectionIds = extractIntersectionIds(vertices);
 
-        // Retourne la paire : List<String> et HashMap<Integer, Set<Integer>>
         return java.util.Map.entry(verticesIntersectionIds, tspPrecs);
     }
 
+    /**
+     * Parses parameters into a string representation.
+     *
+     * @param requestId The request ID.
+     * @param intersectionID The intersection ID.
+     * @param type The type of stop ('p' for pickup, 'd' for delivery, 'w' for warehouse).
+     * @return The parsed string representation.
+     */
     public String parseParams(long requestId, long intersectionID, char type) {
         return requestId + "/" + intersectionID + "/" + type;
     }
 
+    /**
+     * Extracts intersection IDs from a list of vertex strings.
+     *
+     * @param vertices The list of vertex strings.
+     * @return An array of intersection IDs.
+     */
     public long[] extractIntersectionIds(List<String> vertices) {
         long[] intersectionIds = new long[vertices.size()];
 

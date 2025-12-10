@@ -448,17 +448,24 @@ export default function Home() {
             });
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorText = await response.text();
+                // Show error in the app without throwing
+                setError(`Failed to update stop order: ${errorText}`);
+                return; // stop further processing
             }
+
+            // Clear any previous error
+            setError("");
 
             console.log("Stop order updated successfully");
 
-            // Recharge les tours pour voir le changement
+            // Reload the tour to see changes
             await displayTour();
 
         } catch (e: any) {
-            console.error("Failed to update stop order:", e);
-            setError(`Failed to update stop order: ${e.message}`);
+            console.error("Unexpected error while updating stop order:", e);
+            // Still catch unexpected errors without breaking the app
+            setError(`Unexpected error: ${e.message}`);
         }
     };
 
@@ -554,7 +561,24 @@ export default function Home() {
     }
 
     if (error) {
-        return <div>Error: {error}</div>;
+        return <div
+            style={{
+                position: "fixed",
+                top: "20%",
+                left: "50%",
+                transform: "translateX(-50%)",
+                backgroundColor: "#f8d7da",
+                color: "#721c24",
+                padding: "20px",
+                border: "1px solid #f5c6cb",
+                borderRadius: "5px",
+                zIndex: 1000,
+                boxShadow: "0 0 10px rgba(0,0,0,0.3)",
+            }}
+        >
+            <p>{error}</p>
+            <button onClick={() => setError(null)}>Close</button>
+        </div>;
     }
 
     return (

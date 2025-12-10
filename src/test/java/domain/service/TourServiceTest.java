@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 import java.util.HashMap;
@@ -80,24 +81,6 @@ class TourServiceTest {
     }
 
     /**
-     * Verifies that request order constraints can be added for a specific courier.
-     */
-    @Test
-    void checkUpdateRequestOrderAddsConstraintForCourier() {
-        TourService service = new TourService();
-        service.addCourier(new Courier(2L, "Courier 2", Duration.ofHours(8)));
-
-        long courierId = 2L;
-        service.updateRequestOrder(1L, 2L, courierId);
-        service.updateRequestOrder(3L, 4L, courierId);
-
-        HashMap<Long, Long> constraints = service.getRequestOrder().get(courierId);
-        assertEquals(2, constraints.size());
-        assertEquals(2L, constraints.get(1L));
-        assertEquals(4L, constraints.get(3L));
-    }
-
-    /**
      * Verifies that adding a tour for a courier updates the tours map correctly.
      */
     @Test
@@ -108,18 +91,6 @@ class TourServiceTest {
         service.setTourForCourier(1L, tour);
 
         assertEquals(tour, service.getTours().get(1L));
-    }
-
-    /**
-     * Verifies that updating request order fails when the courier does not exist.
-     */
-    @Test
-    void updateRequestOrderFailsForNonExistentCourier() {
-        TourService service = new TourService();
-
-        boolean result = service.updateRequestOrder(1L, 2L, 999L);
-
-        assertFalse(result);
     }
 
     /**
@@ -184,5 +155,84 @@ class TourServiceTest {
         service.getCouriers().get(1).setAvailabilityStatus(AvailabilityStatus.BUSY);
         assertEquals(1, service.getAvailableCouriers().size());
         assertEquals(1L, service.getAvailableCouriers().getFirst().getId());
+    }
+
+    @Test
+    void addCourierIncreasesNumCouriers() {
+        TourService service = new TourService();
+        assertEquals(0, service.getNumCouriers());
+
+        service.addCourier(new Courier(1L, "Courier 1", Duration.ofHours(8)));
+        assertEquals(1, service.getNumCouriers());
+    }
+
+    @Test
+    void removeCourierDecreasesNumCouriers() {
+        TourService service = new TourService();
+        service.addCourier(new Courier(1L, "Courier 1", Duration.ofHours(8)));
+        service.addCourier(new Courier(2L, "Courier 2", Duration.ofHours(8)));
+        assertEquals(2, service.getNumCouriers());
+
+        boolean removed = service.removeCourier(1L);
+        assertTrue(removed);
+        assertEquals(1, service.getNumCouriers());
+    }
+
+    @Test
+    void removeCourierReturnsFalseIfCourierNotFound() {
+        TourService service = new TourService();
+        service.addCourier(new Courier(1L, "Courier 1", Duration.ofHours(8)));
+
+        boolean removed = service.removeCourier(2L);
+        assertFalse(removed);
+        assertEquals(1, service.getNumCouriers());
+    }
+
+    @Test
+    void getAvailableCouriersReturnsOnlyAvailable() {
+        TourService service = new TourService();
+        service.addCourier(new Courier(1L, "Courier 1", Duration.ofHours(8)));
+        service.addCourier(new Courier(2L, "Courier 2", Duration.ofHours(8)));
+
+        service.getCouriers().get(1).setAvailabilityStatus(AvailabilityStatus.BUSY);
+        List<Courier> availableCouriers = service.getAvailableCouriers();
+
+        assertEquals(1, availableCouriers.size());
+        assertEquals(1L, availableCouriers.get(0).getId());
+    }
+
+    @Test
+    void updateStopOrderThrowsExceptionForWarehouse() {
+        TourService service = new TourService();
+        Tour tour = new Tour(1L, LocalDateTime.now());
+        tour.addStop(new TourStop(StopType.WAREHOUSE, -1, 1L, LocalDateTime.now(), LocalDateTime.now()));
+        tour.addStop(new TourStop(StopType.PICKUP, 1, 1L, LocalDateTime.now(), LocalDateTime.now()));
+        service.setTourForCourier(1L, tour);
+
+        assertThrows(IllegalArgumentException.class, () -> service.updateStopOrder(1L, 0, 1));
+    }
+
+    @Test
+    void updateStopOrderThrowsExceptionForSameRequest() {
+        TourService service = new TourService();
+        Tour tour = new Tour(1L, LocalDateTime.now());
+        tour.addStop(new TourStop(StopType.PICKUP, 1L, 2L, LocalDateTime.now(), LocalDateTime.now()));
+        tour.addStop(new TourStop(StopType.DELIVERY, 1L, 3L, LocalDateTime.now(), LocalDateTime.now()));
+        service.setTourForCourier(1L, tour);
+
+        assertThrows(IllegalArgumentException.class, () -> service.updateStopOrder(1L, 0, 1));
+    }
+
+    @Test
+    void updateStopOrderAddsPrecedence() {
+        TourService service = new TourService();
+        Tour tour = new Tour(1L, LocalDateTime.now());
+        tour.addStop(new TourStop(StopType.PICKUP, 1L, 2L, LocalDateTime.now(), LocalDateTime.now()));
+        tour.addStop(new TourStop(StopType.PICKUP, 2L, 3L, LocalDateTime.now(), LocalDateTime.now()));
+        service.setTourForCourier(1L, tour);
+        service.initPrecedences(1L, new ArrayList<>(), new PickupDelivery());
+
+        service.updateStopOrder(1L, 0, 1);
+        assertTrue(service.getPrecedencesByCourier().get(1L).containsKey("2/3/p"));
     }
 }
