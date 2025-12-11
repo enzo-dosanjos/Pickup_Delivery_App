@@ -39,8 +39,9 @@ public class RequestController {
     }
 
     @PostMapping("/save")
-    public ResponseEntity<?> saveRequests(@RequestParam String filepath) {
-        requestService.saveRequests(filepath);
+    public ResponseEntity<?> saveRequests(@RequestParam String filepath,
+                                          @RequestParam long courierId) {
+        requestService.saveRequests(filepath, courierId);
         return ResponseEntity.ok().build();
     }
 
@@ -87,8 +88,8 @@ public class RequestController {
         }
 
         // Ensure warehouse is registered (when coming from manual add and no XML was loaded)
-        if (requestService.getPickupDelivery().getWarehouseAddressId() == -1) {
-            requestService.setWarehouseAddress(warehouseId);
+        if (requestService.getPickupDeliveryForCourier(courierId).getWarehouseAddressId() == -1) {
+            requestService.setWarehouseAddress(warehouseId, courierId);
         }
 
         // Convert durations from seconds to Duration
@@ -109,8 +110,8 @@ public class RequestController {
 
 
     @GetMapping("/warehouse")
-    public long getWarehouseAddress() {
-        return requestService.getPickupDelivery().getWarehouseAddressId();
+    public long getWarehouseAddress(@RequestParam long courierId) {
+        return requestService.getPickupDeliveryForCourier(courierId).getWarehouseAddressId();
     }
 
     /**
@@ -122,7 +123,7 @@ public class RequestController {
     @PostMapping("/delete")
     public ResponseEntity<?> deleteRequest(@RequestParam long requestId,
                                            @RequestParam long courierId) {
-        Request originalRequest = requestService.getRequestById(requestId);
+        Request originalRequest = requestService.getRequestById(requestId, courierId);
         if (originalRequest == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Request with ID " + requestId + " not found.");
         }

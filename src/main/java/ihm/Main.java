@@ -19,7 +19,7 @@ public class Main {
     public static void main(String[] args) {
         // Domain + services
         RequestService requestService = new RequestService();
-        PickupDelivery pickupDelivery = requestService.getPickupDelivery();
+        PickupDelivery pickupDelivery = requestService.getPickupDeliveryForCourier(1L);
         TourService tourService = new TourService();
         MapService mapService = new MapService();
         mapService.loadMap("src/main/resources/grandPlan.xml");
@@ -130,14 +130,14 @@ public class Main {
      * @param pickupDelivery The PickupDelivery object containing the requests.
      */
     private static void listRequests(PickupDelivery pickupDelivery) {
-        TreeMap<Long, Request> requests = pickupDelivery.getRequests();
+       ArrayList<Request> requests = pickupDelivery.getRequests();
         if (requests.isEmpty()) {
             System.out.println("No requests loaded.");
             return;
         }
 
         System.out.println("\nCurrent requests:");
-        for (Request r : requests.values()) {
+        for (Request r : requests) {
             System.out.println(
                     "Request #" + r.getId()
                             + " | pickup=" + r.getPickupIntersectionId()
