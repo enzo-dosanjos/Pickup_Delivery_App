@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.stream.Collectors;
 
 /**
@@ -30,6 +31,7 @@ public class RequestController {
      *
      * @param requestService the service responsible for managing requests
      * @param planningService the service responsible for managing tours calculations
+     * @param tourService the service responsible for managing tours
      */
     @Autowired
     public RequestController(RequestService requestService, PlanningService planningService, TourService tourService) {
@@ -43,6 +45,16 @@ public class RequestController {
                                           @RequestParam long courierId) {
         requestService.saveRequests(filepath, courierId);
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/addWarehouse")
+    public void addWarehouse(@RequestParam long warehouseId,
+                             @RequestParam long courierId) {
+        if (warehouseId <= 0) {
+            throw new IllegalArgumentException("warehouseId must be a positive intersection id.");
+        }
+
+        requestService.setWarehouseAddress(warehouseId, courierId);
     }
 
     /**
@@ -87,9 +99,15 @@ public class RequestController {
                     .body("Courier ID " + courierId + " does not exist.");
         }
 
-        // Ensure warehouse is registered (when coming from manual add and no XML was loaded)
-        if (requestService.getPickupDeliveryForCourier(courierId).getWarehouseAddressId() == -1) {
-            requestService.setWarehouseAddress(warehouseId, courierId);
+        long currentWarehouseId = requestService.getPickupDeliveryForCourier(courierId).getWarehouseAddressId();
+        if (currentWarehouseId == -1) {
+            if (warehouseId == null || warehouseId <= 0) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("Warehouse is not set. Set it via /api/request/addWarehouse or provide a valid warehouseId.");
+            }
+            requestService.getPickupDeliveryForCourier(courierId).setWarehouseAddressId(warehouseId);
+        } else if (warehouseId != null && warehouseId > 0 && warehouseId != currentWarehouseId) {
+            requestService.getPickupDeliveryForCourier(courierId).setWarehouseAddressId(warehouseId);
         }
 
         // Convert durations from seconds to Duration
@@ -108,10 +126,31 @@ public class RequestController {
         return recomputeTourAndHandleExceptions(courierId);
     }
 
-
-    @GetMapping("/warehouse")
+    /**
+     * Retrieves the warehouse address ID associated with the specified courier.
+     *
+     * @param courierId the ID of the courier
+     * @return the warehouse address ID
+     */
+    @PostMapping("/warehouse")
     public long getWarehouseAddress(@RequestParam long courierId) {
-        return requestService.getPickupDeliveryForCourier(courierId).getWarehouseAddressId();
+        var pd = requestService.getPickupDeliveryForCourier(courierId);
+        if (pd == null) {
+            return -1L;  // Courier does not exist or has no PickupDelivery
+        }
+        long wid = pd.getWarehouseAddressId();
+
+        return wid == 0 ? -1L : wid;
+    }
+
+    /**
+     * Retrieves a list of all warehouse IDs associated with the requests.
+     *
+     * @return an ArrayList of warehouse IDs
+     */
+    @GetMapping("/all-warehouses")
+    public ArrayList<Long> getAllWarehouseAddresses() {
+        return requestService.getAllWarehouseIds();
     }
 
     /**

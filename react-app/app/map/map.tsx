@@ -68,7 +68,7 @@ export function Map(props: {
     pickupId: number | null,
     deliveryId: number | null,
     onDeleteRequest?: (requestId: number, courierId: number) => void,
-    warehouseId: number | null,
+    warehouseIds: Array<number> | null,
 }) {
     const mapBounds = useMemo(() => new L.LatLngBounds(props.bounds), [props.bounds]);
 
@@ -84,7 +84,7 @@ export function Map(props: {
             <Pane name="intersections-pane" style={{ zIndex: 500 }} />
 
             {props.intersections.map((intersection) => {
-                if (intersection.id === props.warehouseId) {
+                if (props.warehouseIds && props.warehouseIds.includes(intersection.id)) {
                     return (
                         <Marker
                             key={intersection.id}
