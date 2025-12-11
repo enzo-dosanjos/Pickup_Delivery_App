@@ -9,53 +9,69 @@ import domain.utils.DurationUtil;
 import java.util.HashMap;
 import java.util.PriorityQueue;
 
+/**
+ * Service class for calculating the shortest paths using Dijkstra's algorithm.
+ */
 public class DijkstraService {
-    private final Map map;
-    private GrapheComplet g;
 
+    private final Map map; // The map containing intersections and road segments.
+
+
+    private GrapheComplet g; // The complete graph representation used for storing shortest path costs.
+
+    /**
+     * Computes the shortest paths between all intersections that need to be visited.
+     *
+     * @param dijkstraTable the table used to store the shortest path information
+     */
     public void computeShortestPath(DijkstraTable dijkstraTable) {
-    // Calculate the shortest paths between all intersections that need to be visited using Dijkstra's algorithm
-
+        // Initialize the Dijkstra table with default values
         for (Long row : map.getIntersections().keySet()) {
             for (Long col : map.getIntersections().keySet()) {
-                double duration;
-                if (row.equals(col)) {
-                    duration = 0L;
-                } else {
-                    duration = Double.MAX_VALUE;
-                }
+                double duration = row.equals(col) ? 0L : Double.MAX_VALUE;
                 long predecessor = -1;
                 boolean visited = false;
                 dijkstraTable.put(row, col, duration, predecessor, visited);
             }
         }
 
-
+        // Compute the shortest paths for each warehouse/pickup/delivery stop of this tour
         for (int i = 0; i < g.getNbSommets(); i++) {
-            Dijkstra(i, dijkstraTable);
+            dijkstra(i, dijkstraTable);
         }
     }
 
-    private void Dijkstra(int start, DijkstraTable dijkstraTable) {
-        // Calculate the shortest paths using Dijkstra's algorithm
+    /**
+     * Executes Dijkstra's algorithm to calculate the shortest paths from a starting vertex.
+     *
+     * @param start the index of the starting vertex
+     * @param dijkstraTable the table used to store the shortest path information
+     */
+    private void dijkstra(int start, DijkstraTable dijkstraTable) {
         this.g.setCout(start, start, 0L);
         long[] sommets = this.g.getSommets();
-        HashMap<Long, RoadSegment[]> adjencyList = map.getAdjencyList();
+        HashMap<Long, RoadSegment[]> adjacencyList = map.getAdjacencyList();
         PriorityQueue<Node> pq = new PriorityQueue<>();
         pq.add(new Node(sommets[start], 0));
+
         while (!pq.isEmpty()) {
             Node currentNode = pq.poll();
             long currentVertex = currentNode.getVertex();
             CellInfo currentCell = dijkstraTable.get(sommets[start], currentVertex);
+
             if (currentCell == null || currentCell.isVisited()) continue;
+
             currentCell.setVisited(true);
-            RoadSegment[] neighbors = adjencyList.get(currentVertex);
+            RoadSegment[] neighbors = adjacencyList.get(currentVertex);
+
             if (neighbors != null) {
                 for (RoadSegment segment : neighbors) {
                     long neighborVertex = segment.getEndId();
                     CellInfo neighborCell = dijkstraTable.get(sommets[start], neighborVertex);
+
                     if (neighborCell != null && !neighborCell.isVisited()) {
                         double newDur = currentCell.getDuration() + DurationUtil.computeDuration(segment);
+
                         if (newDur < neighborCell.getDuration()) {
                             neighborCell.setDuration(newDur);
                             neighborCell.setPredecessor(currentVertex);
@@ -65,7 +81,8 @@ public class DijkstraService {
                     }
                 }
             }
-            // Test pour savoir si le sommet est dans grapheComplet
+
+            // Update the cost in the complete graph if the vertex is part of it
             for (int j = 0; j < this.g.getNbSommets(); j++) {
                 if (sommets[j] == currentVertex) {
                     this.g.setCout(start, j, currentNode.getDuration());
@@ -74,10 +91,17 @@ public class DijkstraService {
         }
     }
 
+    /**
+     * Constructs a new DijkstraService with the specified map and complete graph.
+     *
+     * @param map the map containing intersections and road segments
+     * @param g the complete graph representation
+     */
     public DijkstraService(Map map, GrapheComplet g) {
         this.map = map;
         this.g = g;
     }
+
 
     public GrapheComplet getGraph() {
         return g;

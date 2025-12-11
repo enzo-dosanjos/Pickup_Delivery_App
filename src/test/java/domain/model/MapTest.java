@@ -8,8 +8,15 @@ import java.util.TreeMap;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Unit tests for the {@link Map} class.
+ */
 class MapTest {
 
+    /**
+     * Verifies that adding the same intersection multiple times behaves as expected.
+     * The first addition should succeed, while subsequent additions should fail.
+     */
     @Test
     void checkAddSameIntersectionMultipleTimes() {
         Map map = new Map();
@@ -26,6 +33,9 @@ class MapTest {
         assertSame(i1, intersections.get(1L));
     }
 
+    /**
+     * Verifies that adding a road segment fails if the starting intersection is unknown.
+     */
     @Test
     void checkAddRoadSegmentFailsIfIntersectionUnknown() {
         Map map = new Map();
@@ -34,9 +44,12 @@ class MapTest {
         boolean result = map.addRoadSegment(1L, segment);
 
         assertFalse(result);
-        assertTrue(map.getAdjencyList().isEmpty());
+        assertTrue(map.getAdjacencyList().isEmpty());
     }
 
+    /**
+     * Verifies that adding a road segment succeeds when the starting intersection exists.
+     */
     @Test
     void checkAddRoadSegmentWorksWhenIntersectionExists() {
         Map map = new Map();
@@ -50,12 +63,15 @@ class MapTest {
 
         assertTrue(result);
 
-        HashMap<Long, RoadSegment[]> adj = map.getAdjencyList();
+        HashMap<Long, RoadSegment[]> adj = map.getAdjacencyList();
         assertTrue(adj.containsKey(1L));
         assertEquals(1, adj.get(1L).length);
         assertSame(s1, adj.get(1L)[0]);
     }
 
+    /**
+     * Verifies that multiple road segments can be added to the same starting intersection.
+     */
     @Test
     void checkAddMultipleRoadSegments() {
         Map map = new Map();
@@ -72,12 +88,15 @@ class MapTest {
         map.addRoadSegment(1L, s1);
         map.addRoadSegment(1L, s2);
 
-        RoadSegment[] segments = map.getAdjencyList().get(1L);
+        RoadSegment[] segments = map.getAdjacencyList().get(1L);
         assertEquals(2, segments.length);
         assertSame(s1, segments[0]);
         assertSame(s2, segments[1]);
     }
 
+    /**
+     * Verifies that the correct road segment is returned when queried by start and end IDs.
+     */
     @Test
     void checkGetRoadSegmentReturnCorrectSegment() {
         Map map = new Map();
@@ -101,6 +120,9 @@ class MapTest {
         assertNull(notFound);
     }
 
+    /**
+     * Verifies that road segments can be retrieved by a partial name match.
+     */
     @Test
     void chechGetRoadSegmentByPartialName() {
         Map map = new Map();
@@ -137,6 +159,9 @@ class MapTest {
         assertEquals(0, notFound.size());
     }
 
+    /**
+     * Verifies that adding a road segment fails when the start ID does not match the segment's start ID.
+     */
     @Test
     void checkAddRoadSegmentFailsWhenStartIdDoesNotMatch() {
         Map map = new Map();
@@ -148,9 +173,12 @@ class MapTest {
         boolean result = map.addRoadSegment(1L, segment);
 
         assertFalse(result, "addRoadSegment should fail when startId does not match");
-        assertTrue(map.getAdjencyList().isEmpty(), "No segment should be added");
+        assertTrue(map.getAdjacencyList().isEmpty(), "No segment should be added");
     }
 
+    /**
+     * Verifies that adding a road segment fails when the end intersection is unknown.
+     */
     @Test
     void checkAddRoadSegmentFailsWhenEndIntersectionUnknown() {
         Map map = new Map();
@@ -162,6 +190,49 @@ class MapTest {
         boolean result = map.addRoadSegment(1L, segment);
 
         assertFalse(result, "addRoadSegment should fail when end intersection is unknown");
-        assertTrue(map.getAdjencyList().isEmpty(), "No segment should be added");
+        assertTrue(map.getAdjacencyList().isEmpty(), "No segment should be added");
+    }
+
+    /**
+     * Verifies that retrieving a road segment by name returns an empty list when no matches are found.
+     */
+    @Test
+    void checkGetRoadSegmentByNameReturnsEmptyListWhenNoMatch() {
+        Map map = new Map();
+        Intersection i1 = new Intersection(1L, 45.0, 4.0);
+        map.addIntersection(i1);
+
+        ArrayList<RoadSegment> result = map.getRoadSegmentByName("Nonexistent Road");
+
+        assertTrue(result.isEmpty(), "Result should be empty when no matches are found");
+    }
+
+    /**
+     * Verifies that the toString method returns a non-empty string for a populated map.
+     */
+    @Test
+    void checkToStringReturnsNonEmptyStringForPopulatedMap() {
+        Map map = new Map();
+        Intersection i1 = new Intersection(1L, 45.0, 4.0);
+        map.addIntersection(i1);
+
+        String result = map.toString();
+
+        assertNotNull(result, "toString should not return null");
+        assertFalse(result.isEmpty(), "toString should return a non-empty string");
+    }
+
+    /**
+     * Verifies that the toString method returns an empty map description for an empty map.
+     */
+    @Test
+    void checkToStringReturnsEmptyMapDescriptionForEmptyMap() {
+        Map map = new Map();
+
+        String result = map.toString();
+
+        assertTrue(result.contains("Map:"), "toString should include 'Map:'");
+        assertTrue(result.contains("Intersections:"), "toString should include 'Intersections:'");
+        assertTrue(result.contains("Adjacency List:"), "toString should include 'Adjacency List:'");
     }
 }
