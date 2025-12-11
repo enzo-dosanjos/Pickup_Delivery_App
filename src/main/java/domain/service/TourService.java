@@ -44,6 +44,11 @@ public class TourService {
     }
 
 
+    /**
+     * Associates a computed tour with a courier.
+     * @param courierId courier identifier.
+     * @param tour tour to persist in memory.
+     */
     public void setTourForCourier(long courierId, Tour tour) {
         tours.put(courierId, tour);
     }
@@ -246,25 +251,36 @@ public class TourService {
     }
 
 
+    /**
+     * Current in-memory couriers.
+     * @return list of registered couriers (mutable).
+     */
     public ArrayList<Courier> getCouriers() {
         return couriers;
     }
 
 
+    /** @return number of couriers currently registered. */
     public int getNumCouriers() {
         return numCouriers;
     }
 
 
+    /** @return all tours keyed by courier id. */
     public TreeMap<Long, Tour> getTours() {
         return tours;
     }
 
 
+    /** @return precedence constraints keyed by courier id. */
     public TreeMap<Long, HashMap<Long, Long>> getRequestOrder() {
         return requestsOrder;
     }
 
+    /**
+     * Returns couriers considered available (not busy).
+     * @return list of available couriers.
+     */
     public ArrayList<Courier> getAvailableCouriers() {
         ArrayList<Courier> availableCouriers = new ArrayList<>();
         for (Courier courier : couriers) {

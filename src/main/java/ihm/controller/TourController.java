@@ -134,16 +134,30 @@ public class TourController {
     }
 
 
+    /**
+     * Lists all computed tours keyed by courier id.
+     * @return current tours managed in memory.
+     */
     @GetMapping("/tours")
     public Map<Long, Tour> getTours() {
         return tourService.getTours();
     }
 
+    /**
+     * Returns couriers flagged as available (not busy).
+     * @return list of available couriers.
+     */
     @GetMapping("/available-couriers")
     public List<Courier> getAvailableCouriers() {
         return tourService.getAvailableCouriers();
     }
 
+    /**
+     * Persists a courier's tour to an XML file.
+     * @param courierId courier whose tour is exported.
+     * @param filepath output path for the XML file.
+     * @return HTTP 200 on success, 404 if tour missing, 500 if write fails.
+     */
     @PostMapping("/save")
     public ResponseEntity<?> saveTour(@RequestParam long courierId,
                                       @RequestParam String filepath) {
@@ -157,7 +171,6 @@ public class TourController {
                     .body("Failed to export tour: " + e.getMessage());
         }
     }
-
     /**
      * DTO returned by show-request-details for front-end consumption.
      */

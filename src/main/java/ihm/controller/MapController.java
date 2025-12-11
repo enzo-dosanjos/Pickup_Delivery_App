@@ -27,7 +27,10 @@ public class MapController {
         mapService.loadMap("src/main/resources/grandPlan.xml");
     }
 
-
+    /**
+     * Returns the currently loaded map (intersections and road segments).
+     * @return domain map model served to the frontend.
+     */
     @RequestMapping("/api/map")
     public Map getMap() {
         return mapService.getMap();
