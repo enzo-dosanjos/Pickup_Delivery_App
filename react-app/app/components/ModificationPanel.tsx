@@ -23,7 +23,7 @@ type ModificationPanelProps = {
     onAddRequest: () => void;
     onCancel: () => void;
     selectionMode: 'pickup' | 'delivery' | null;
-    setSelectionMode: (mode: 'pickup' | 'delivery') => void;
+    setSelectionMode: (mode: 'pickup' | 'delivery' | 'warehouse') => void;
     isAddingRequest: boolean;
 };
 
