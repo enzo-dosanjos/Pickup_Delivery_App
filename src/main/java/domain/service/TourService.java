@@ -12,6 +12,7 @@ import domain.model.dijkstra.CellInfo;
 import domain.model.dijkstra.DijkstraTable;
 import org.springframework.stereotype.Service;
 import persistence.XMLParsers;
+import persistence.XMLWriters;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -272,5 +273,21 @@ public class TourService {
             }
         }
         return availableCouriers;
+    }
+
+    /**
+     * Exports the tour of the given courier to an XML file.
+     *
+     * @param courierId the courier whose tour must be exported
+     * @param filePath the destination XML file path
+     * @throws Exception if writing fails
+     */
+    public void exportTour(long courierId, String filePath) throws Exception {
+        Tour tour = tours.get(courierId);
+        if (tour == null) {
+            throw new IllegalArgumentException("No tour found for courier " + courierId);
+        }
+
+        XMLWriters.writeTour(tour, filePath);
     }
 }

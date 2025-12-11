@@ -55,6 +55,14 @@ type ApiCourier = {
     shiftDuration: string;
 }
 
+type RequestDetailsResponse = {
+    request: ApiRequest;
+    stopType: MapStopType;
+    arrivalTime?: string;
+    departureTime?: string;
+    courierId: number;
+};
+
 export function meta({}: Route.MetaArgs) {
     return [
         { title: "Pick-up & Delivery App" },
@@ -78,6 +86,7 @@ export default function Home() {
     const [isDeletingRequest, setIsDeletingRequest] = useState(false);
     const [tours, setTours] = useState<MapTour[]>([]);
     const [loadingTours, setLoadingTours] = useState(true);
+    const [isExportingTour, setIsExportingTour] = useState(false);
 
     const [isPanelOpen, setIsPanelOpen] = useState(false);
     const [selectionMode, setSelectionMode] = useState<'pickup' | 'delivery' | null>(null);
@@ -95,6 +104,7 @@ export default function Home() {
     // file paths
     const [requestFilePath, setRequestFilePath] = useState<string>("src/main/resources/requests.xml");
     const [courierFilePath, setCourierFilePath] = useState<string>("src/main/resources/couriers.xml");
+    const [exportFilePath, setExportFilePath] = useState<string>("src/main/resources/exported_tour.xml");
 
     const fetchInitiated = useRef(false);
 
@@ -513,6 +523,86 @@ export default function Home() {
         }
     };
 
+    const formatDateTime = (value?: string | null) => {
+        if (!value) return "N/A";
+        const parsed = new Date(value);
+        if (!isNaN(parsed.getTime())) {
+            return parsed.toLocaleString();
+        }
+        return value;
+    };
+
+    const handleShowRequestDetails = async (intersectionId: number) => {
+        try {
+            const params = new URLSearchParams();
+            params.append('instersectionId', intersectionId.toString());
+
+            const response = await fetch('http://localhost:8080/api/tour/show-request-details', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: params,
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText || `HTTP error! status: ${response.status}`);
+            }
+
+            const details: RequestDetailsResponse = await response.json();
+            setModalMessage(
+                `Courier: ${details.courierId >= 0 ? details.courierId : "N/A"}\n` +
+                `Stop type: ${details.stopType}\n` +
+                `Request ID: ${details.request?.id ?? "N/A"}\n` +
+                `Pickup: ${details.request?.pickupIntersectionId ?? "N/A"}\n` +
+                `Delivery: ${details.request?.deliveryIntersectionId ?? "N/A"}\n` +
+                `Arrival: ${formatDateTime(details.arrivalTime)}\n` +
+                `Departure: ${formatDateTime(details.departureTime)}`
+            );
+            setIsModalOpen(true);
+        } catch (e: any) {
+            setModalMessage(`Failed to fetch request details: ${e.message}`);
+            setIsModalOpen(true);
+        }
+    };
+
+    const handleExportTour = async () => {
+        if (!selectedCourier) {
+            setModalMessage("Please select a courier before exporting a tour.");
+            setIsModalOpen(true);
+            return;
+        }
+
+        setIsExportingTour(true);
+        try {
+            const params = new URLSearchParams();
+            params.append('courierId', selectedCourier);
+            params.append('filepath', exportFilePath);
+
+            const response = await fetch('http://localhost:8080/api/tour/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: params,
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText || `HTTP error! status: ${response.status}`);
+            }
+
+            setModalMessage(`Tour exported successfully to ${exportFilePath}`);
+            setIsModalOpen(true);
+        } catch (e: any) {
+            setModalMessage(`Failed to export tour: ${e.message}`);
+            setIsModalOpen(true);
+        } finally {
+            setIsExportingTour(false);
+        }
+    };
+
     if (loading || loadingTours) {
         return <div>Loading data...</div>;
     }
@@ -576,6 +666,25 @@ export default function Home() {
                         {isLoadingCouriers ? "Loading..." : "Load Couriers"}
                     </button>
                 </div>
+
+                <div style={{ marginTop: "8px" }}>
+                    <label style={{ marginRight: "8px" }}>
+                        Export tour path:
+                        <input
+                            type="text"
+                            value={exportFilePath}
+                            onChange={(e) => setExportFilePath(e.target.value)}
+                            style={{ marginLeft: "8px", width: "300px" }}
+                        />
+                    </label>
+                    <button
+                        onClick={handleExportTour}
+                        style={{ padding: "8px", marginLeft: "8px" }}
+                        disabled={isExportingTour}
+                    >
+                        {isExportingTour ? "Exporting..." : "Export Tour"}
+                    </button>
+                </div>
             </div>
 
             <br />
@@ -601,7 +710,7 @@ export default function Home() {
                 />
             )}
             {bounds.length > 0 && (
-                 <MapComponent
+                <MapComponent
                     intersections={intersections}
                     roadSegments={roadSegments}
                     bounds={bounds}
@@ -612,6 +721,7 @@ export default function Home() {
                     deliveryId={deliveryId}
                     onDeleteRequest={handleDeleteRequest}
                     warehouseId={warehouseId}
+                    onShowRequestDetails={handleShowRequestDetails}
                 />
             )}
         </div>

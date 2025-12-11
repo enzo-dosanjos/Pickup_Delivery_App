@@ -4,11 +4,15 @@ import domain.model.*;
 import domain.service.RequestService;
 import domain.service.TourService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * Controller class for managing tours and couriers.
@@ -92,11 +96,41 @@ public class TourController {
      * Shows the details of a request based on the specified intersection ID.
      *
      * @param instersectionId the intersection ID of the request
-     * @return a map entry containing the request and its stop type
+     * @return request details enriched with arrival/departure times when available
      */
     @PostMapping("/show-request-details")
-    public Map.Entry<Request, StopType> showRequestDetails(@RequestParam long instersectionId) {
-        return requestService.getPickupDelivery().findRequestByIntersectionId(instersectionId);  // todo: create a service method
+    public ResponseEntity<?> showRequestDetails(@RequestParam long instersectionId) {
+        Entry<Request, StopType> requestEntry =
+                requestService.getPickupDelivery().findRequestByIntersectionId(instersectionId);
+
+        if (requestEntry == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("No request found for intersection " + instersectionId);
+        }
+
+        for (Entry<Long, Tour> tourEntry : tourService.getTours().entrySet()) {
+            Tour tour = tourEntry.getValue();
+            TourStop stop = tour.getStopByIntersectionId(instersectionId);
+            if (stop != null) {
+                RequestDetailsResponse payload = new RequestDetailsResponse(
+                        requestEntry.getKey(),
+                        requestEntry.getValue(),
+                        stop.getArrivalTime(),
+                        stop.getDepartureTime(),
+                        tourEntry.getKey()
+                );
+                return ResponseEntity.ok(payload);
+            }
+        }
+
+        RequestDetailsResponse payload = new RequestDetailsResponse(
+                requestEntry.getKey(),
+                requestEntry.getValue(),
+                null,
+                null,
+                -1L
+        );
+        return ResponseEntity.ok(payload);
     }
 
 
@@ -108,5 +142,60 @@ public class TourController {
     @GetMapping("/available-couriers")
     public List<Courier> getAvailableCouriers() {
         return tourService.getAvailableCouriers();
+    }
+
+    @PostMapping("/save")
+    public ResponseEntity<?> saveTour(@RequestParam long courierId,
+                                      @RequestParam String filepath) {
+        try {
+            tourService.exportTour(courierId, filepath);
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to export tour: " + e.getMessage());
+        }
+    }
+
+    /**
+     * DTO returned by show-request-details for front-end consumption.
+     */
+    public static class RequestDetailsResponse {
+        private final Request request;
+        private final StopType stopType;
+        private final LocalDateTime arrivalTime;
+        private final LocalDateTime departureTime;
+        private final long courierId;
+
+        public RequestDetailsResponse(Request request, StopType stopType,
+                                      LocalDateTime arrivalTime, LocalDateTime departureTime,
+                                      long courierId) {
+            this.request = request;
+            this.stopType = stopType;
+            this.arrivalTime = arrivalTime;
+            this.departureTime = departureTime;
+            this.courierId = courierId;
+        }
+
+        public Request getRequest() {
+            return request;
+        }
+
+        public StopType getStopType() {
+            return stopType;
+        }
+
+        public LocalDateTime getArrivalTime() {
+            return arrivalTime;
+        }
+
+        public LocalDateTime getDepartureTime() {
+            return departureTime;
+        }
+
+        public long getCourierId() {
+            return courierId;
+        }
     }
 }

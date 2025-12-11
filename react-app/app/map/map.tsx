@@ -30,6 +30,24 @@ export type Tour = {
     totalDuration: number;
 };
 
+const tourColors = [
+    "#d0021b", // red
+    "#417505", // green
+    "#4a3700", // blue
+    "#f5a623", // orange
+    "#9013fe", // purple
+    "#50e3c2", // teal
+    "#b8e986", // light green
+    "#f8e71c", // yellow
+    "#8b572a", // brown
+    "#7ed321", // lime
+];
+
+const getTourColor = (courierId: number) => {
+    const idx = Math.abs(Math.floor(courierId)) % tourColors.length;
+    return tourColors[idx];
+};
+
 const pickupIcon = new L.Icon({
     iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
@@ -69,6 +87,7 @@ export function Map(props: {
     deliveryId: number | null,
     onDeleteRequest?: (requestId: number, courierId: number) => void,
     warehouseId: number | null,
+    onShowRequestDetails?: (intersectionId: number) => void,
 }) {
     const mapBounds = useMemo(() => new L.LatLngBounds(props.bounds), [props.bounds]);
 
@@ -128,10 +147,19 @@ export function Map(props: {
                 <Polyline key={id} positions={segment} pane="road-segments-pane" />
             ))}
 
-            {props.tours.map(tour => (
+            {props.tours.map(tour => {
+                const tourColor = getTourColor(tour.courierId);
+                return (
                 <div key={tour.courierId}>
                     {tour.roadSegmentsTaken.map((segment, index) => (
-                        <Polyline key={index} positions={segment} color="red" pane="tour-pane" />
+                        <Polyline
+                            key={index}
+                            positions={segment}
+                            color={tourColor}
+                            weight={5}
+                            opacity={0.85}
+                            pane="tour-pane"
+                        />
                     ))}
                     {tour.stops.map((stop, index) => {
                         const intersection = props.intersections.find(i => i.id === stop.intersectionId);
@@ -154,6 +182,13 @@ export function Map(props: {
                                             Request ID: {stop.requestID} <br />
                                             Intersection ID: {stop.intersectionId} <br />
                                             Order in tour: {stopOrder} <br />
+                                            <button
+                                                className="details-button"
+                                                onClick={() => props.onShowRequestDetails?.(stop.intersectionId)}
+                                                style={{ marginRight: "6px" }}
+                                            >
+                                                Show details
+                                            </button>
                                             {stop.type !== StopType.WAREHOUSE && stop.requestID >= 0 && (
                                                 <button className="delete-button" onClick={() => props.onDeleteRequest?.(stop.requestID, tour.courierId)}>
                                                     Delete Request
@@ -167,7 +202,7 @@ export function Map(props: {
                         return null;
                     })}
                 </div>
-            ))}
+            )})}
             <FitBounds bounds={tourBounds} />
         </MapContainer>
     );
