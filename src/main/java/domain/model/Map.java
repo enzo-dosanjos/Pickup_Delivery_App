@@ -74,6 +74,12 @@ public class Map {
     }
 
 
+    /**
+     * Retrieves a road segment from start to end if it exists.
+     * @param startId origin intersection id.
+     * @param endId destination intersection id.
+     * @return matching road segment or {@code null} if none exists.
+     */
     public RoadSegment getRoadSegment(Long startId, Long endId) {
         RoadSegment[] segments = adjacencyList.get(startId);
         if (segments != null) {
@@ -88,12 +94,22 @@ public class Map {
     }
 
 
+    /**
+     * Finds all segments whose name contains the given substring.
+     * @param name partial or full road name to search for.
+     * @return list of matching road segments (possibly empty).
+     */
     public ArrayList<RoadSegment> getRoadSegmentByName(String name) {
         // Iterate through all road segments in the adjacency list to find segments with the given partial or full name
         ArrayList<RoadSegment> roadSegments = new ArrayList<>();
+        if (name == null) {
+            return roadSegments;
+        }
+
+        String needle = name.toLowerCase();
         for (RoadSegment[] segments : adjacencyList.values()) {
             for (RoadSegment segment : segments) {
-                if (segment.getName().contains(name)) {
+                if (segment.getName().toLowerCase().contains(needle)) {
                     roadSegments.add(segment);
                 }
             }
@@ -103,11 +119,19 @@ public class Map {
     }
 
 
+    /**
+     * Immutable view of intersections keyed by id.
+     * @return all intersections on the map.
+     */
     public TreeMap<Long, Intersection> getIntersections() {
         return intersections;
     }
 
 
+    /**
+     * Adjacency list keyed by origin intersection id.
+     * @return mapping of origin to outgoing road segments.
+     */
     public HashMap<Long, RoadSegment[]> getAdjacencyList() {
         return adjacencyList;
     }
