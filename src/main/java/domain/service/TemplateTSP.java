@@ -29,9 +29,11 @@ public abstract class TemplateTSP implements TSP {
 	// Durée maximale en secondes (shift duration)
     private double maxDuration = Double.MAX_VALUE;
 
+	// Time control
 	private long lastImprovementTime;
 	private long NO_IMPROVEMENT_TIMEOUT = 4000;
 
+	// Flag to stop all recursive branches
 	private boolean stopSearch = false;
 
 	public void setNO_IMPROVEMENT_TIMEOUT(long noImp){
@@ -58,6 +60,13 @@ public abstract class TemplateTSP implements TSP {
         this.maxDuration = maxDuration;
     }
 
+	/**
+     * Entry point of the TSP solving process.
+     * Performs:
+     *   1. Initialization
+     *   2. Nearest Neighbor heuristic as initial upper bound
+     *   3. Branch & Bound search for improvements
+     */
 	public void chercheSolution(int tpsLimite,Graphe g ){
 		if (tpsLimite <= 0) return;
 		tpsDebut = System.currentTimeMillis();	
@@ -69,7 +78,7 @@ public abstract class TemplateTSP implements TSP {
 		Collection<Integer> nonVus = new ArrayList<Integer>(g.getNbSommets()-1);
 		for (int i=1; i<g.getNbSommets(); i++) nonVus.add(i);
 		Collection<Integer> vus = new ArrayList<Integer>(g.getNbSommets());
-		vus.add(0); // le premier sommet visite est 0
+		vus.add(0); // le premier sommet visite est 0 depot
 		
 		System.out.println("Running Nearest Neighbor heuristic...");
     	double heuristicCost = nearestNeighborHeuristic();
@@ -77,7 +86,7 @@ public abstract class TemplateTSP implements TSP {
 		if (heuristicCost < Double.MAX_VALUE) {
 			coutMeilleureSolution = heuristicCost;
 			System.out.println(
-				"NN initial solution: " + 
+				"Nearest Neigbour initial solution: " + 
 				String.format("%.2f", heuristicCost / 3600.0) + "h");
 			} 
 		else{
@@ -135,7 +144,7 @@ public abstract class TemplateTSP implements TSP {
 		long currentTime = System.currentTimeMillis();
 
 		if (stopSearch) return;
-		    //Timeout for we are if not getting a better solution in some time
+		// Stop when no improvement for some time
     	if (currentTime - lastImprovementTime > NO_IMPROVEMENT_TIMEOUT) {
         if (!stopSearch) {
                 System.out.println("No improvement for " + (NO_IMPROVEMENT_TIMEOUT/1000) + "s, stopping...");
@@ -143,16 +152,16 @@ public abstract class TemplateTSP implements TSP {
             }
             return;
     	}
-		
-		 if (currentTime - tpsDebut > tpsLimite) {
-            if (!stopSearch) {
+		// Stop when exceeding global limit
+		if (currentTime - tpsDebut > tpsLimite) {
+        	if (!stopSearch) {
                 System.out.println("Global Time limit reached");
                 stopSearch = true;
             }
             return;
         }
-
-	    if (nonVus.size() == 0){ // tous les sommets ont ete visites
+		 // Case: all nodes visited
+	    if (nonVus.size() == 0){ 
 	    	if (g.estArc(sommetCrt,0)){ // on peut retourner au sommet de depart (0)
 				double newCost = coutVus+g.getCout(sommetCrt,0);
 				if (newCost < coutMeilleureSolution){
@@ -161,6 +170,7 @@ public abstract class TemplateTSP implements TSP {
 					lastImprovementTime = System.currentTimeMillis();
 				}
 	    	}
+		// Explore successors only if the lower bound is promising
 	    } else if (coutVus+bound(sommetCrt,nonVus) < coutMeilleureSolution){
 	        Iterator<Integer> it = iterator(sommetCrt, nonVus, g);
 	        while (it.hasNext()){
@@ -181,14 +191,14 @@ public abstract class TemplateTSP implements TSP {
 	           
                 double addCost = g.getCout(sommetCrt, prochainSommet);
 
-                // Tempos service
+                // Temps service
                 if (serviceTimes != null && prochainSommet >= 0 && prochainSommet < serviceTimes.length) {
                     addCost += serviceTimes[prochainSommet];
                 }
 
                 double nouveauCout = coutVus + addCost;
                 
-                // Pruning: ne pas explorer si on dépasse la durée max
+                // Pruning: ne pas explorer si on depasse la durée max
                 if (nouveauCout <= maxDuration || nouveauCout < coutMeilleureSolution) {
                     branchAndBound(prochainSommet, nonVus, vus, nouveauCout);
                 }
@@ -198,7 +208,10 @@ public abstract class TemplateTSP implements TSP {
 	        }	    
 	    }
 	}
-
+	/**
+     * Generates a quick feasible solution using the Nearest Neighbor heuristic.
+     * Used as the initial upper bound before Branch & Bound.
+     */
 	protected double nearestNeighborHeuristic() {
 		int n = g.getNbSommets();
 		boolean[] visited = new boolean[n];

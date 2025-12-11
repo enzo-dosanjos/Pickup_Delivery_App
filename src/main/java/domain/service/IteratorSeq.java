@@ -29,7 +29,7 @@ public class IteratorSeq implements Iterator<Integer> {
                 candidats.add(s);
             }
         }
-        // Ordenar por costo ascendente (más prometedores primero)
+        // Orders by higer cost (most promising first)
         candidats.sort(Comparator.comparingDouble(s -> g.getCout(sommetCrt, s)));
         iterator = candidats.iterator();
     }

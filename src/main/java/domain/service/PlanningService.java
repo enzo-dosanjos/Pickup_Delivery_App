@@ -118,7 +118,7 @@ public class PlanningService {
             timeLimit = 20000; // 30s
             NO_IMPROVEMENT_TIMEOUT = 3000;
         } else {
-            timeLimit = 45000; // 45s many
+            timeLimit = 45000; // 45s many stops
             NO_IMPROVEMENT_TIMEOUT = 7000;
         }
         tsp.setNO_IMPROVEMENT_TIMEOUT(NO_IMPROVEMENT_TIMEOUT);
