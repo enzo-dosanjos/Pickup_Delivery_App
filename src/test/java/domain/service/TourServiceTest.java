@@ -145,6 +145,9 @@ class TourServiceTest {
         assertEquals(5, updatedTour.getRoadSegmentsTaken().size());
     }
 
+    /**
+     * Verifies that getting available couriers returns only those who are available.
+     */
     @Test
     void checkGetAvailableCouriers() {
         TourService service = new TourService();
@@ -157,6 +160,9 @@ class TourServiceTest {
         assertEquals(1L, service.getAvailableCouriers().getFirst().getId());
     }
 
+    /**
+     * Verifies that updating the stop order correctly adds precedences.
+     */
     @Test
     void addCourierIncreasesNumCouriers() {
         TourService service = new TourService();
@@ -166,6 +172,9 @@ class TourServiceTest {
         assertEquals(1, service.getNumCouriers());
     }
 
+    /**
+     * Verifies that removing a courier decreases the number of couriers.
+     */
     @Test
     void removeCourierDecreasesNumCouriers() {
         TourService service = new TourService();
@@ -178,6 +187,9 @@ class TourServiceTest {
         assertEquals(1, service.getNumCouriers());
     }
 
+    /**
+     * Verifies that attempting to remove a non-existent courier returns false.
+     */
     @Test
     void removeCourierReturnsFalseIfCourierNotFound() {
         TourService service = new TourService();
@@ -188,6 +200,9 @@ class TourServiceTest {
         assertEquals(1, service.getNumCouriers());
     }
 
+    /**
+     * Verifies that getAvailableCouriers returns only couriers with AVAILABLE status.
+     */
     @Test
     void getAvailableCouriersReturnsOnlyAvailable() {
         TourService service = new TourService();
@@ -201,6 +216,9 @@ class TourServiceTest {
         assertEquals(1L, availableCouriers.get(0).getId());
     }
 
+    /**
+     * Verifies that updateStopOrder throws an exception when trying to reorder a warehouse stop.
+     */
     @Test
     void updateStopOrderThrowsExceptionForWarehouse() {
         TourService service = new TourService();
@@ -212,6 +230,9 @@ class TourServiceTest {
         assertThrows(IllegalArgumentException.class, () -> service.updateStopOrder(1L, 0, 1));
     }
 
+    /**
+     * Verifies that updateStopOrder throws an exception when the same request is used for reordering.
+     */
     @Test
     void updateStopOrderThrowsExceptionForSameRequest() {
         TourService service = new TourService();
@@ -223,6 +244,37 @@ class TourServiceTest {
         assertThrows(IllegalArgumentException.class, () -> service.updateStopOrder(1L, 0, 1));
     }
 
+    /**
+     * Verifies that updateStopOrder throws an exception when the following stop is a warehouse.
+     */
+    @Test
+    void updateStopOrderThrowsExceptionWhenBeforeStopIsWarehouse() {
+        TourService service = new TourService();
+        Tour tour = new Tour(1L, LocalDateTime.now());
+        tour.addStop(new TourStop(StopType.WAREHOUSE, -1, 1L, LocalDateTime.now(), LocalDateTime.now()));
+        tour.addStop(new TourStop(StopType.PICKUP, 1L, 2L, LocalDateTime.now(), LocalDateTime.now()));
+        service.setTourForCourier(1L, tour);
+
+        assertThrows(IllegalArgumentException.class, () -> service.updateStopOrder(1L, 0, 1));
+    }
+
+    /**
+     * Verifies that updateStopOrder throws an exception when the following stop is a warehouse.
+     */
+    @Test
+    void updateStopOrderThrowsExceptionWhenAfterStopIsWarehouse() {
+        TourService service = new TourService();
+        Tour tour = new Tour(1L, LocalDateTime.now());
+        tour.addStop(new TourStop(StopType.PICKUP, 1L, 2L, LocalDateTime.now(), LocalDateTime.now()));
+        tour.addStop(new TourStop(StopType.WAREHOUSE, -1, 1L, LocalDateTime.now(), LocalDateTime.now()));
+        service.setTourForCourier(1L, tour);
+
+        assertThrows(IllegalArgumentException.class, () -> service.updateStopOrder(1L, 0, 1));
+    }
+
+    /**
+     * Verifies that updateStopOrder correctly adds precedences after reordering stops.
+     */
     @Test
     void updateStopOrderAddsPrecedence() {
         TourService service = new TourService();

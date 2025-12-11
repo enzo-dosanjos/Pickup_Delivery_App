@@ -32,7 +32,7 @@ public class TourService {
     private TreeMap<Long, Tour> tours; //  Map of tours associated with each courier ID.
 
 
-    private TreeMap<Long, HashMap<String, Set<String>>> precedencesByCourier;
+    private TreeMap<Long, HashMap<String, Set<String>>> precedencesByCourier; // Map of precedence constraints for each courier.
 
 
     /** Initializes a new instance of the TourService class. */
@@ -223,45 +223,52 @@ public class TourService {
      * Updates the stop order for a courier's tour and adds precedence constraints.
      *
      * @param courierId The ID of the courier.
-     * @param prevStopIndex The index of the previous stop.
-     * @param followingStopIndex The index of the following stop.
+     * @param beforeStopIndex The current index of the stop that must come before the other in tour.
+     * @param afterStopIndex The current index of the stop that must come after the other in tour.
      */
-    public void updateStopOrder(long courierId, Integer prevStopIndex, Integer followingStopIndex) {
+    public void updateStopOrder(long courierId, Integer beforeStopIndex, Integer afterStopIndex) {
+
+        if(beforeStopIndex < 0 || afterStopIndex < 0 || beforeStopIndex >= tours.get(courierId).getStops().size() || afterStopIndex >= tours.get(courierId).getStops().size()) {
+            throw new IllegalArgumentException(
+                    "Stop indices are out of bounds."
+            );
+        }
+
         HashMap<String, Set<String>> precs = precedencesByCourier.get(courierId);
-        TourStop prevStop, followStop;
+        TourStop beforeStop, followStop;
         Tour tour;
         char prevType, followingType;
 
         tour = tours.get(courierId);
-        prevStop = tour.getStops().get(prevStopIndex);
-        followStop = tour.getStops().get(followingStopIndex);
+        beforeStop = tour.getStops().get(beforeStopIndex);
+        followStop = tour.getStops().get(afterStopIndex);
 
         // Checking if the stops are not the warehouse
-        if (prevStop.getRequestID() == -1 || followStop.getRequestID() == -1) {
+        if (beforeStop.getRequestID() == -1 || followStop.getRequestID() == -1) {
             throw new IllegalArgumentException(
                     "Impossible to create precedence with warehouse."
             );
         }
 
         // Checking if the stops come from different requests
-        if (prevStop.getRequestID() == followStop.getRequestID()) {
+        if (beforeStop.getRequestID() == followStop.getRequestID()) {
             throw new IllegalArgumentException(
                     "Impossible to create precedence between 2 stops belonging to the same request (requestId = "
-                            + prevStop.getRequestID() + ")."
+                            + beforeStop.getRequestID() + ")."
             );
         }
 
         // Find types
-        prevType = (prevStop.getType() == StopType.PICKUP) ? 'p' : 'd';
+        prevType = (beforeStop.getType() == StopType.PICKUP) ? 'p' : 'd';
         followingType = (followStop.getType() == StopType.PICKUP) ? 'p' : 'd';
 
-        String prevParse = parseParams(prevStop.getRequestID(), prevStop.getIntersectionId(), prevType);
+        String prevParse = parseParams(beforeStop.getRequestID(), beforeStop.getIntersectionId(), prevType);
         String followParse = parseParams(followStop.getRequestID(), followStop.getIntersectionId(), followingType);
 
         if ((precs.containsKey(prevParse) && precs.get(prevParse).contains(followParse)) || (precs.containsKey(followParse) && precs.get(followParse).contains(prevParse))) {
             throw new IllegalArgumentException(
                     "Impossible to create precedence between 2 stops already linked by precedence : "
-                            + prevStopIndex + " and " + followingStopIndex
+                            + beforeStopIndex + " and " + afterStopIndex
             );
         }
         // Add precedence
@@ -323,12 +330,12 @@ public class TourService {
         HashMap<Integer, Set<Integer>> tspPrecs = new HashMap<>();
 
         for (int i = 0; i < vertices.size(); i++) {
-            Set<String> precVertices = precs.get(vertices.get(i));
-            if (precVertices != null) {
-                for (String precVertix : precVertices) {
-                    int precVertixIndex = vertices.indexOf(precVertix);
+            Set<String> prevVertices = precs.get(vertices.get(i));
+            if (prevVertices != null) {
+                for (String prevVertix : prevVertices) {
+                    int prevVertixIndex = vertices.indexOf(prevVertix);
                     tspPrecs.computeIfAbsent(i, k -> new HashSet<>())
-                            .add(precVertixIndex);
+                            .add(prevVertixIndex);
                 }
             }
         }

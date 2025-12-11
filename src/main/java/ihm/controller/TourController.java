@@ -22,7 +22,7 @@ import java.util.Map;
 @RequestMapping("/api/tour")
 public class TourController {
 
-    private final PlanningService planningService;
+    private final PlanningService planningService; // The service responsible for managing tours calculations.
 
     private final TourService tourService; // The service responsible for managing tours and couriers.
 
@@ -82,7 +82,7 @@ public class TourController {
 
 
 
-    @PostMapping("/update-stop-order")
+
     /**
      * Updates the order of stops for a courier's tour and recomputes the tour.
      * If the update is invalid (e.g., involves the warehouse or stops from the same request),
@@ -96,6 +96,7 @@ public class TourController {
      *         - 400 BAD REQUEST if the update is invalid.
      *         - 409 CONFLICT if an error occurs during tour recomputation.
      */
+    @PostMapping("/update-stop-order")
     public ResponseEntity<?> updateStopOrder(@RequestParam long courierId,
                                              @RequestParam Integer precStopIndex,
                                              @RequestParam Integer followingStopIndex) {
@@ -129,7 +130,6 @@ public class TourController {
     public Map.Entry<Request, StopType> showRequestDetails(@RequestParam long instersectionId) {
         return requestService.getPickupDelivery().findRequestByIntersectionId(instersectionId);  // todo: create a service method
     }
-
 
     @GetMapping("/tours")
     public Map<Long, Tour> getTours() {

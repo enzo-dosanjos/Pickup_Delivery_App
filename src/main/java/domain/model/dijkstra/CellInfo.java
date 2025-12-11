@@ -44,7 +44,11 @@ public class CellInfo {
         this.predecessor = predecessor;
     }
 
-
+    /**
+     * Checks if the cell has been visited.
+     *
+     * @return true if the cell has been visited, false otherwise
+     */
     public boolean isVisited() {
         return visited;
     }

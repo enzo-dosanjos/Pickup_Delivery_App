@@ -9,6 +9,9 @@ import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+/**
+ * Unit tests for the {@link PlanningService} class.
+ */
 class PlanningServiceTest {
 
     /**

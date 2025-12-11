@@ -34,6 +34,12 @@ public class RequestService {
         pickupDelivery.addRequestToCourier(courierId, request);
     }
 
+    /**
+     * Deletes a request from a specific courier.
+     *
+     * @param courierId the ID of the courier from whom the request will be deleted
+     * @param requestId the ID of the request to be deleted
+     */
     public void deleteRequest(long courierId, long requestId) {
         pickupDelivery.removeRequestFromCourier(courierId, requestId);
     }
@@ -49,7 +55,11 @@ public class RequestService {
         return XMLParsers.parseRequests(filepath, courierId, pickupDelivery);
     }
 
-
+    /**
+     * Saves the current requests to an XML file.
+     *
+     * @param filepath the path to the XML file where the requests will be saved
+     */
     public void saveRequests(String filepath) {
         XMLWriters.writeRequests(pickupDelivery, filepath);
     }

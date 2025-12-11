@@ -34,6 +34,7 @@ public class Request {
         this.deliveryDuration = deliveryDuration;
     }
 
+    /** AtomicLong to ensure thread-safe unique ID generation */
     private static final AtomicLong ID_GENERATOR = new AtomicLong(1);
 
     /**
