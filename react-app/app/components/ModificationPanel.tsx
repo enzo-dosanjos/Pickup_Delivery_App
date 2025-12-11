@@ -47,7 +47,7 @@ export function ModificationPanel({
     isAddingRequest
 }: ModificationPanelProps) {
     return (
-        <div className="modification-panel">
+        <div className="modification-panel add-request">
             <h3>Add a New Request</h3>
             <div className="info">
                 <div>

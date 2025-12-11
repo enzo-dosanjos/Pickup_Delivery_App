@@ -78,11 +78,12 @@ public class TourService {
     }
 
     /**
-     * Loads couriers from an XML file and adds them to the service.
+     * Empties the couriers array, then loads couriers from an XML file and adds them to the service.
      *
      * @param filepath the path to the XML file containing courier data
      */
     public void loadCouriers(String filepath) {
+        couriers.clear();
         ArrayList<Courier> couriersToAdd = XMLParsers.parseCouriers(filepath);
 
         for (Courier courier : couriersToAdd) {

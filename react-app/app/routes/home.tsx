@@ -3,6 +3,7 @@ import { Map as MapComponent, type Intersection as MapIntersection, type Tour as
 import { useState, useEffect, useRef } from "react";
 import L from "leaflet";
 import { ModificationPanel, type Courier as PanelCourier } from "../components/ModificationPanel";
+import { CourierSelectionPanel } from "~/components/CourierSelectionPanel";
 import "../components/ModificationPanel.css";
 import Modal from "../components/Modal";
 import "./home.css";
@@ -91,6 +92,8 @@ export default function Home() {
     const [couriersList, setCouriersList] = useState<PanelCourier[]>([]);
     const [selectedCourier, setSelectedCourier] = useState<string>("0");
     const [warehouseId, setWarehouseId] = useState<number | null>(null);
+    const [displayedCouriers, setDisplayedCouriers] = useState<string>("All");
+    const [displayedTours, setDisplayedTours] = useState<MapTour[]>([]);
 
     // file paths
     const [requestFilePath, setRequestFilePath] = useState<string>("src/main/resources/requests.xml");
@@ -208,6 +211,15 @@ export default function Home() {
             setSelectedCourier(couriersList[0].id.toString());
         }
     }, [couriersList]);
+
+    useEffect(() => {
+        if (displayedCouriers === "All") {
+            setDisplayedTours(tours);
+        } else {
+            setDisplayedTours(tours.filter(tour => tour.courierId.toString() === displayedCouriers))
+        }
+
+    }, [tours, displayedCouriers]);
 
     const handleMapClick = (intersectionId: number) => {
         const roadName = intersectionIdToRoadName.get(intersectionId) || `Intersection ${intersectionId}`;
@@ -333,6 +345,7 @@ export default function Home() {
             setModalMessage("Requests loaded successfully!");
             setIsModalOpen(true);
             await displayTour();
+            setDisplayedCouriers(selectedCourier);
 
         } catch (e: any) {
             console.error("Failed to load requests:", e);
@@ -605,13 +618,20 @@ export default function Home() {
                     intersections={intersections}
                     roadSegments={roadSegments}
                     bounds={bounds}
-                    tours={tours}
+                    tours={displayedTours}
                     onMapClick={handleMapClick}
                     selectionModeActive={isPanelOpen}
                     pickupId={pickupId}
                     deliveryId={deliveryId}
                     onDeleteRequest={handleDeleteRequest}
                     warehouseId={warehouseId}
+                />
+            )}
+            {couriersList.length > 0 && (
+                <CourierSelectionPanel
+                    couriersList={couriersList}
+                    displayedCouriers={displayedCouriers}
+                    setDisplayedCouriers={setDisplayedCouriers}
                 />
             )}
         </div>
