@@ -1,5 +1,5 @@
 @startuml
-title UC4 - Modifier le nombre de livreurs (ajout d’un nouveau livreur)
+title UC - Modifier le nombre de livreurs (ajout d’un nouveau livreur)
 
 actor User
 participant "TourController" as TC

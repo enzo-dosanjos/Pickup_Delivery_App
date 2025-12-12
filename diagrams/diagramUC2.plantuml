@@ -1,5 +1,5 @@
 @startuml
-title UC2 – Save Tours to File
+title UC - Save Tours to File
 
 actor User
 participant "TourController" as TC

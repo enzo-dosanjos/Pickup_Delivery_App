@@ -1,5 +1,5 @@
 @startuml
-title UC6 - Choisir un livreur
+title UC - Choisir un livreur
 
 actor User
 participant "RequestController" as RC

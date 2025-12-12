@@ -1,12 +1,10 @@
 @startuml
-title UC10 – Modifier l’ordre de la livraison
+title UC – Modifier l’ordre de la livraison
 
 actor User
 participant "TourController" as TC
 participant "TourService" as TS
 participant "TSP1" as TSP
-participant "MapService" as MS
-participant "Map" as MAP
 participant "Tour" as TOUR
 
 alt Normal flow
@@ -28,22 +26,15 @@ alt Normal flow
         TSP --> TS : meilleureSolution (bestTour)
         deactivate TSP
 
+        ' --- CONVERT INTO NEW TOUR OBJECT ---
         TS -> TOUR : convertGraphToTour(..., bestSolution)
         activate TOUR
         TOUR --> TS : Tour recalculated
         deactivate TOUR
 
         TS -> TS : setTourForCourier(courierId, Tour)
-        TS -> MS : updateMapView(Tour)
-        activate MS
-            MS -> MAP : updateTourOnMap(Tour)
-            activate MAP
-            MAP --> MS : confirmation
-            deactivate MAP
-        MS --> TS : map updated
-        deactivate MS
 
-    TS --> TC : updatedTour (Tour + map refreshed)
+    TS --> TC : updatedTour (Tour recalculated)
     deactivate TS
 
     TC --> User : "Ordre modifié et tournée recalculée"

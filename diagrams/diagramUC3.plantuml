@@ -1,5 +1,5 @@
 @startuml
-title UC3 – Importer programme depuis un fichier
+title UC – Importer Pickup-Delivery depuis un fichier
 
 actor User
 participant "RequestController" as RC

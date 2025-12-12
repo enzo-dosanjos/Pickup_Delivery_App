@@ -1,5 +1,5 @@
 @startuml
-title UC8 - Choisir lieu de livraison
+title UC - Choisir lieu de livraison
 
 actor User
 participant "RequestController" as RC

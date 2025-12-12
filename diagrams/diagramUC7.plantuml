@@ -1,5 +1,5 @@
 @startuml
-title UC7 - Choisir lieu de collecte
+title UC - Choisir lieu de collecte
 
 actor User
 participant "RequestController" as RC

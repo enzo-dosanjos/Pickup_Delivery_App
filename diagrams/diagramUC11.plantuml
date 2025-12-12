@@ -1,5 +1,5 @@
 @startuml
-title UC11 – Sauvegarder le programme de la tournée 
+title UC – Sauvegarder le programme de la tournée 
 
 actor User
 participant "TourController" as TC
