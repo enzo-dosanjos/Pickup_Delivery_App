@@ -1,5 +1,6 @@
 package ihm.controller;
 
+import domain.model.Courier;
 import domain.model.Request;
 import domain.service.PlanningService;
 import domain.service.RequestService;
@@ -10,6 +11,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 /**
@@ -30,6 +34,7 @@ public class RequestController {
      *
      * @param requestService the service responsible for managing requests
      * @param planningService the service responsible for managing tours calculations
+     * @param tourService the service responsible for managing tours
      */
     @Autowired
     public RequestController(RequestService requestService, PlanningService planningService, TourService tourService) {
@@ -39,9 +44,20 @@ public class RequestController {
     }
 
     @PostMapping("/save")
-    public ResponseEntity<?> saveRequests(@RequestParam String filepath) {
-        requestService.saveRequests(filepath);
+    public ResponseEntity<?> saveRequests(@RequestParam String filepath,
+                                          @RequestParam long courierId) {
+        requestService.saveRequests(filepath, courierId);
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/addWarehouse")
+    public void addWarehouse(@RequestParam long warehouseId,
+                             @RequestParam long courierId) {
+        if (warehouseId <= 0) {
+            throw new IllegalArgumentException("warehouseId must be a positive intersection id.");
+        }
+
+        requestService.setWarehouseAddress(warehouseId, courierId);
     }
 
     /**
@@ -86,9 +102,15 @@ public class RequestController {
                     .body("Courier ID " + courierId + " does not exist.");
         }
 
-        // Ensure warehouse is registered (when coming from manual add and no XML was loaded)
-        if (requestService.getPickupDelivery().getWarehouseAddressId() == -1) {
-            requestService.setWarehouseAddress(warehouseId);
+        long currentWarehouseId = requestService.getPickupDeliveryForCourier(courierId).getWarehouseAddressId();
+        if (currentWarehouseId == -1) {
+            if (warehouseId == null || warehouseId <= 0) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body("Warehouse is not set. Set it via /api/request/addWarehouse or provide a valid warehouseId.");
+            }
+            requestService.getPickupDeliveryForCourier(courierId).setWarehouseAddressId(warehouseId);
+        } else if (warehouseId != null && warehouseId > 0 && warehouseId != currentWarehouseId) {
+            requestService.getPickupDeliveryForCourier(courierId).setWarehouseAddressId(warehouseId);
         }
 
         // Convert durations from seconds to Duration
@@ -107,10 +129,20 @@ public class RequestController {
         return recomputeTourAndHandleExceptions(courierId);
     }
 
-
+    /**
+     * Retrieves all warehouse IDs from the system.
+     *
+     * @return a map of courier IDs to their corresponding warehouse IDs with -1 for couriers without a warehouse
+     */
     @GetMapping("/warehouse")
-    public long getWarehouseAddress() {
-        return requestService.getPickupDelivery().getWarehouseAddressId();
+    public Map<Long, Long> getWarehouseAddress() {
+        TreeMap<Long, Long> warehouseIds = requestService.getAllWarehouseIds();
+
+        for (Courier courier : tourService.getCouriers()) {
+            warehouseIds.putIfAbsent(courier.getId(), -1L);
+        }
+
+        return warehouseIds;
     }
 
     /**
@@ -122,7 +154,7 @@ public class RequestController {
     @PostMapping("/delete")
     public ResponseEntity<?> deleteRequest(@RequestParam long requestId,
                                            @RequestParam long courierId) {
-        Request originalRequest = requestService.getRequestById(requestId);
+        Request originalRequest = requestService.getRequestById(requestId, courierId);
         if (originalRequest == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Request with ID " + requestId + " not found.");
         }

@@ -6,6 +6,9 @@ import org.springframework.stereotype.Service;
 import persistence.XMLParsers;
 import persistence.XMLWriters;
 
+import java.util.ArrayList;
+import java.util.TreeMap;
+
 
 /**
  * Service class for managing requests and their association with couriers.
@@ -15,13 +18,13 @@ import persistence.XMLWriters;
 @Service
 public class RequestService {
 
-    private PickupDelivery pickupDelivery; // The PickupDelivery object that manages requests and their associations.
+    private final TreeMap<Long, PickupDelivery> pickupDeliveryPerCourier; // A map of courier IDs to a the pickup delivery associated with that courier.
 
     /**
      * Constructs a new RequestService and initializes the PickupDelivery object.
      */
     public RequestService() {
-        pickupDelivery = new PickupDelivery();
+        pickupDeliveryPerCourier = new TreeMap<>();
     }
 
     /**
@@ -31,11 +34,21 @@ public class RequestService {
      * @param request the request to be added
      */
     public void addRequest(long courierId, Request request) {
-        pickupDelivery.addRequestToCourier(courierId, request);
+        if (!pickupDeliveryPerCourier.containsKey(courierId)) {
+            pickupDeliveryPerCourier.put(courierId, new PickupDelivery());
+        }
+
+        pickupDeliveryPerCourier.get(courierId).addRequest(request);
     }
 
+    /**
+     * Deletes a request from a specific courier.
+     *
+     * @param courierId the ID of the courier from whom the request will be deleted
+     * @param requestId the ID of the request to be deleted
+     */
     public void deleteRequest(long courierId, long requestId) {
-        pickupDelivery.removeRequestFromCourier(courierId, requestId);
+        pickupDeliveryPerCourier.get(courierId).removeRequest(requestId);
     }
 
     /**
@@ -46,23 +59,59 @@ public class RequestService {
      * @return true if the requests were successfully loaded, false otherwise
      */
     public boolean loadRequests(String filepath, long courierId) {
-        return XMLParsers.parseRequests(filepath, courierId, pickupDelivery);
+        if (!pickupDeliveryPerCourier.containsKey(courierId)) {
+            pickupDeliveryPerCourier.put(courierId, new PickupDelivery());
+        }
+
+        return XMLParsers.parseRequests(filepath, pickupDeliveryPerCourier.get(courierId));
     }
 
-
-    public void saveRequests(String filepath) {
-        XMLWriters.writeRequests(pickupDelivery, filepath);
+    /**
+     * Saves the requests of a specific courier to an XML file.
+     *
+     * @param filepath the path to the XML file where the requests will be saved
+     * @param courierId the ID of the courier whose requests are being saved
+     */
+    public void saveRequests(String filepath, long courierId) {
+        XMLWriters.writeRequests(pickupDeliveryPerCourier.get(courierId), filepath);
     }
 
-    public PickupDelivery getPickupDelivery() {
-        return pickupDelivery;
+    /**
+     * Retrieves a list of all warehouse IDs associated with the requests of a specific courier.
+     *
+     * @return a map courier IDs to their warehouse IDs
+     */
+    public TreeMap<Long, Long> getAllWarehouseIds() {
+        TreeMap<Long, Long> warehouseIds = new TreeMap<>();
+
+        for (Long courierId : pickupDeliveryPerCourier.keySet()) {
+            warehouseIds.put(courierId, pickupDeliveryPerCourier.get(courierId).getWarehouseAddressId());
+        }
+
+        return warehouseIds;
     }
 
-    public Request getRequestById(long requestId) {
-        return pickupDelivery.findRequestById(requestId);
+    public PickupDelivery getPickupDeliveryForCourier(long courierId) {
+        if (!pickupDeliveryPerCourier.containsKey(courierId)) {
+            pickupDeliveryPerCourier.put(courierId, new PickupDelivery());
+        }
+
+        return pickupDeliveryPerCourier.get(courierId);
     }
 
-    public void setWarehouseAddress(long warehouseId) {
-        pickupDelivery.setWarehouseAddressId(warehouseId);
+    public TreeMap<Long, PickupDelivery> getPickupDeliveryPerCourier() {
+        return pickupDeliveryPerCourier;
+    }
+
+    public Request getRequestById(long requestId, long courierId) {
+        return pickupDeliveryPerCourier.get(courierId).findRequestById(requestId);
+    }
+
+    public void setWarehouseAddress(long warehouseId,long courierId) {
+        if (!pickupDeliveryPerCourier.containsKey(courierId)) {
+            pickupDeliveryPerCourier.put(courierId, new PickupDelivery());
+        }
+
+        pickupDeliveryPerCourier.get(courierId).setWarehouseAddressId(warehouseId);
     }
 }

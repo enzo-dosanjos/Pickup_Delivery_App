@@ -51,8 +51,8 @@ class TourServiceTest {
         pickupDelivery.setWarehouseAddressId(1L);
         Request request1 = new Request(2L, Duration.ofMinutes(5), 3L, Duration.ofMinutes(10));
         Request request2 = new Request(4L, Duration.ofMinutes(3), 5L, Duration.ofMinutes(8));
-        pickupDelivery.addRequestToCourier(123L, request1);
-        pickupDelivery.addRequestToCourier(123L, request2);
+        pickupDelivery.addRequest(request1);
+        pickupDelivery.addRequest(request2);
 
         LocalDateTime startTime = LocalDateTime.of(2023, 10, 1, 8, 0);
         Integer[] solution = {0, 1, 2, 3, 4};
@@ -174,6 +174,9 @@ class TourServiceTest {
         assertEquals(5, updatedTour.getRoadSegmentsTaken().size());
     }
 
+    /**
+     * Verifies that the list of available couriers is correctly retrieved.
+     */
     @Test
     void checkGetAvailableCouriers() {
         TourService service = new TourService();

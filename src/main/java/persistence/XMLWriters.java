@@ -103,11 +103,11 @@ public class XMLWriters {
             // depot element
             Element depot = doc.createElement("depot");
             depot.setAttribute("address", String.valueOf(pickupDelivery.getWarehouseAddressId()));
-            depot.setAttribute("departureTime", "8:0:0"); // Hardcoded as per file format
+            depot.setAttribute("departureTime", "8:0:0"); // Hardcoded as per file format  // todo: make dynamic
             rootElement.appendChild(depot);
 
             // request elements
-            for (Request req : pickupDelivery.getRequests().values()) {
+            for (Request req : pickupDelivery.getRequests()) {
                 Element requestElement = doc.createElement("request");
                 requestElement.setAttribute("pickupAddress", String.valueOf(req.getPickupIntersectionId()));
                 requestElement.setAttribute("deliveryAddress", String.valueOf(req.getDeliveryIntersectionId()));
