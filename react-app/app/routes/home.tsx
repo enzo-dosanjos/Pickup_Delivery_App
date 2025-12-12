@@ -7,6 +7,8 @@ import { CourierSelectionPanel } from "~/components/CourierSelectionPanel";
 import "../components/ModificationPanel.css";
 import Modal from "../components/Modal";
 import "./home.css";
+import {UpdateOrderPanel} from "~/components/UpdateOrderPanel";
+import {useMap} from "react-leaflet";
 
 // Define the types for the data we expect from the API
 type ApiIntersection = {
@@ -81,8 +83,9 @@ export default function Home() {
     const [loadingTours, setLoadingTours] = useState(true);
     const [isExportingTour, setIsExportingTour] = useState(false);
 
-    const [isPanelOpen, setIsPanelOpen] = useState(false);
-    const [selectionMode, setSelectionMode] = useState<'pickup' | 'delivery' | 'warehouse' | null>(null);
+    const [isSidePanelOpen, setIsSidePanelOpen] = useState<boolean>(true);
+    const [isModificationPanelOpen, setIsModificationPanelOpen] = useState(false);
+    const [selectionMode, setSelectionMode] = useState<'pickup' | 'delivery' | 'warehouse' | 'stops_only' | null>(null);
     const [pickupId, setPickupId] = useState<number | null>(null);
     const [deliveryId, setDeliveryId] = useState<number | null>(null);
     const [pickupName, setPickupName] = useState<string | null>(null);
@@ -99,11 +102,13 @@ export default function Home() {
     const [displayedWarehouses, setDisplayedWarehouses] = useState<number[]>([]);
     const [prevStopIndex, setPrevStopIndex] = useState("");
     const [nextStopIndex, setNextStopIndex] = useState("");
+    const [isUpdatingOrder, setIsUpdatingOrder] = useState(false);
 
     // file paths
     const [requestFilePath, setRequestFilePath] = useState<string>("src/main/resources/requests.xml");
     const [courierFilePath, setCourierFilePath] = useState<string>("src/main/resources/couriers.xml");
-    const [exportFilePath, setExportFilePath] = useState<string>("src/main/resources/exported_tour.xml");
+    const [exportTourFilePath, setExportTourFilePath] = useState<string>("src/main/resources/exported_tour.xml");
+    const [exportRequestsFilePath, setExportRequestsFilePath] = useState<string>("src/main/resources/exported_requests.xml");
 
     const fetchInitiated = useRef(false);
 
@@ -496,6 +501,40 @@ export default function Home() {
         }
     };
 
+    const handleUpdateOrderClick = async () => {
+        if (displayedCouriers === "All") {
+            setModalMessage("Please select a specific courier to update stop order.");
+            setModalActions([]);
+            setIsModalOpen(true);
+            return;
+        }
+
+        const t = tours.find(t => t.courierId.toString() === displayedCouriers);
+        if (!t) {
+            setModalMessage("No tour available.");
+            setModalActions([]);
+            setIsModalOpen(true);
+            return;
+        }
+
+        const prevIndex = parseInt(prevStopIndex, 10);
+        const nextIndex = parseInt(nextStopIndex, 10);
+
+        if (isNaN(prevIndex) || isNaN(nextIndex)) {
+            setModalMessage("Please enter valid indices.");
+            setModalActions([]);
+            setIsModalOpen(true);
+            return;
+        }
+
+        setIsUpdatingOrder(true);
+        try {
+            await handleUpdateStopOrder(t.courierId, prevIndex, nextIndex);
+        } finally {
+            setIsUpdatingOrder(false);
+        }
+    };
+
     const handleUpdateStopOrder = async (
         courierId: number,
         precStopIndex: number,
@@ -539,7 +578,7 @@ export default function Home() {
     };
 
     const handleClosePanel = () => {
-        setIsPanelOpen(false);
+        setIsModificationPanelOpen(false);
         setSelectionMode(null);
         setPickupId(null);
         setDeliveryId(null);
@@ -551,7 +590,7 @@ export default function Home() {
 
     const openModificationPanel = () => {
         fetchAvailableCouriers();
-        setIsPanelOpen(true);
+        setIsModificationPanelOpen(true);
     };
 
     const handleSaveRequests = async () => {
@@ -645,7 +684,7 @@ export default function Home() {
         try {
             const params = new URLSearchParams();
             params.append('courierId', selectedCourier);
-            params.append('filepath', exportFilePath);
+            params.append('filepath', exportTourFilePath);
 
             const response = await fetch('http://localhost:8080/api/tour/save', {
                 method: 'POST',
@@ -660,7 +699,7 @@ export default function Home() {
                 throw new Error(errorText || `HTTP error! status: ${response.status}`);
             }
 
-            setModalMessage(`Tour exported successfully to ${exportFilePath}`);
+            setModalMessage(`Tour exported successfully to ${exportTourFilePath}`);
             setIsModalOpen(true);
         } catch (e: any) {
             setModalMessage(`Failed to export tour: ${e.message}`);
@@ -675,11 +714,95 @@ export default function Home() {
     }
 
     return (
-        <div className={"home"}>
+        <div className="home-container">
             {isModalOpen && (
                 <Modal message={modalMessage} onClose={closeModal} actions={modalActions}/>
             )}
             <h1>Welcome to our brand new pick-up & delivery app !</h1>
+
+            <div>
+                <label>
+                    Couriers XML path:&nbsp;&nbsp;
+                    <input
+                        type="text"
+                        value={courierFilePath}
+                        onChange={(e) => setCourierFilePath(e.target.value)}
+                    />
+                </label>
+                <button
+                    onClick={handleLoadCouriers}
+                    className={"home-button"}
+                    disabled={isLoadingCouriers}
+                >
+                    {isLoadingCouriers ? "Loading..." : "Load Couriers"}
+                </button>
+            </div>
+
+            <div>
+                <span className="info-label">Selected courier:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                <select id={"courier"} value={selectedCourier} onFocus={fetchAvailableCouriers} onChange={(e) => setSelectedCourier(e.target.value)}>
+                    {couriersList?.map(courier => (
+                        <option key={courier.id.toString()} value={courier.id.toString()}>{courier.name}</option>
+                    ))}
+                </select>
+            </div>
+
+            <div>
+                <div>
+                    <label>
+                        Requests XML path:&nbsp;&nbsp;
+                        <input
+                            type="text"
+                            value={requestFilePath}
+                            onChange={(e) => setRequestFilePath(e.target.value)}
+                        />
+                    </label>
+                    <button
+                        onClick={handleLoadRequests}
+                        className={"home-button"}
+                        disabled={isLoadingRequests}
+                    >
+                        {isLoadingRequests ? "Loading..." : "Load Requests"}
+                    </button>
+                </div>
+
+                <div>
+                    <label>
+                        Export tour path:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                        <input
+                            type="text"
+                            value={exportTourFilePath}
+                            onChange={(e) => setExportTourFilePath(e.target.value)}
+                        />
+                    </label>
+                    <button
+                        onClick={handleExportTour}
+                        className={"home-button"}
+                        disabled={isExportingTour}
+                    >
+                        {isExportingTour ? "Exporting..." : "Export Tour"}
+                    </button>
+                </div>
+
+                <div>
+                    <label>
+                        Export requests path:
+                        <input
+                            type="text"
+                            value={exportRequestsFilePath}
+                            onChange={(e) => setExportRequestsFilePath(e.target.value)}
+                        />
+                    </label>
+                    <button
+                        onClick={handleSaveRequests}
+                        className={"home-button"}
+                        disabled={isSavingRequests}
+                    >
+                        {isSavingRequests ? "Exporting..." : "Export Requests"}
+                    </button>
+                </div>
+            </div>
+
             <div>
                 <button onClick={openModificationPanel}
                         className={"home-button"}>
@@ -750,73 +873,8 @@ export default function Home() {
                 </button>
             </div>
 
-            <div style={{ marginBottom: "15px" }}>
-                <div style={{ marginBottom: "8px" }}>
-                    <label style={{ marginRight: "8px" }}>
-                        Requests XML path:
-                        <input
-                            type="text"
-                            value={requestFilePath}
-                            onChange={(e) => setRequestFilePath(e.target.value)}
-                            style={{ marginLeft: "8px", width: "300px" }}
-                        />
-                    </label>
-                    <span className="info-label">Courier:</span>
-                    <select id={"courier"} value={selectedCourier} onFocus={fetchAvailableCouriers} onChange={(e) => setSelectedCourier(e.target.value)}>
-                        {couriersList?.map(courier => (
-                            <option key={courier.id.toString()} value={courier.id.toString()}>{courier.name}</option>
-                        ))}
-                    </select>
-                    <button
-                        onClick={handleLoadRequests}
-                        className={"home-button"}
-                        disabled={isLoadingRequests}
-                    >
-                        {isLoadingRequests ? "Loading..." : "Load Requests"}
-                    </button>
-                </div>
-
-                <div>
-                    <label style={{ marginRight: "8px" }}>
-                        Couriers XML path:
-                        <input
-                            type="text"
-                            value={courierFilePath}
-                            onChange={(e) => setCourierFilePath(e.target.value)}
-                            style={{ marginLeft: "8px", width: "300px" }}
-                        />
-                    </label>
-                    <button
-                        onClick={handleLoadCouriers}
-                        style={{ padding: "8px", marginLeft: "8px" }}
-                        disabled={isLoadingCouriers}
-                    >
-                        {isLoadingCouriers ? "Loading..." : "Load Couriers"}
-                    </button>
-                </div>
-
-                <div style={{ marginTop: "8px" }}>
-                    <label style={{ marginRight: "8px" }}>
-                        Export tour path:
-                        <input
-                            type="text"
-                            value={exportFilePath}
-                            onChange={(e) => setExportFilePath(e.target.value)}
-                            style={{ marginLeft: "8px", width: "300px" }}
-                        />
-                    </label>
-                    <button
-                        onClick={handleExportTour}
-                        style={{ padding: "8px", marginLeft: "8px" }}
-                        disabled={isExportingTour}
-                    >
-                        {isExportingTour ? "Exporting..." : "Export Tour"}
-                    </button>
-                </div>
-            </div>
-
             <br />
-            {isPanelOpen && (
+            {isModificationPanelOpen && (
                 <ModificationPanel
                     pickupId={pickupId}
                     deliveryId={deliveryId}
@@ -837,6 +895,20 @@ export default function Home() {
                     isAddingRequest={isAddingRequest}
                 />
             )}
+            <UpdateOrderPanel
+                firstId={pickupId}
+                secondId={deliveryId}
+                firstName={pickupName}
+                secondName={deliveryName}
+                couriersList={couriersList}
+                selectedCourier={selectedCourier}
+                setSelectedCourier={setSelectedCourier}
+                onUpdateOrder={handleUpdateOrderClick}
+                onCancel={handleClosePanel}
+                selectionMode={selectionMode}
+                setSelectionMode={(mode) => setSelectionMode(mode)}
+                isUpdatingOrder={isUpdatingOrder}
+            />
             {bounds.length > 0 && (
                  <MapComponent
                     intersections={intersections}
@@ -844,7 +916,7 @@ export default function Home() {
                     bounds={bounds}
                     tours={displayedTours}
                     onMapClick={handleMapClick}
-                    selectionModeActive={isPanelOpen}
+                    selectionModeActive={isModificationPanelOpen}
                     pickupId={pickupId}
                     deliveryId={deliveryId}
                     onDeleteRequest={handleDeleteRequest}
