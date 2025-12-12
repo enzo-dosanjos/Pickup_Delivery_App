@@ -95,24 +95,37 @@ To compile and run the application, you need to have **Java** and **Apache Maven
 
 The frontend of this application is a React project located in the `react-app/` directory. It provides a user interface to visualize maps, tours, and interact with the backend services.
 
-### How to Run the React Application
+### How to Run the React App
 
-To run the React application, follow these steps:
+To see the React display, you need to have Node.js and npm installed.
 
-1.  Navigate to the `react-app` directory:
+1.  **Navigate to the React application directory:**
     ```bash
     cd react-app
     ```
-2.  Install the dependencies:
+2.  **Install project dependencies:**
     ```bash
     npm install
     ```
-3.  Start the development server:
+
+3.  **Start the development server:**
     ```bash
     npm run dev
     ```
-    The React application will typically be available at `http://localhost:5173` (or another port if 5173 is in use).
-    Ensure the Java backend is running for the React application to function correctly.
+    This command will start a local development server and display a link you can click on to open the React application in your web browser.
+
+**Important: Node.js Version:**
+This project's React dependencies require Node.js version 20 or higher.
+
+### React App Dependencies
+
+The React app relies on the following main dependencies:
+-   `react` & `react-dom`
+-   `react-router` for routing
+-   `leaflet` & `react-leaflet` for interactive maps
+-   `vite` as the build tool
+
+All dependencies are listed in `react-app/package.json` and are installed automatically with `npm install`.
 
 ### Frontend usage tips
 
