@@ -29,11 +29,11 @@ public class IteratorSeqTest {
         IteratorSeq iterator = new IteratorSeq(nonVus, sommetCrt, graph);
 
         assertTrue(iterator.hasNext());
-        assertEquals(4, iterator.next());
+        assertEquals(2, iterator.next());
         assertTrue(iterator.hasNext());
         assertEquals(3, iterator.next());
         assertTrue(iterator.hasNext());
-        assertEquals(2, iterator.next());
+        assertEquals(4, iterator.next());
         assertFalse(iterator.hasNext());
 
     }
@@ -51,9 +51,9 @@ public class IteratorSeqTest {
         IteratorSeq iterator = new IteratorSeq(nonVus, sommetCrt, graph);
 
         assertTrue(iterator.hasNext());
-        assertEquals(2, iterator.next());
-        assertTrue(iterator.hasNext());
         assertEquals(1, iterator.next());
+        assertTrue(iterator.hasNext());
+        assertEquals(2, iterator.next());
         assertFalse(iterator.hasNext());
     }
 
@@ -102,11 +102,11 @@ public class IteratorSeqTest {
         IteratorSeq iterator = new IteratorSeq(nonVus, sommetCrt, graph);
 
         assertTrue(iterator.hasNext());
+        assertEquals(2, iterator.next());
+        assertTrue(iterator.hasNext());
+        assertEquals(2, iterator.next());
+        assertTrue(iterator.hasNext());
         assertEquals(3, iterator.next());
-        assertTrue(iterator.hasNext());
-        assertEquals(2, iterator.next());
-        assertTrue(iterator.hasNext());
-        assertEquals(2, iterator.next());
         assertFalse(iterator.hasNext());
     }
 

@@ -5,6 +5,7 @@ import domain.model.dijkstra.DijkstraTable;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -48,12 +49,16 @@ public class PlanningService {
      * @throws RuntimeException if the TSP algorithm does not find a solution
      */
     public void recomputeTourForCourier(long courierId) {
+        if (!requestService.getPickupDeliveryPerCourier().containsKey(courierId)) {
+            throw new IllegalArgumentException("Courier ID " + courierId + " not found in requests.");
+        }
 
         // Create a local copy to avoid concurrency issues
         PickupDelivery pickupDelivery = new PickupDelivery(requestService.getPickupDeliveryForCourier(courierId));
         ArrayList<Request> requests = pickupDelivery.getRequests();
         ArrayList<Long> requestIdsForCourier = pickupDelivery.getRequests().stream().map(Request::getId).collect(Collectors.toCollection(ArrayList::new));
-
+        Courier courier = courierInCharge(courierId);
+        Duration shiftDuration = courier.getShiftDuration();
 
         if (!tourService.getPrecedencesByCourier().containsKey(courierId)) {
             tourService.initPrecedences(courierId, requests);
@@ -91,11 +96,47 @@ public class PlanningService {
 
         tsp.setServiceTimes(serviceTimes);
 
+        // Set shift duration constraint
+        tsp.setMaxDuration(shiftDuration.toSeconds());
+
         // 5. execute TSP (SOP)
-        tsp.chercheSolution(30000, graph);
+        long tspStartTime = System.currentTimeMillis();
+
+
+        int timeLimit;
+        long NO_IMPROVEMENT_TIMEOUT;
+        if (stops.length <= 10) {
+            timeLimit = 7500; // 10s not many stops
+            NO_IMPROVEMENT_TIMEOUT = 2000;
+        } else if (stops.length <= 15) {
+            timeLimit = 20000; // 30s
+            NO_IMPROVEMENT_TIMEOUT = 3000;
+        } else {
+            timeLimit = 45000; // 45s many stops
+            NO_IMPROVEMENT_TIMEOUT = 7000;
+        }
+        tsp.setNO_IMPROVEMENT_TIMEOUT(NO_IMPROVEMENT_TIMEOUT);
+
+        tsp.chercheSolution(timeLimit, graph);
+
+        long tspEndTime = System.currentTimeMillis();
+        long tspExecutionTime = tspEndTime - tspStartTime;
+
 
         if (tsp.getCoutMeilleureSolution() == Integer.MAX_VALUE) {
-            throw new RuntimeException("TSP algorithm did not find a solution for courier " + courierId);
+            throw new RuntimeException("TSP algorithm did not find a solution for courier " + courierId);}
+
+        double tourDuration = tsp.getCoutMeilleureSolution();
+
+        // Check if solution exceeds shift duration
+        if (tourDuration > shiftDuration.toSeconds()) {
+            double exceedSeconds = tourDuration - shiftDuration.toSeconds();
+        } else {
+            double remainingSeconds = shiftDuration.toSeconds() - tourDuration;
+            System.out.println(
+                "✓ Within shift duration (remaining: " +
+                formatDuration(remainingSeconds) + ")"
+            );
         }
 
         // 6. result
@@ -209,6 +250,82 @@ public class PlanningService {
         precs.entrySet().removeIf(entry -> entry.getValue().isEmpty());
     }
 
+    public Courier courierInCharge(long courierId) {
+        return tourService.getCouriers().stream()
+            .filter(courier -> courier.getId() == courierId)
+            .findFirst()
+            .orElse(null);
+    }
 
 
+    private void printTSPSolution(
+        TSP1 tsp,
+        long[] stops,
+        Graphe graph,
+        double[] serviceTimes
+    ) {
+        double cumulativeTime = 0.0;
+
+        for (int i = 0; i < graph.getNbSommets(); i++) {
+            int nodeIndex = tsp.getSolution(i);
+            long stopAddress = stops[nodeIndex];
+
+            String stopType;
+            if (i == 0) {
+                stopType = "Depot";
+            } else if (nodeIndex % 2 == 1) {
+                stopType = "Pickup";
+            } else {
+                stopType = "Delivery";
+            }
+
+            double travelTime = 0.0;
+            if (i > 0) {
+                int prevIndex = tsp.getSolution(i - 1);
+                travelTime = graph.getCout(prevIndex, nodeIndex);
+                cumulativeTime += travelTime;
+            }
+
+            double serviceTime = serviceTimes[nodeIndex];
+
+            System.out.printf(
+                "%2d. [%s] Stop #%d (Address: %d) | " +
+                "Travel: %s | Service: %s | Cumulative: %s%n",
+                i,
+                stopType,
+                nodeIndex,
+                stopAddress,
+                formatDuration(travelTime),
+                formatDuration(serviceTime),
+                formatDuration(cumulativeTime)
+            );
+
+            cumulativeTime += serviceTime;
+        }
+
+        // Return to depot
+        int lastIndex = tsp.getSolution(graph.getNbSommets() - 1);
+        double returnCost = graph.getCout(lastIndex, 0);
+        cumulativeTime += returnCost;
+
+        System.out.printf(
+            "    Return to Depot | Travel: %s | Total: %s%n",
+            formatDuration(returnCost),
+            formatDuration(cumulativeTime)
+        );
+    }
+
+    private String formatDuration(double seconds) {
+        long hours = (long) (seconds / 3600);
+        long minutes = (long) ((seconds % 3600) / 60);
+        long secs = (long) (seconds % 60);
+
+        if (hours > 0) {
+            return String.format("%dh %02dm %02ds", hours, minutes, secs);
+        } else if (minutes > 0) {
+            return String.format("%dm %02ds", minutes, secs);
+        } else {
+            return String.format("%ds", secs);
+        }
+    }
 }
