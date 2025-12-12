@@ -675,16 +675,17 @@ export default function Home() {
     }
 
     return (
-        <div>
+        <div className={"home"}>
             {isModalOpen && (
                 <Modal message={modalMessage} onClose={closeModal} actions={modalActions}/>
             )}
             <h1>Welcome to our brand new pick-up & delivery app !</h1>
             <div>
-                <button onClick={openModificationPanel} style={{ marginBottom: '10px', padding: '10px', marginRight: '10px' }}>
-                    Add a Request
+                <button onClick={openModificationPanel}
+                        className={"home-button"}>
+                    Add a request
                 </button>
-                <button onClick={handleSaveRequests} style={{ marginBottom: '10px', padding: '10px' }} disabled={isSavingRequests}>
+                <button onClick={handleSaveRequests} className={"home-button"} disabled={isSavingRequests}>
                     {isSavingRequests ? "Saving..." : "Save Requests"}
                 </button>
                 <label>
@@ -768,7 +769,7 @@ export default function Home() {
                     </select>
                     <button
                         onClick={handleLoadRequests}
-                        style={{ padding: "8px", marginLeft: "8px" }}
+                        className={"home-button"}
                         disabled={isLoadingRequests}
                     >
                         {isLoadingRequests ? "Loading..." : "Load Requests"}

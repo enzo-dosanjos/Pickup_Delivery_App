@@ -18,3 +18,32 @@ body {
     height: 80vh;
     width: 100vw;
 }
+
+h1 {
+    margin: 15px 0 10px 0;
+    font-size: 24px;
+    font-weight: 600;
+    color: #a0cfff;
+}
+
+div {
+    margin-bottom: 15px;
+}
+
+button {
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    margin: 3px;
+}
+
+input {
+    border: thin solid #333333;
+    border-radius: 3px;
+    background-color: #f1f1f1;
+    color: #333333;
+    padding-left: 5px;
+    margin-left: 10px;
+}
