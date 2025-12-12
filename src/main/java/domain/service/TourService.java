@@ -79,11 +79,12 @@ public class TourService {
     }
 
     /**
-     * Loads couriers from an XML file and adds them to the service.
+     * Empties the couriers array, then loads couriers from an XML file and adds them to the service.
      *
      * @param filepath the path to the XML file containing courier data
      */
     public void loadCouriers(String filepath) {
+        couriers.clear();
         ArrayList<Courier> couriersToAdd = XMLParsers.parseCouriers(filepath);
 
         for (Courier courier : couriersToAdd) {
@@ -284,19 +285,16 @@ public class TourService {
      * Initializes precedence constraints for a courier based on their requests.
      *
      * @param courierId The ID of the courier.
-     * @param requestsId The list of request IDs.
-     * @param pickupDelivery The pickup and delivery data.
+     * @param requests The list of requests assigned to the courier.
      */
-    public void initPrecedences(long courierId, ArrayList<Long> requestsId, PickupDelivery pickupDelivery) {
+    public void initPrecedences(long courierId, ArrayList<Request> requests) {
         HashMap<String, Set<String>> precs = new HashMap<>();
-        Request request;
         long delIntersectionId;
         long puIntersectionId;
-        for (long requestId : requestsId) {
-            request = pickupDelivery.findRequestById(requestId);
+        for (Request request : requests) {
             puIntersectionId = request.getPickupIntersectionId();
             delIntersectionId = request.getDeliveryIntersectionId();
-            precs.computeIfAbsent(parseParams(requestId, delIntersectionId, 'd'), k -> new HashSet<>()).add(parseParams(requestId, puIntersectionId, 'p'));
+            precs.computeIfAbsent(parseParams(request.getId(), delIntersectionId, 'd'), k -> new HashSet<>()).add(parseParams(request.getId(), puIntersectionId, 'p'));
         }
         precedencesByCourier.put(courierId, precs);
     }
@@ -304,27 +302,23 @@ public class TourService {
     /**
      * Generates TSP precedences for a courier based on their requests.
      *
-     * @param requestIdsForCourier The list of request IDs for the courier.
+     * @param requests The list of requests assigned to the courier.
      * @param courierId The ID of the courier.
-     * @param pickupDelivery The pickup and delivery data.
      * @return A map entry containing intersection IDs and precedence constraints.
      */
     public java.util.Map.Entry<long[], HashMap<Integer, Set<Integer>>> generateTspPrecedences(
-            ArrayList<Long> requestIdsForCourier,
-            long courierId,
-            PickupDelivery pickupDelivery) {
+            ArrayList<Request> requests,
+            long warehouseAddressId,
+            long courierId) {
 
         HashMap<String, Set<String>> precs = precedencesByCourier.get(courierId);
 
-        Request request;
+        List<String> vertices = new ArrayList<>(requests.size() * 2 + 1);
+        vertices.add(parseParams(-1, warehouseAddressId, 'w'));
 
-        List<String> vertices = new ArrayList<>(requestIdsForCourier.size() * 2 + 1);
-        vertices.add(parseParams(-1, pickupDelivery.getWarehouseAddressId(), 'w'));
-
-        for (long requestId : requestIdsForCourier) {
-            request = pickupDelivery.findRequestById(requestId);
-            vertices.add(parseParams(requestId, request.getPickupIntersectionId(), 'p'));
-            vertices.add(parseParams(requestId, request.getDeliveryIntersectionId(), 'd'));
+        for (Request request : requests) {
+            vertices.add(parseParams(request.getId(), request.getPickupIntersectionId(), 'p'));
+            vertices.add(parseParams(request.getId(), request.getDeliveryIntersectionId(), 'd'));
         }
 
         HashMap<Integer, Set<Integer>> tspPrecs = new HashMap<>();

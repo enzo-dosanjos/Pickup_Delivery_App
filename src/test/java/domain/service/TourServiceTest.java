@@ -52,8 +52,8 @@ class TourServiceTest {
         pickupDelivery.setWarehouseAddressId(1L);
         Request request1 = new Request(2L, Duration.ofMinutes(5), 3L, Duration.ofMinutes(10));
         Request request2 = new Request(4L, Duration.ofMinutes(3), 5L, Duration.ofMinutes(8));
-        pickupDelivery.addRequestToCourier(123L, request1);
-        pickupDelivery.addRequestToCourier(123L, request2);
+        pickupDelivery.addRequest(request1);
+        pickupDelivery.addRequest(request2);
 
         LocalDateTime startTime = LocalDateTime.of(2023, 10, 1, 8, 0);
         Integer[] solution = {0, 1, 2, 3, 4};
@@ -282,7 +282,7 @@ class TourServiceTest {
         tour.addStop(new TourStop(StopType.PICKUP, 1L, 2L, LocalDateTime.now(), LocalDateTime.now()));
         tour.addStop(new TourStop(StopType.PICKUP, 2L, 3L, LocalDateTime.now(), LocalDateTime.now()));
         service.setTourForCourier(1L, tour);
-        service.initPrecedences(1L, new ArrayList<>(), new PickupDelivery());
+        service.initPrecedences(1L, new ArrayList<>());
 
         service.updateStopOrder(1L, 0, 1);
         assertTrue(service.getPrecedencesByCourier().get(1L).containsKey("2/3/p"));

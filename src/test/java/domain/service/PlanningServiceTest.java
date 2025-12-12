@@ -38,9 +38,9 @@ class PlanningServiceTest {
         tourService.addCourier(courier);
 
         Request request = new Request(8358135L, Duration.ofMinutes(10), 25173820L, Duration.ofMinutes(15));
-        requestService.getPickupDelivery().addRequestToCourier(1L, request);
+        requestService.getPickupDeliveryForCourier(1L).addRequest(request);
 
-        requestService.getPickupDelivery().setWarehouseAddressId(342873658L);
+        requestService.getPickupDeliveryForCourier(1L).setWarehouseAddressId(342873658L);
         planningService.recomputeTourForCourier(1L);
 
         Tour tour = tourService.getTours().get(1L);
@@ -78,14 +78,14 @@ class PlanningServiceTest {
         TourService tourService = new TourService();
         PlanningService planningService = new PlanningService(new RequestService(), tourService, new MapService());
 
-        tourService.initPrecedences(1L, new ArrayList<>(), new PickupDelivery());
+        tourService.initPrecedences(1L, new ArrayList<>());
         PickupDelivery pickupDelivery = new PickupDelivery();
         Request request = new Request(1L, Duration.ofMinutes(10), 2L, Duration.ofMinutes(15));
-        pickupDelivery.getRequests().put(1L, request);
+        pickupDelivery.addRequest(request);
 
-        planningService.updatePrecedences(1L, 1L, pickupDelivery);
+        planningService.updatePrecedences(1L, request);
 
-        assertTrue(tourService.getPrecedencesByCourier().get(1L).containsKey("1/2/d"));
+        assertTrue(tourService.getPrecedencesByCourier().get(1L).containsKey("20/2/d"));
     }
 
     /**
@@ -96,7 +96,7 @@ class PlanningServiceTest {
         TourService tourService = new TourService();
         PlanningService planningService = new PlanningService(new RequestService(), tourService, new MapService());
 
-        tourService.initPrecedences(1L, new ArrayList<>(), new PickupDelivery());
+        tourService.initPrecedences(1L, new ArrayList<>());
         HashMap<String, Set<String>> precs = tourService.getPrecedencesByCourier().get(1L);
         precs.put("1/2/d", new HashSet<>(List.of("1/2/p")));
 

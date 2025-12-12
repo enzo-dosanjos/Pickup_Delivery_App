@@ -23,7 +23,7 @@ type ModificationPanelProps = {
     onAddRequest: () => void;
     onCancel: () => void;
     selectionMode: 'pickup' | 'delivery' | null;
-    setSelectionMode: (mode: 'pickup' | 'delivery') => void;
+    setSelectionMode: (mode: 'pickup' | 'delivery' | 'warehouse') => void;
     isAddingRequest: boolean;
 };
 
@@ -47,7 +47,7 @@ export function ModificationPanel({
     isAddingRequest
 }: ModificationPanelProps) {
     return (
-        <div className="modification-panel">
+        <div className="modification-panel add-request">
             <h3>Add a New Request</h3>
             <div className="info">
                 <div>

@@ -80,11 +80,10 @@ public class XMLParsers {
      * Parses an XML file to populate a PickupDelivery object with requests and depot information.
      *
      * @param filePath the path to the XML file containing the requests data
-     * @param courierId the ID of the courier for whom the requests are being parsed
      * @param pickupDeliveryToFill the PickupDelivery object to populate with parsed data
      * @return true if the parsing was successful, false otherwise
      */
-    public static boolean parseRequests(String filePath, long courierId, PickupDelivery pickupDeliveryToFill) {
+    public static boolean parseRequests(String filePath, PickupDelivery pickupDeliveryToFill) {
         try {
             // Initialise XML parser
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
@@ -128,7 +127,7 @@ public class XMLParsers {
 
                 Request request = new Request(pickupIntersectionId, pickupDuration, deliveryIntersectionId, deliveryDuration);
 
-                pickupDeliveryToFill.addRequestToCourier(courierId, request);
+                pickupDeliveryToFill.addRequest(request);
             }
 
         } catch (Exception e) {

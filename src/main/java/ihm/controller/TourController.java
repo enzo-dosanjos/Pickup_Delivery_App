@@ -127,8 +127,9 @@ public class TourController {
      * @return a map entry containing the request and its stop type
      */
     @PostMapping("/show-request-details")
-    public Map.Entry<Request, StopType> showRequestDetails(@RequestParam long instersectionId) {
-        return requestService.getPickupDelivery().findRequestByIntersectionId(instersectionId);  // todo: create a service method
+    public Map.Entry<Request, StopType> showRequestDetails(@RequestParam long instersectionId,
+                                                           @RequestParam long courierId) {
+        return requestService.getPickupDeliveryForCourier(courierId).findRequestByIntersectionId(instersectionId);
     }
 
     @GetMapping("/tours")
