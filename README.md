@@ -4,7 +4,11 @@ An application for optimizing pickup and delivery tours in a city. This project 
 
 ## Features
 
-.
+-   Interactive React frontend.
+-   Load/save pickup/delivery requests and couriers from XML.
+-   Compute optimized tours (TSP with precedence and service times).
+-   Visualize tours on a map with per-courier colors, stop details, delete actions, and request detail popups.
+-   Export tours to XML from the UI.
 
 ### 1. Import Pickup/Delivery Requests
 
@@ -17,6 +21,7 @@ An application for optimizing pickup and delivery tours in a city. This project 
     -   The `XMLParsers.parseRequests()` method handles the parsing logic.
     -   A `RequestService` orchestrates the import process.
     -   Data is loaded into a `PickupDelivery` model, which organizes requests by courier and stores the depot location.
+    -   Requests can also be added manually from the UI and saved back to XML.
 
 ### 2. Import Tours
 
@@ -65,11 +70,13 @@ The backend provides a REST API to interact with the application's features. Her
 -   `GET /api/request/warehouse`: Retrieves the warehouse intersection ID.
 
 ### Tours
--   `POST /api/tour/save`: Saves the computed tours to a specified XML file.
--   `GET /api/tour/load`: Loads tours from a specified XML file.
--   `POST /api/tour/update-num-couriers`: Updates the number of available couriers.
+-   `POST /api/tour/save`: Saves the computed tour of a courier to an XML file.
+-   `POST /api/tour/show-request-details`: Returns the request and stop type for a given intersection, plus arrival/departure times when a tour is computed.
+-   `POST /api/tour/load-couriers`: Loads couriers from XML.
+-   `POST /api/tour/add-courier` / `POST /api/tour/remove-courier`: Manage couriers.
 -   `POST /api/tour/update-request-order`: Updates the order of requests for a courier.
--   `GET /api/tour/show-request-details`: (Not implemented) Shows details for a specific request.
+-   `GET /api/tour/tours`: Lists current tours.
+-   `GET /api/tour/available-couriers`: Lists available couriers.
 
 ## How to Run
 
@@ -88,21 +95,42 @@ To compile and run the application, you need to have **Java** and **Apache Maven
 
 The frontend of this application is a React project located in the `react-app/` directory. It provides a user interface to visualize maps, tours, and interact with the backend services.
 
-### How to Run the React Application
+### How to Run the React App
 
-To run the React application, follow these steps:
+To see the React display, you need to have Node.js and npm installed.
 
-1.  Navigate to the `react-app` directory:
+1.  **Navigate to the React application directory:**
     ```bash
     cd react-app
     ```
-2.  Install the dependencies:
+2.  **Install project dependencies:**
     ```bash
     npm install
     ```
-3.  Start the development server:
+
+3.  **Start the development server:**
     ```bash
     npm run dev
     ```
-    The React application will typically be available at `http://localhost:5173` (or another port if 5173 is in use).
-    Ensure the Java backend is running for the React application to function correctly.
+    This command will start a local development server and display a link you can click on to open the React application in your web browser.
+
+**Important: Node.js Version:**
+This project's React dependencies require Node.js version 20 or higher.
+
+### React App Dependencies
+
+The React app relies on the following main dependencies:
+-   `react` & `react-dom`
+-   `react-router` for routing
+-   `leaflet` & `react-leaflet` for interactive maps
+-   `vite` as the build tool
+
+All dependencies are listed in `react-app/package.json` and are installed automatically with `npm install`.
+
+### Frontend usage tips
+
+-   On load, you’ll see a pixel-style loading screen. Once ready, use the control panel to:
+    -   Load couriers (`/api/tour/load-couriers`) and requests (`/api/request/load`).
+    -   Add requests manually, delete requests, and recompute tours.
+    -   Export a tour to XML via the “Export Tour” action.
+-   Tours are shown with per-courier colors; clicking a stop shows details including arrival/departure times.
