@@ -18,7 +18,7 @@ import java.util.TreeMap;
 @Service
 public class RequestService {
 
-    private TreeMap<Long, PickupDelivery> pickupDeliveryPerCourier; // A map of courier IDs to a the pickup delivery associated with that courier.
+    private final TreeMap<Long, PickupDelivery> pickupDeliveryPerCourier; // A map of courier IDs to a the pickup delivery associated with that courier.
 
     /**
      * Constructs a new RequestService and initializes the PickupDelivery object.
@@ -79,13 +79,13 @@ public class RequestService {
     /**
      * Retrieves a list of all warehouse IDs associated with the requests of a specific courier.
      *
-     * @return an ArrayList of warehouse IDs
+     * @return a map courier IDs to their warehouse IDs
      */
-    public ArrayList<Long> getAllWarehouseIds() {
-        ArrayList<Long> warehouseIds = new ArrayList<>();
+    public TreeMap<Long, Long> getAllWarehouseIds() {
+        TreeMap<Long, Long> warehouseIds = new TreeMap<>();
 
-        for (PickupDelivery pickupDelivery : pickupDeliveryPerCourier.values()) {
-            warehouseIds.add(pickupDelivery.getWarehouseAddressId());
+        for (Long courierId : pickupDeliveryPerCourier.keySet()) {
+            warehouseIds.put(courierId, pickupDeliveryPerCourier.get(courierId).getWarehouseAddressId());
         }
 
         return warehouseIds;

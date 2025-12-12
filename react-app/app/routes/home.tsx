@@ -3,10 +3,10 @@ import { Map as MapComponent, type Intersection as MapIntersection, type Tour as
 import { useState, useEffect, useRef } from "react";
 import L from "leaflet";
 import { ModificationPanel, type Courier as PanelCourier } from "../components/ModificationPanel";
+import { CourierSelectionPanel } from "~/components/CourierSelectionPanel";
 import "../components/ModificationPanel.css";
 import Modal from "../components/Modal";
 import "./home.css";
-import type {List} from "postcss/lib/list";
 
 // Define the types for the data we expect from the API
 type ApiIntersection = {
@@ -92,8 +92,11 @@ export default function Home() {
     const [deliveryDuration, setDeliveryDuration] = useState<number>(defaultDuration);
     const [couriersList, setCouriersList] = useState<PanelCourier[]>([]);
     const [selectedCourier, setSelectedCourier] = useState<string>("0");
-    const [warehouseIds, setWarehouseIds] = useState<Array<number> | null>(null);
+    const [warehouseIds, setWarehouseIds] = useState<Map<string, number>>(() => new Map());
     const [selectionHint, setSelectionHint] = useState<string | null>(null);
+    const [displayedCouriers, setDisplayedCouriers] = useState<string>("All");
+    const [displayedTours, setDisplayedTours] = useState<MapTour[]>([]);
+    const [displayedWarehouses, setDisplayedWarehouses] = useState<number[]>([]);
 
     // file paths
     const [requestFilePath, setRequestFilePath] = useState<string>("src/main/resources/requests.xml");
@@ -188,7 +191,7 @@ export default function Home() {
                 setRoadSegments(transformedRoadSegments);
 
                 // Finally, fetch and display tours
-                await displayTour('All');
+                await fetchTours();
 
             } catch (e: any) {
                 console.error("Caught error object:", e);
@@ -213,6 +216,17 @@ export default function Home() {
         }
     }, [couriersList]);
 
+    useEffect(() => {
+        if (displayedCouriers === "All") {
+            setDisplayedTours(tours);
+            setDisplayedWarehouses(Array.from(warehouseIds.values()));
+        } else {
+            setDisplayedTours(tours.filter(tour => tour.courierId.toString() === displayedCouriers))
+            setDisplayedWarehouses([warehouseIds.get(displayedCouriers)!]);
+        }
+
+    }, [tours, displayedCouriers]);
+
     const handleMapClick = (intersectionId: number) => {
         const roadName = intersectionIdToRoadName.get(intersectionId) || `Intersection ${intersectionId}`;
         if (selectionMode === 'pickup') {
@@ -226,7 +240,6 @@ export default function Home() {
             setSelectionMode(null); // Deactivate selection mode
             setSelectionHint(null);
         } else if (selectionMode === 'warehouse') {
-            setWarehouseIds([intersectionId]);
             setSelectionMode(null);
             setSelectionHint(null);
             const params = new URLSearchParams();
@@ -253,42 +266,20 @@ export default function Home() {
         }
     };
 
-    const displayTour = async (courierId: string) => {
+    const fetchTours = async () => {
         if (!intersectionMapRef.current) {
             throw new Error("intersectionMap not initialized");
         }
         const intersectionMap = intersectionMapRef.current;
 
-        if (courierId == 'All') {
-            const warehousesResponse = await fetch('http://localhost:8080/api/request/all-warehouses');
+        const warehousesResponse = await fetch('http://localhost:8080/api/request/warehouse');
 
-            if (!warehousesResponse.ok) {
-                throw new Error(`HTTP error! status: ${warehousesResponse.status}`);
-            }
-            const fetchedWarehouseIds: number[] = await warehousesResponse.json();
-            setWarehouseIds(fetchedWarehouseIds);
-        } else {
-            const params = new URLSearchParams();
-            params.append("courierId", courierId);
-            // Fetch warehouse ID
-            const warehouseResponse = await fetch('http://localhost:8080/api/request/warehouse', {
-                method: "POST",
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: params,
-            });
-            if (!warehouseResponse.ok) {
-                throw new Error(`HTTP error! status: ${warehouseResponse.status}`);
-            }
-            const fetchedWarehouseId: number = await warehouseResponse.json();
-
-            if (fetchedWarehouseId === -1) {
-                setWarehouseIds(null);
-            } else {
-                setWarehouseIds([fetchedWarehouseId]);
-            }
+        if (!warehousesResponse.ok) {
+            throw new Error(`HTTP error! status: ${warehousesResponse.status}`);
         }
+        const data = await warehousesResponse.json();
+        const fetchedWarehouseIds = new Map<string, number>(Object.entries(data));
+        setWarehouseIds(fetchedWarehouseIds);
 
         // Fetch tours from backend
         const toursResponse = await fetch("http://localhost:8080/api/tour/tours");
@@ -386,7 +377,8 @@ export default function Home() {
             console.log('Requests loaded successfully');
             setModalMessage("Requests loaded successfully!");
             setIsModalOpen(true);
-            await displayTour(selectedCourier);
+            await fetchTours();
+            setDisplayedCouriers(selectedCourier);
 
         } catch (e: any) {
             console.error("Failed to load requests:", e);
@@ -426,23 +418,15 @@ export default function Home() {
 
         setIsAddingRequest(true);
         try {
-            // First, get the warehouse ID from the backend
-            const paramsWarehouse = new URLSearchParams();
-            paramsWarehouse.append("courierId", selectedCourier);
-            const warehouseResponse = await fetch('http://localhost:8080/api/request/warehouse', {
-                method: "POST",
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: paramsWarehouse,
-            });
+            const warehouseResponse = await fetch('http://localhost:8080/api/request/warehouse');
             if (!warehouseResponse.ok) {
                 throw new Error(`HTTP error! status: ${warehouseResponse.status}`);
             }
             const fetchedWarehouseId = await warehouseResponse.json();
+            setWarehouseIds(fetchedWarehouseId);
 
             // If warehouse not set yet, prompt user to add it before proceeding
-            if (fetchedWarehouseId === -1) {
+            if (warehouseIds?.get(selectedCourier) === -1) {
                 setModalMessage("Warehouse is not set. Click 'Add warehouse' then select a point on the map.");
                 setModalActions([{
                     label: "Add warehouse",
@@ -458,7 +442,7 @@ export default function Home() {
 
             // Now, add the request with the fetched warehouse ID
             const params = new URLSearchParams();
-            params.append('warehouseId', fetchedWarehouseId.toString());
+            params.append('warehouseId', warehouseIds?.get(selectedCourier)?.toString() || "");
             params.append('pickupIntersectionId', pickupId.toString());
             params.append('pickupDurationInSeconds', pickupDuration.toString());
             params.append('deliveryIntersectionId', deliveryId.toString());
@@ -486,7 +470,8 @@ export default function Home() {
             setIsModalOpen(true);
 
             // Finally, fetch and display tours
-            await displayTour(selectedCourier);
+            await fetchTours();
+            setDisplayedCouriers(selectedCourier);
 
         } catch (e: any) {
             console.error("Failed to add request:", e);
@@ -572,7 +557,7 @@ export default function Home() {
             }
 
             console.log('Request deleted successfully');
-            await displayTour(courierId.toString());
+            await fetchTours();
             setModalMessage("Request deleted successfully!");
             setIsModalOpen(true);
 
@@ -681,13 +666,20 @@ export default function Home() {
                     intersections={intersections}
                     roadSegments={roadSegments}
                     bounds={bounds}
-                    tours={tours}
+                    tours={displayedTours}
                     onMapClick={handleMapClick}
                     selectionModeActive={isPanelOpen}
                     pickupId={pickupId}
                     deliveryId={deliveryId}
                     onDeleteRequest={handleDeleteRequest}
-                    warehouseIds={warehouseIds}
+                    warehouseIds={displayedWarehouses}
+                />
+            )}
+            {couriersList.length > 0 && (
+                <CourierSelectionPanel
+                    couriersList={couriersList}
+                    displayedCouriers={displayedCouriers}
+                    setDisplayedCouriers={setDisplayedCouriers}
                 />
             )}
         </div>

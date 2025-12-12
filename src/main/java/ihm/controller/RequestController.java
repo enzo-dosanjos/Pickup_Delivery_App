@@ -1,5 +1,6 @@
 package ihm.controller;
 
+import domain.model.Courier;
 import domain.model.Request;
 import domain.service.PlanningService;
 import domain.service.RequestService;
@@ -11,6 +12,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.stream.Collectors;
 
 /**
@@ -127,30 +130,19 @@ public class RequestController {
     }
 
     /**
-     * Retrieves the warehouse address ID associated with the specified courier.
+     * Retrieves all warehouse IDs from the system.
      *
-     * @param courierId the ID of the courier
-     * @return the warehouse address ID
+     * @return a map of courier IDs to their corresponding warehouse IDs with -1 for couriers without a warehouse
      */
-    @PostMapping("/warehouse")
-    public long getWarehouseAddress(@RequestParam long courierId) {
-        var pd = requestService.getPickupDeliveryForCourier(courierId);
-        if (pd == null) {
-            return -1L;  // Courier does not exist or has no PickupDelivery
+    @GetMapping("/warehouse")
+    public Map<Long, Long> getWarehouseAddress() {
+        TreeMap<Long, Long> warehouseIds = requestService.getAllWarehouseIds();
+
+        for (Courier courier : tourService.getCouriers()) {
+            warehouseIds.putIfAbsent(courier.getId(), -1L);
         }
-        long wid = pd.getWarehouseAddressId();
 
-        return wid == 0 ? -1L : wid;
-    }
-
-    /**
-     * Retrieves a list of all warehouse IDs associated with the requests.
-     *
-     * @return an ArrayList of warehouse IDs
-     */
-    @GetMapping("/all-warehouses")
-    public ArrayList<Long> getAllWarehouseAddresses() {
-        return requestService.getAllWarehouseIds();
+        return warehouseIds;
     }
 
     /**

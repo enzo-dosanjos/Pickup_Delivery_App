@@ -68,7 +68,7 @@ export function Map(props: {
     pickupId: number | null,
     deliveryId: number | null,
     onDeleteRequest?: (requestId: number, courierId: number) => void,
-    warehouseIds: Array<number> | null,
+    warehouseIds: Array<number>,
 }) {
     const mapBounds = useMemo(() => new L.LatLngBounds(props.bounds), [props.bounds]);
 
