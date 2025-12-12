@@ -5,7 +5,6 @@ import domain.model.*;
 import domain.model.dijkstra.DijkstraTable;
 import org.junit.jupiter.api.Test;
 
-
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -22,10 +21,7 @@ class DijkstraServiceTest {
     private Map map; // The map containing intersections and road segments.
 
 
-    private GrapheComplet grapheComplet; // The complete graph representation used for storing shortest path costs.
-
-
-    private DijkstraTable dijkstraTable; // The table used to store the shortest path information.
+    private GrapheComplet grapheComplet; // The complete graph representation used for storing the shortest paths costs.
 
     /**
      * Verifies that computeShortestPath works correctly with an empty map.
@@ -33,13 +29,11 @@ class DijkstraServiceTest {
     @Test
     void computeShortestPathWithEmptyMap() {
         map = new Map();
-        grapheComplet = new GrapheComplet(0);
-        dijkstraTable = new DijkstraTable();
-        dijkstraService = new DijkstraService(map, grapheComplet);
+        dijkstraService = new DijkstraService(map);
 
-        dijkstraService.computeShortestPath(dijkstraTable);
+        grapheComplet = dijkstraService.computeShortestPath(new long[0]);
 
-        assertEquals(0, dijkstraService.getGraph().getNbSommets());
+        assertEquals(0, grapheComplet.getNbSommets());
     }
 
     /**
@@ -51,13 +45,11 @@ class DijkstraServiceTest {
         Intersection intersection = new Intersection(1L, 0.0, 0.0);
         long[] intersectionsIds = {1L};
         map.addIntersection(intersection);
-        grapheComplet = new GrapheComplet(intersectionsIds, 1);
-        dijkstraTable = new DijkstraTable();
-        dijkstraService = new DijkstraService(map, grapheComplet);
+        dijkstraService = new DijkstraService(map);
 
-        dijkstraService.computeShortestPath(dijkstraTable);
+        grapheComplet = dijkstraService.computeShortestPath(intersectionsIds);
 
-        assertEquals(0, dijkstraService.getGraph().getCout(0, 0));
+        assertEquals(0, grapheComplet.getCout(0, 0));
     }
 
     /**
@@ -71,14 +63,14 @@ class DijkstraServiceTest {
         long[] intersectionsIds = {1L, 2L};
         map.addIntersection(intersection2);
         map.addIntersection(intersection);
-        dijkstraTable = new DijkstraTable();
-        grapheComplet = new GrapheComplet(intersectionsIds, 2);
-        dijkstraService = new DijkstraService(map, grapheComplet);
+        dijkstraService = new DijkstraService(map);
 
-        dijkstraService.computeShortestPath(dijkstraTable);
+        grapheComplet = dijkstraService.computeShortestPath(intersectionsIds);
 
-        assertEquals(Double.MAX_VALUE, dijkstraService.getGraph().getCout(0, 1));
-        assertEquals(Double.MAX_VALUE, dijkstraService.getGraph().getCout(1, 0));
+        assertEquals(0, grapheComplet.getCout(0, 0));
+        assertEquals(0, grapheComplet.getCout(1, 1));
+        assertEquals(Double.MAX_VALUE, grapheComplet.getCout(0, 1));
+        assertEquals(Double.MAX_VALUE, grapheComplet.getCout(1, 0));
     }
 
     /**
@@ -94,14 +86,12 @@ class DijkstraServiceTest {
         map.addIntersection(intersection);
         RoadSegment roadSegment = new RoadSegment("Jean Paul", 5, 2L, 1L);
         map.addRoadSegment(2L, roadSegment);
-        dijkstraTable = new DijkstraTable();
-        grapheComplet = new GrapheComplet(intersectionsIds, 2);
-        dijkstraService = new DijkstraService(map, grapheComplet);
+        dijkstraService = new DijkstraService(map);
 
-        dijkstraService.computeShortestPath(dijkstraTable);
+        grapheComplet = dijkstraService.computeShortestPath(intersectionsIds);
 
-        assertEquals(5*60.0/15.0/1000.0, dijkstraService.getGraph().getCout(1, 0));
-        assertEquals(Double.MAX_VALUE, dijkstraService.getGraph().getCout(0, 1));
+        assertEquals(5*60.0/15.0/1000.0, grapheComplet.getCout(1, 0));
+        assertEquals(Double.MAX_VALUE, grapheComplet.getCout(0, 1));
     }
 
     /**
@@ -123,11 +113,9 @@ class DijkstraServiceTest {
         map.addRoadSegment(1L, roadSegment);
         map.addRoadSegment(2L, roadSegment2);
         map.addRoadSegment(3L, roadSegment3);
-        dijkstraTable = new DijkstraTable();
-        grapheComplet = new GrapheComplet(intersectionsIds, 3);
-        dijkstraService = new DijkstraService(map, grapheComplet);
+        dijkstraService = new DijkstraService(map);
 
-        dijkstraService.computeShortestPath(dijkstraTable);
+        grapheComplet = dijkstraService.computeShortestPath(intersectionsIds);
 
         assertEquals(5*60.0/15.0/1000.0, grapheComplet.getCout(0, 1),0.0001);
         assertEquals(9*60.0/15.0/1000.0, grapheComplet.getCout(0, 2),0.0001);
@@ -162,36 +150,31 @@ class DijkstraServiceTest {
         map.addRoadSegment(3L, roadSegment3);
         map.addRoadSegment(1L, roadSegment4);
         map.addRoadSegment(4L, roadSegment5);
-        dijkstraTable = new DijkstraTable();
-        grapheComplet = new GrapheComplet(intersectionsIds, 3);
-        dijkstraService = new DijkstraService(map, grapheComplet);
+        dijkstraService = new DijkstraService(map);
 
-        dijkstraService.computeShortestPath(dijkstraTable);
+        grapheComplet = dijkstraService.computeShortestPath(intersectionsIds);
 
-        assertEquals(5*60.0/15.0/1000.0, dijkstraService.getGraph().getCout(0, 1),0.0001);
-        assertEquals(9*60.0/15.0/1000.0, dijkstraService.getGraph().getCout(0, 2),0.0001);
-        assertEquals(6*60.0/15.0/1000.0, dijkstraService.getGraph().getCout(1, 0),0.0001);
+        assertEquals(5*60.0/15.0/1000.0, grapheComplet.getCout(0, 1),0.0001);
+        assertEquals(9*60.0/15.0/1000.0, grapheComplet.getCout(0, 2),0.0001);
+        assertEquals(6*60.0/15.0/1000.0, grapheComplet.getCout(1, 0),0.0001);
         assertEquals(4*60.0/15.0/1000.0, grapheComplet.getCout(1, 2),0.0001);
         assertEquals(2*60.0/15.0/1000.0, grapheComplet.getCout(2, 0),0.0001);
         assertEquals(7*60.0/15.0/1000.0, grapheComplet.getCout(2, 1),0.0001);
     }
 
     /**
-     * Verifies that computeShortestPath initializes the Dijkstra table correctly.
+     * Verifies that DijkstraService initializes the Dijkstra table correctly.
      */
     @Test
-    void computeShortestPathInitializesDijkstraTableCorrectly() {
+    void dijkstraServiceInitializesDijkstraTableCorrectly() {
         map = new Map();
         Intersection intersection1 = new Intersection(1L, 0.0, 0.0);
         Intersection intersection2 = new Intersection(2L, 10.0, 20.0);
         map.addIntersection(intersection1);
         map.addIntersection(intersection2);
-        long[] intersectionsIds = {1L, 2L};
-        grapheComplet = new GrapheComplet(intersectionsIds, 2);
-        dijkstraTable = new DijkstraTable();
-        dijkstraService = new DijkstraService(map, grapheComplet);
+        dijkstraService = new DijkstraService(map);
 
-        dijkstraService.computeShortestPath(dijkstraTable);
+        DijkstraTable dijkstraTable = dijkstraService.getDijkstraTable();
 
         assertEquals(0, dijkstraTable.get(1L, 1L).getDuration());
         assertEquals(Double.MAX_VALUE, dijkstraTable.get(1L, 2L).getDuration());
@@ -199,26 +182,6 @@ class DijkstraServiceTest {
         assertEquals(0, dijkstraTable.get(2L, 2L).getDuration());
     }
 
-    /**
-     * Verifies that Dijkstra handles a graph with no neighbors for the starting vertex.
-     */
-    @Test
-    void dijkstraHandlesNoNeighborsForStartVertex() {
-        map = new Map();
-        Intersection intersection1 = new Intersection(1L, 0.0, 0.0);
-        Intersection intersection2 = new Intersection(2L, 10.0, 20.0);
-        map.addIntersection(intersection1);
-        map.addIntersection(intersection2);
-        long[] intersectionsIds = {1L, 2L};
-        grapheComplet = new GrapheComplet(intersectionsIds, 2);
-        dijkstraTable = new DijkstraTable();
-        dijkstraService = new DijkstraService(map, grapheComplet);
-
-        dijkstraService.computeShortestPath(dijkstraTable);
-
-        assertEquals(Double.MAX_VALUE, dijkstraService.getGraph().getCout(0, 1));
-        assertEquals(Double.MAX_VALUE, dijkstraService.getGraph().getCout(1, 0));
-    }
 
     /**
      * Verifies that Dijkstra updates the shortest path when a shorter path is found.
@@ -239,30 +202,10 @@ class DijkstraServiceTest {
         map.addRoadSegment(2L, segment2);
         map.addRoadSegment(3L, segment3);
         long[] intersectionsIds = {1L, 2L, 3L};
-        grapheComplet = new GrapheComplet(intersectionsIds, 3);
-        dijkstraTable = new DijkstraTable();
-        dijkstraService = new DijkstraService(map, grapheComplet);
+        dijkstraService = new DijkstraService(map);
 
-        dijkstraService.computeShortestPath(dijkstraTable);
+        grapheComplet = dijkstraService.computeShortestPath(intersectionsIds);
 
-        assertEquals(7 * 60.0 / 15.0 / 1000.0, dijkstraService.getGraph().getCout(0, 2), 0.0001);
-    }
-
-    /**
-     * Verifies that Dijkstra handles a graph with a single vertex correctly.
-     */
-    @Test
-    void dijkstraHandlesSingleVertexGraph() {
-        map = new Map();
-        Intersection intersection = new Intersection(1L, 0.0, 0.0);
-        map.addIntersection(intersection);
-        long[] intersectionsIds = {1L};
-        grapheComplet = new GrapheComplet(intersectionsIds, 1);
-        dijkstraTable = new DijkstraTable();
-        dijkstraService = new DijkstraService(map, grapheComplet);
-
-        dijkstraService.computeShortestPath(dijkstraTable);
-
-        assertEquals(0, dijkstraService.getGraph().getCout(0, 0));
+        assertEquals(7 * 60.0 / 15.0 / 1000.0, grapheComplet.getCout(0, 2), 0.0001);
     }
 }
