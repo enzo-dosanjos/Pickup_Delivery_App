@@ -120,13 +120,13 @@ public class TourController {
     /**
      * Shows the details of a request based on the specified intersection ID.
      *
-     * @param instersectionId the intersection ID of the request
+     * @param intersectionId the intersection ID of the request
      * @return a map entry containing the request and its stop type
      */
     @PostMapping("/show-request-details")
-    public Map.Entry<Request, StopType> showRequestDetails(@RequestParam long instersectionId,
+    public Map.Entry<Request, StopType> showRequestDetails(@RequestParam long intersectionId,
                                                            @RequestParam long courierId) {
-        return requestService.getPickupDeliveryForCourier(courierId).findRequestByIntersectionId(instersectionId);
+        return requestService.getPickupDeliveryForCourier(courierId).findRequestByIntersectionId(intersectionId);
     }
 
     @GetMapping("/tours")
