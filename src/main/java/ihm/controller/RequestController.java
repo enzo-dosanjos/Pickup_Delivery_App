@@ -11,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
@@ -25,9 +24,9 @@ import java.util.stream.Collectors;
 @RequestMapping("/api/request")
 public class RequestController {
 
-    private final RequestService requestService;
-    private final PlanningService planningService;
-    private final TourService tourService;
+    private final RequestService requestService; // The service responsible for managing requests.
+    private final PlanningService planningService; // The service responsible for managing tours calculations.
+    private final TourService tourService; // The service responsible for managing tours.
 
     /**
      * Constructs a RequestController with the specified request and tour services.
@@ -43,6 +42,11 @@ public class RequestController {
         this.tourService = tourService;
     }
 
+    /**
+     * Saves the current requests to a file specified by the given file path.
+     *
+     * @param filepath the path to the file where the requests will be saved
+     */
     @PostMapping("/save")
     public ResponseEntity<?> saveRequests(@RequestParam String filepath,
                                           @RequestParam long courierId) {
@@ -50,6 +54,12 @@ public class RequestController {
         return ResponseEntity.ok().build();
     }
 
+    /**
+     * Sets the warehouse address for the specified courier.
+     *
+     * @param warehouseId the ID of the warehouse intersection
+     * @param courierId the ID of the courier
+     */
     @PostMapping("/addWarehouse")
     public void addWarehouse(@RequestParam long warehouseId,
                              @RequestParam long courierId) {
@@ -126,6 +136,10 @@ public class RequestController {
         );
         requestService.addRequest(courierId, newRequest);
 
+        //update precedences
+        planningService.updatePrecedences(courierId, newRequest);
+
+        // Recompute the tour for the courier
         return recomputeTourAndHandleExceptions(courierId);
     }
 
@@ -160,6 +174,7 @@ public class RequestController {
         }
 
         // 1. Speculatively delete the request
+        planningService.deletePrecedences(courierId, requestId);
         requestService.deleteRequest(courierId, requestId);
 
         try {
@@ -176,6 +191,12 @@ public class RequestController {
         }
     }
 
+    /**
+     * Helper method to recompute the tour for a courier and handle exceptions appropriately.
+     *
+     * @param courierId the ID of the courier whose tour is to be recomputed
+     * @return a ResponseEntity indicating the result of the operation
+     */
     private ResponseEntity<?> recomputeTourAndHandleExceptions(long courierId) {
         try {
             planningService.recomputeTourForCourier(courierId);

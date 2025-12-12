@@ -25,10 +25,20 @@ public class Courier {
         this.availabilityStatus = AvailabilityStatus.AVAILABLE;
     }
 
+    /**
+     * Checks if the courier is currently available.
+     *
+     * @return true if the courier is available, false otherwise
+     */
     public Boolean isAvailable() {
         return availabilityStatus == AvailabilityStatus.AVAILABLE;
     }
 
+    /**
+     * Checks if the courier is currently busy.
+     *
+     * @return true if the courier is busy, false otherwise
+     */
     public Boolean isBusy() {
         return availabilityStatus == AvailabilityStatus.BUSY;
     }

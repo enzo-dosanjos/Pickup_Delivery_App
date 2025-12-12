@@ -1,6 +1,7 @@
 package ihm.controller;
 
 import domain.model.*;
+import domain.service.PlanningService;
 import domain.service.RequestService;
 import domain.service.TourService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,10 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 
 /**
  * Controller class for managing tours and couriers.
@@ -22,6 +21,8 @@ import java.util.Map.Entry;
 @RestController
 @RequestMapping("/api/tour")
 public class TourController {
+
+    private final PlanningService planningService; // The service responsible for managing tours calculations.
 
     private final TourService tourService; // The service responsible for managing tours and couriers.
 
@@ -34,9 +35,10 @@ public class TourController {
      * @param requestService the service responsible for managing requests
      */
     @Autowired
-    public TourController(TourService tourService, RequestService requestService) {
+    public TourController(TourService tourService, RequestService requestService, PlanningService planningService) {
         this.tourService = tourService;
         this.requestService = requestService;
+        this.planningService = planningService;
     }
 
     /**
@@ -79,17 +81,52 @@ public class TourController {
     }
 
     /**
-     * Updates the order of requests for a specific courier.
+     * Updates the order of stops for a courier's tour and recomputes the tour.
+     * If the update is invalid (e.g., involves the warehouse or stops from the same request),
+     * an appropriate error response is returned.
      *
-     * @param requestBeforeId the ID of the request that should come before
-     * @param requestAfterId the ID of the request that should come after
-     * @param courierId the ID of the courier whose request order is to be updated
+     * @param courierId The ID of the courier whose stop order is being updated.
+     * @param precStopIndex The index of the preceding stop in the tour.
+     * @param followingStopIndex The index of the following stop in the tour.
+     * @return A ResponseEntity indicating the result of the operation:
+     *         - 200 OK if the update and recomputation succeed.
+     *         - 400 BAD REQUEST if the update is invalid.
+     *         - 409 CONFLICT if an error occurs during tour recomputation.
      */
-    @PostMapping("/update-request-order")
-    public void updateRequestOrder(@RequestParam long requestBeforeId,
-                                   @RequestParam long requestAfterId,
-                                   @RequestParam long courierId) {
-        tourService.updateRequestOrder(requestBeforeId, requestAfterId, courierId);
+    @PostMapping("/update-stop-order")
+    public ResponseEntity<?> updateStopOrder(@RequestParam long courierId,
+                                             @RequestParam Integer precStopIndex,
+                                             @RequestParam Integer followingStopIndex) {
+        try {
+            // Updating Stops order
+            tourService.updateStopOrder(courierId, precStopIndex, followingStopIndex);
+            // Recomputing tour
+            planningService.recomputeTourForCourier(courierId);
+
+            // If no exceptions arose
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            // Validation exceptions (ex: warehouse or same request)
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("Impossible to update stops order : " + e.getMessage());
+        } catch (RuntimeException e) {
+            // PlanningService exceptions (recomputeTourForCourier)
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body("Error when recomputing tour for courier " + courierId + ". " +
+                            "Tour update cancelled. Details : " + e.getMessage());
+        }
+    }
+
+    /**
+     * Shows the details of a request based on the specified intersection ID.
+     *
+     * @param instersectionId the intersection ID of the request
+     * @return a map entry containing the request and its stop type
+     */
+    @PostMapping("/show-request-details")
+    public Map.Entry<Request, StopType> showRequestDetails(@RequestParam long instersectionId,
+                                                           @RequestParam long courierId) {
+        return requestService.getPickupDeliveryForCourier(courierId).findRequestByIntersectionId(instersectionId);
     }
 
     @GetMapping("/tours")

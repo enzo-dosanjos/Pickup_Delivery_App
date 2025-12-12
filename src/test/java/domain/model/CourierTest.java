@@ -30,6 +30,10 @@ class CourierTest {
         assertEquals(AvailabilityStatus.AVAILABLE, courier.getAvailabilityStatus());
     }
 
+    /**
+     * Tests the availability status methods of the {@link Courier} class.
+     * Verifies that the courier's availability status can be set and retrieved correctly.
+     */
     @Test
     void checkAvailabilityStatus() {
         long id = 1L;

@@ -13,7 +13,7 @@ public enum StopType {
 
     /** Represents an intermediate stop with a type value of 3.
      * An intermediate stop is not a real stop, but rather an intersection by witch
-     * the coursier will pass between two real stops (Pickup, Delivery or Warehouse)*/
+     * the courier will pass between two real stops (Pickup, Delivery or Warehouse)*/
     INTERMEDIATE(3),
 
     /** Represents the warehouse stop with a type value of 0. */

@@ -69,7 +69,6 @@ export default function Home() {
     const [intersectionIdToRoadName, setIntersectionIdToRoadName] = useState<Map<number, string>>(new Map());
     const [bounds, setBounds] = useState<L.LatLngExpression[]>([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalMessage, setModalMessage] = useState("");
     const [modalActions, setModalActions] = useState<{ label: string, onClick: () => void }[]>([]);
@@ -98,6 +97,8 @@ export default function Home() {
     const [displayedCouriers, setDisplayedCouriers] = useState<string>("All");
     const [displayedTours, setDisplayedTours] = useState<MapTour[]>([]);
     const [displayedWarehouses, setDisplayedWarehouses] = useState<number[]>([]);
+    const [prevStopIndex, setPrevStopIndex] = useState("");
+    const [nextStopIndex, setNextStopIndex] = useState("");
 
     // file paths
     const [requestFilePath, setRequestFilePath] = useState<string>("src/main/resources/requests.xml");
@@ -224,7 +225,7 @@ export default function Home() {
             setDisplayedWarehouses(Array.from(warehouseIds.values()));
         } else {
             setDisplayedTours(tours.filter(tour => tour.courierId.toString() === displayedCouriers))
-            setDisplayedWarehouses([warehouseIds.get(displayedCouriers)!]);
+            setDisplayedWarehouses([warehouseIds.get(displayedCouriers) || -1]);
         }
 
     }, [tours, displayedCouriers]);
@@ -260,6 +261,8 @@ export default function Home() {
                 setModalMessage("Warehouse set successfully. You can now add a request.");
                 setModalActions([]);
                 setIsModalOpen(true);
+                // Update warehouseIds state
+                fetchTours();
             }).catch(e => {
                 setModalMessage(`Failed to set warehouse: ${e.message}`);
                 setModalActions([]);
@@ -409,7 +412,9 @@ export default function Home() {
             console.log("Couriers list fetched successfully");
         } catch (e: any) {
             console.error("Failed to fetch couriers:", e);
-            setError(`Failed to fetch couriers: ${e.message}`);
+            setModalMessage(`Failed to fetch couriers: ${e.message}`);
+            setModalActions([]);
+            setIsModalOpen(true);
         }
     }
 
@@ -425,8 +430,9 @@ export default function Home() {
             if (!warehouseResponse.ok) {
                 throw new Error(`HTTP error! status: ${warehouseResponse.status}`);
             }
-            const fetchedWarehouseId = await warehouseResponse.json();
-            setWarehouseIds(fetchedWarehouseId);
+            const data = await warehouseResponse.json();
+            const fetchedWarehouseIds = new Map<string, number>(Object.entries(data));
+            setWarehouseIds(fetchedWarehouseIds);
 
             // If warehouse not set yet, prompt user to add it before proceeding
             if (warehouseIds?.get(selectedCourier) === -1) {
@@ -487,6 +493,48 @@ export default function Home() {
         } finally {
             setIsAddingRequest(false);
             handleClosePanel();
+        }
+    };
+
+    const handleUpdateStopOrder = async (
+        courierId: number,
+        precStopIndex: number,
+        followingStopIndex: number
+    ) => {
+        try {
+            const params = new URLSearchParams();
+            params.append("courierId", courierId.toString());
+            params.append("precStopIndex", precStopIndex.toString());
+            params.append("followingStopIndex", followingStopIndex.toString());
+
+            const response = await fetch("http://localhost:8080/api/tour/update-stop-order", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/x-www-form-urlencoded",
+                },
+                body: params,
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                // Show error in the app without throwing
+                setModalMessage(`Failed to update stop order: ${errorText}`);
+                setModalActions([]);
+                setIsModalOpen(true);
+                return; // stop further processing
+            }
+
+            console.log("Stop order updated successfully");
+
+            // Reload the tour to see changes
+            await fetchTours();
+
+        } catch (e: any) {
+            console.error("Unexpected error while updating stop order:", e);
+            // Still catch unexpected errors without breaking the app
+            setModalMessage(`Unexpected error: ${e.message}`);
+            setModalActions([]);
+            setIsModalOpen(true);
         }
     };
 
@@ -638,6 +686,66 @@ export default function Home() {
                 </button>
                 <button onClick={handleSaveRequests} style={{ marginBottom: '10px', padding: '10px' }} disabled={isSavingRequests}>
                     {isSavingRequests ? "Saving..." : "Save Requests"}
+                </button>
+                <label>
+                    First stop index (must come BEFORE):
+                    <input
+                        type="number"
+                        value={prevStopIndex}
+                        onChange={(e) => setPrevStopIndex(e.target.value)}
+
+                    />
+                </label>
+
+
+                <label>
+                    Second stop index (must come AFTER):
+                    <input
+                        type="number"
+                        value={nextStopIndex}
+                        onChange={(e) => setNextStopIndex(e.target.value)}
+
+                    />
+                </label>
+
+
+                <button
+                    onClick={() => {
+                        if (displayedCouriers === "All") {
+                            setModalMessage("Please select a specific courier to update stop order.");
+                            setModalActions([]);
+                            setIsModalOpen(true);
+                            return;
+                        }
+
+                        const t = tours.find(t => t.courierId.toString() === displayedCouriers);
+                        if (!t) {
+                            setModalMessage("No tour available.");
+                            setModalActions([]);
+                            setIsModalOpen(true);
+                            return;
+                        }
+
+                        const prevIndex = parseInt(prevStopIndex, 10);
+                        const nextIndex = parseInt(nextStopIndex, 10);
+
+                        if (isNaN(prevIndex) || isNaN(nextIndex)) {
+                            setModalMessage("Please enter valid indices.");
+                            setModalActions([]);
+                            setIsModalOpen(true);
+                            return;
+                        }
+
+                        const confirmed = window.confirm(
+                            `Confirm update stop order?\nStop ${prevIndex} must come BEFORE stop ${nextIndex}`
+                        );
+
+                        if (!confirmed) return;
+
+                        handleUpdateStopOrder(t.courierId, prevIndex, nextIndex);
+                    }}
+                >
+                    Apply Update
                 </button>
             </div>
 

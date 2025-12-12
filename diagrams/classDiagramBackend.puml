@@ -159,10 +159,10 @@ package "Domain" {
         }
 
         class TourService {
-            - couriers : ArrayList<Courier> (list of courier ids)
-            - numCouriers : int
-            - tours : TreeMap<long, Tour>  (key: courier id)
-            - requestOrder : TreeMap<Long, HashMap<Long, Long>>  (key: courier id, value: pair of ids of stop that should be before the other)
+            - couriers : ArrayList<Courier> (list of courier)
+            - numCouriers : int (number of couriers loaded)
+            - tours : TreeMap<long, Tour> (key: courier id → computed tour)
+            - precedencesByCourier : TreeMap<Long, HashMap<String, Set<String>>>  (key: courier id → precedences "reqId/interId/type" → set of predecessors)
             + saveTours(filepath: String) : void
             + loadTours(filepath: String) : void
             + setTourForCourier(courierId: long, tour: Tour) : void
@@ -185,6 +185,7 @@ package "Domain" {
             - mapService : MapService
             + recomputeTourForCourier(courierId: long) : void
             + courierExists(courierId: long) : boolean
+            + updatePrecedences(courierId: long, newRequestId: long, pickupDelivery: PickupDelivery) : void (add pickup-before-delivery constraints for a new request)
         }
 
         class IteratorSeq {
@@ -251,13 +252,13 @@ package "Presentation" {
     class TourController {
         - requestService : RequestService
         - tourService : TourService
+        - planningService : PlanningService
         + saveTours(filepath: String) : void
         + loadTours(filepath: String) : void
         + addCourier(id: long, name: String, shiftDurationInSeconds: long) : void
         + removeCourier(courierId: long) : void
         + loadCouriers(filePath: string) : void
-        + updateRequestOrder(requestBeforeId: long, requestAfterId: long, courierId: long) : void
-        + showRequestDetails(instersectionId: long) : void
+        + updateStopOrder(courierId: long, precStopIndex: Integer, followingStopIndex: Integer) : void (update constraints then recompute tour)        + showRequestDetails(instersectionId: long) : void
         + getTours() : Map<long, Tour>
         + getAvailableCouriers() : List<Courier>
     }
@@ -272,6 +273,8 @@ RequestController --> RequestService
 RequestController --> PlanningService
 TourController --> TourService
 TourController --> RequestService
+TourController --> PlanningService
+
 
 PlanningService --> RequestService
 PlanningService --> TourService

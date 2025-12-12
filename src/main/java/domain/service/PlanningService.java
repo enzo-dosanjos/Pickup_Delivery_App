@@ -47,25 +47,23 @@ public class PlanningService {
         if (!requestService.getPickupDeliveryPerCourier().containsKey(courierId)) {
             throw new IllegalArgumentException("Courier ID " + courierId + " not found in requests.");
         }
-        
+
         // Create a local copy to avoid concurrency issues
         PickupDelivery pickupDelivery = new PickupDelivery(requestService.getPickupDeliveryForCourier(courierId));
         ArrayList<Request> requests = pickupDelivery.getRequests();
 
-        // 1. Build list of stops (warehouse + pickups + deliveries)
-        int nbStops = 2 * requests.size() + 1;
-        long[] stops = new long[nbStops];
 
-        int idx = 0;
-        stops[idx++] = pickupDelivery.getWarehouseAddressId();
-
-        for (Request req : requests) {
-            stops[idx++] = req.getPickupIntersectionId();
-            stops[idx++] = req.getDeliveryIntersectionId();
+        if (!tourService.getPrecedencesByCourier().containsKey(courierId)) {
+            tourService.initPrecedences(courierId, requests);
         }
+        // 1. Generate TSP precedences and stops
+
+        java.util.Map.Entry<long[], HashMap<Integer, Set<Integer>>> result = tourService.generateTspPrecedences(requests, pickupDelivery.getWarehouseAddressId(), courierId);
+        long[] stops = result.getKey();
+        HashMap<Integer, Set<Integer>> tspPrecedences = result.getValue();
 
         // 2. build graph
-        GrapheComplet graph = new GrapheComplet(stops, nbStops);
+        GrapheComplet graph = new GrapheComplet(stops, stops.length);
 
         // 3. Distances with Dijkstra
         DijkstraTable dijkstraTable = new DijkstraTable();  // todo: store in DijkstraService
@@ -73,25 +71,15 @@ public class PlanningService {
         dijkstraService.computeShortestPath(dijkstraTable);
 
         // 4.Precedences
-        HashMap<Integer, Set<Integer>> precs = new HashMap<>();
-
-        int requestIndex = 0;
-        for (int i = 0; i <= requests.size(); i++) {
-            int pickupIndex = 1 + requestIndex * 2;
-            int deliveryIndex = pickupIndex + 1;
-
-            precs.put(deliveryIndex, Set.of(pickupIndex));
-            requestIndex++;
-        }
-
         TSP1 tsp = new TSP1();
-        tsp.setPrecedences(precs);
+        tsp.setPrecedences(tspPrecedences);
+
 
         // 5. Service times
         double[] serviceTimes = new double[dijkstraService.getGraph().getNbSommets()];
         Arrays.fill(serviceTimes, 0); // warehouse = 0
 
-        requestIndex = 0;
+        int requestIndex = 0;
         for (Request req : requests) {
             int pickupIndex = 1 + requestIndex * 2;
             int deliveryIndex = pickupIndex + 1;
@@ -177,5 +165,44 @@ public class PlanningService {
      */
     public boolean courierExists(long courierId) {
         return tourService.getCouriers().stream().anyMatch(courier -> courier.getId() == courierId);
+    }
+
+    /**
+     * Updates the precedence constraints for a courier by adding a new request.
+     *
+     * @param courierId The ID of the courier.
+     * @param newRequest The new request to be added.
+     */
+    public void updatePrecedences(long courierId, Request newRequest) {
+        long puIntersectionId, delIntersectionId;
+
+        if (!tourService.getPrecedencesByCourier().containsKey(courierId)) {
+            tourService.initPrecedences(courierId, requestService.getPickupDeliveryForCourier(courierId).getRequests());
+        }
+
+        HashMap<String, Set<String>> precs = tourService.getPrecedencesByCourier().get(courierId);
+
+        puIntersectionId = newRequest.getPickupIntersectionId();
+        delIntersectionId = newRequest.getDeliveryIntersectionId();
+        precs.computeIfAbsent(tourService.parseParams(newRequest.getId(), delIntersectionId, 'd'), k -> new HashSet<>()).add(tourService.parseParams(newRequest.getId(), puIntersectionId, 'p'));
+    }
+
+    /**
+     * Deletes the precedence constraints for a specific request of a courier.
+     *
+     * @param courierId The ID of the courier.
+     * @param requestId The ID of the request whose precedences need to be removed.
+     */
+    public void deletePrecedences(long courierId, long requestId) {
+        HashMap<String, Set<String>> precs = tourService.getPrecedencesByCourier().get(courierId);
+
+        // Remove keys starting with the request ID
+        precs.keySet().removeIf(key -> key.startsWith(String.valueOf(requestId)));
+
+        // Remove values starting with the request ID
+        precs.values().forEach(set -> set.removeIf(value -> value.startsWith(String.valueOf(requestId))));
+
+        // Clean up empty entries
+        precs.entrySet().removeIf(entry -> entry.getValue().isEmpty());
     }
 }
