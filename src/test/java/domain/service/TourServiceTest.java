@@ -6,6 +6,7 @@ import domain.model.dijkstra.DijkstraTable;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -55,7 +56,7 @@ class TourServiceTest {
         pickupDelivery.addRequest(request1);
         pickupDelivery.addRequest(request2);
 
-        LocalDateTime startTime = LocalDateTime.of(2023, 10, 1, 8, 0);
+        LocalDateTime startTime = LocalDate.now().atTime(8, 0).plusDays(1L);
         Integer[] solution = {0, 1, 2, 3, 4};
         Long[] vertices = {0L, 2L, 3L, 4L, 5L};
         double[][] costs = {
@@ -67,7 +68,7 @@ class TourServiceTest {
         };
 
         TourService tourService = new TourService();
-        Tour tour = tourService.convertGraphToTour(pickupDelivery, startTime, 123L, solution, vertices, costs);
+        Tour tour = tourService.convertGraphToTour(pickupDelivery, 123L, solution, vertices, costs);
         List<TourStop> tourStops = tour.getStops();
 
         assertEquals(5, tourStops.size());

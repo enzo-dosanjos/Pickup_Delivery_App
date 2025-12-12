@@ -9,6 +9,7 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.util.ArrayList;
 
 /**
@@ -108,7 +109,14 @@ public class XMLParsers {
                 if (pickupDeliveryToFill.getWarehouseAddressId() != warehouseAddress) {
                     return false;
                 }
-                // Ignore departureTime for now as it's not in the Request model
+
+                String[] parts = depotElement.getAttribute("departureTime").split(":");
+                int hour = Integer.parseInt(parts[0]);
+                int minute = Integer.parseInt(parts[1]);
+                int second = Integer.parseInt(parts[2]);
+
+                LocalDate tomorrow = LocalDate.now().plusDays(1);
+                pickupDeliveryToFill.setDepartureTime(tomorrow.atTime(hour, minute, second));
             }
 
             // Parse requests

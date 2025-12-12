@@ -22,7 +22,7 @@ type ModificationPanelProps = {
     setSelectedCourier: (courier: string) => void;
     onAddRequest: () => void;
     onCancel: () => void;
-    selectionMode: 'pickup' | 'delivery' | null;
+    selectionMode: 'pickup' | 'delivery' | 'warehouse' | null;
     setSelectionMode: (mode: 'pickup' | 'delivery' | 'warehouse') => void;
     isAddingRequest: boolean;
 };

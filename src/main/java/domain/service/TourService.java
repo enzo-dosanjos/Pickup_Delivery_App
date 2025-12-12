@@ -12,6 +12,7 @@ import domain.model.dijkstra.CellInfo;
 import domain.model.dijkstra.DijkstraTable;
 import org.springframework.stereotype.Service;
 import persistence.XMLParsers;
+import persistence.XMLWriters;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -99,14 +100,13 @@ public class TourService {
      * for the graph made by DijkstraService.
      *
      * @param pickupDelivery the pickup and delivery data
-     * @param startTime the start time of the tour
      * @param courierId the ID of the courier
      * @param solution the solution array representing the order of stops
      * @param vertices the array of vertices in the graph
      * @param costs the cost matrix for the graph
      * @return the generated tour
      */
-    public Tour convertGraphToTour(PickupDelivery pickupDelivery, LocalDateTime startTime, long courierId, Integer[] solution, Long[] vertices, double[][] costs) {
+    public Tour convertGraphToTour(PickupDelivery pickupDelivery, long courierId, Integer[] solution, Long[] vertices, double[][] costs) {
         long intersectionId;
         Integer previousTourStop = null;
 
@@ -118,7 +118,7 @@ public class TourService {
         LocalDateTime arrivalTime, departureTime;
         Duration duration;
 
-        Tour tour = new Tour(courierId, startTime);
+        Tour tour = new Tour(courierId, pickupDelivery.getDepartureTime());
         double minutes = 0.0;
         boolean first = true;
         Duration commuteDuration = Duration.ZERO;
@@ -394,5 +394,21 @@ public class TourService {
             }
         }
         return availableCouriers;
+    }
+
+    /**
+     * Exports the tour of the given courier to an XML file.
+     *
+     * @param courierId the courier whose tour must be exported
+     * @param filePath the destination XML file path
+     * @throws Exception if writing fails
+     */
+    public void exportTour(long courierId, String filePath) throws Exception {
+        Tour tour = tours.get(courierId);
+        if (tour == null) {
+            throw new IllegalArgumentException("No tour found for courier " + courierId);
+        }
+
+        XMLWriters.writeTour(tour, filePath);
     }
 }

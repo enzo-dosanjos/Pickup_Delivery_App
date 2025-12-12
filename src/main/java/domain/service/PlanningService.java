@@ -130,10 +130,8 @@ public class PlanningService {
 
         Long[] vertices = Arrays.stream(graph.getSommets()).boxed().toArray(Long[]::new);
 
-        LocalDateTime start = LocalDateTime.now();
-
         Tour tour = tourService.convertGraphToTour(
-                pickupDelivery, start, courierId, sol, vertices, graph.getCout()
+                pickupDelivery, courierId, sol, vertices, graph.getCout()
         );
 
         // 9. add roads to tour
