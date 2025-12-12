@@ -23,17 +23,22 @@ public class PlanningService {
 
     private MapService mapService; // Service for handling map data.
 
-    /** Constructs a new PlanningService with the specified services.
+
+    private DijkstraService dijkstraService; // Service for computing shortest paths using Dijkstra's algorithm.
+
+    /**
+     * Constructs a PlanningService with the specified dependencies.
      *
      * @param requestService the service for handling requests
-     * @param tourService the service for handling tours
-     * @param mapService the service for handling map data
+     * @param tourService    the service for handling tours
+     * @param mapService     the service for handling map data
      */
     @Autowired
     public PlanningService(RequestService requestService, TourService tourService, MapService mapService) {
         this.requestService = requestService;
         this.tourService = tourService;
         this.mapService = mapService;
+        this.dijkstraService = new DijkstraService(mapService.getMap());;
     }
 
     /**
@@ -59,25 +64,22 @@ public class PlanningService {
         }
         // 1. Generate TSP precedences and stops
 
-        java.util.Map.Entry<long[], HashMap<Integer, Set<Integer>>> result = tourService.generateTspPrecedences(requestIdsForCourier, courierId, pickupDelivery);
-        long[] stops = result.getKey();
+        java.util.Map.Entry<List<String>, HashMap<Integer, Set<Integer>>> result = tourService.generateTspPrecedences(requestIdsForCourier, courierId, pickupDelivery);
+        List<String> vertices = result.getKey();
+        long[] stops = tourService.extractIntersectionIds(vertices);
         HashMap<Integer, Set<Integer>> tspPrecedences = result.getValue();
 
-        // 2. build graph
-        GrapheComplet graph = new GrapheComplet(stops, stops.length);
 
-        // 3. Distances with Dijkstra
-        DijkstraTable dijkstraTable = new DijkstraTable();  // todo: store in DijkstraService
-        DijkstraService dijkstraService = new DijkstraService(mapService.getMap(), graph);
-        dijkstraService.computeShortestPath(dijkstraTable);
+        // 2. Distances with Dijkstra
+        GrapheComplet graph = dijkstraService.computeShortestPath(stops);
 
-        // 4.Precedences
+        // 3.Precedences
         TSP1 tsp = new TSP1();
         tsp.setPrecedences(tspPrecedences);
 
 
-        // 5. Service times
-        double[] serviceTimes = new double[dijkstraService.getGraph().getNbSommets()];
+        // 4. Service times
+        double[] serviceTimes = new double[graph.getNbSommets()];
         Arrays.fill(serviceTimes, 0); // warehouse = 0
 
         int requestIndex = 0;
@@ -95,25 +97,25 @@ public class PlanningService {
 
         tsp.setServiceTimes(serviceTimes);
 
-        // 6. execute TSP (SOP)
-        tsp.chercheSolution(30000, dijkstraService.getGraph());
+        // 5. execute TSP (SOP)
+        tsp.chercheSolution(30000, graph);
 
         if (tsp.getCoutMeilleureSolution() == Integer.MAX_VALUE) {
             throw new RuntimeException("TSP algorithm did not find a solution for courier " + courierId);
         }
 
-        // 7. result
+        // 6. result
         double[] serviceTimesUsed = tsp.getServiceTimes();
 
         double currentTime = 0.0;  // time
 
-        int numVertices = dijkstraService.getGraph().getNbSommets();
+        int numVertices = graph.getNbSommets();
         for (int i = 0; i < numVertices; i++) {
             int node = tsp.getSolution(i);
 
             if (i > 0) {
                 int prev = tsp.getSolution(i - 1);
-                currentTime += dijkstraService.getGraph().getCout(prev, node);
+                currentTime += graph.getCout(prev, node);
             }
 
             // Arrival
@@ -126,12 +128,10 @@ public class PlanningService {
             currentTime = departure;
         }
 
-        // 8. Convert graph to tour
+        // 7. Convert graph to tour
         Integer[] sol = new Integer[graph.getNbSommets()];
         for (int i = 0; i < sol.length; i++)
             sol[i] = tsp.getSolution(i);
-
-        Long[] vertices = Arrays.stream(graph.getSommets()).boxed().toArray(Long[]::new);
 
         LocalDateTime start = LocalDateTime.now();
 
@@ -139,12 +139,12 @@ public class PlanningService {
                 pickupDelivery, start, courierId, sol, vertices, graph.getCout()
         );
 
-        // 9. add roads to tour
-        tour = tourService.addRoadsToTour(tour, dijkstraTable, mapService.getMap());
+        // 8. add roads to tour
+        tour = tourService.addRoadsToTour(tour, dijkstraService.getDijkstraTable(), mapService.getMap());
 
         tourService.setTourForCourier(courierId, tour);
 
-        // 10. Set courier's availability status to BUSY or AVAILABLE depending on tour duration
+        // 9. Set courier's availability status to BUSY or AVAILABLE depending on tour duration
         ArrayList<Courier> couriers = tourService.getCouriers();
         int i;
         for(i = 0; i < couriers.size(); i++) {
@@ -187,6 +187,10 @@ public class PlanningService {
 
         puIntersectionId = request.getPickupIntersectionId();
         delIntersectionId = request.getDeliveryIntersectionId();
+        if (precs == null) {
+            precs = new HashMap<>();
+            tourService.getPrecedencesByCourier().put(courierId, precs);
+        }
         precs.computeIfAbsent(tourService.parseParams(newRequestId, delIntersectionId, 'd'), k -> new HashSet<>()).add(tourService.parseParams(newRequestId, puIntersectionId, 'p'));
     }
 

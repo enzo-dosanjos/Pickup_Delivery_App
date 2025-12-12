@@ -94,18 +94,17 @@ public class TourService {
 
 
     /**
-     * Generates a tour for a specific courier by using the solution calculated by TemplateTSP
-     * for the graph made by DijkstraService.
+     * Converts a TSP solution into a Tour object.
      *
-     * @param pickupDelivery the pickup and delivery data
+     * @param pickupDelivery the PickupDelivery object containing requests
      * @param startTime the start time of the tour
      * @param courierId the ID of the courier
-     * @param solution the solution array representing the order of stops
-     * @param vertices the array of vertices in the graph
-     * @param costs the cost matrix for the graph
-     * @return the generated tour
+     * @param solution the TSP solution as an array of vertex indices
+     * @param vertices the list of vertex strings
+     * @param costs the cost matrix representing travel times between vertices
+     * @return the constructed Tour object
      */
-    public Tour convertGraphToTour(PickupDelivery pickupDelivery, LocalDateTime startTime, long courierId, Integer[] solution, Long[] vertices, double[][] costs) {
+    public Tour convertGraphToTour(PickupDelivery pickupDelivery, LocalDateTime startTime, long courierId, Integer[] solution, List<String> vertices, double[][] costs) {
         long intersectionId;
         Integer previousTourStop = null;
 
@@ -124,7 +123,7 @@ public class TourService {
 
         for (Integer i : solution) {
             duration = Duration.ZERO;
-            intersectionId = vertices[i];
+            intersectionId = extractIntersectionId(vertices.get(i));
 
             if (first) {
                 stopType = StopType.WAREHOUSE;
@@ -132,15 +131,8 @@ public class TourService {
                 arrivalTime = tour.getStartTime();
                 first = false;
             } else {
-                Entry<Request, StopType> result = pickupDelivery.findRequestByIntersectionId(intersectionId);
-
-                if (result == null) {
-                    // This should not happen if the solution is valid
-                    throw new IllegalArgumentException("No request found for intersection ID: " + intersectionId);
-                }
-
-                request = result.getKey();
-                stopType = result.getValue();
+                request = pickupDelivery.findRequestById(extractRequestId(vertices.get(i)));
+                stopType = extractStopType(vertices.get(i));
                 arrivalTime = tour.getStartTime().plus(tour.getTotalDuration());
 
                 if (stopType == StopType.PICKUP) {
@@ -302,14 +294,14 @@ public class TourService {
     }
 
     /**
-     * Generates TSP precedences for a courier based on their requests.
+     * Generates TSP precedence constraints for a courier based on their requests.
      *
      * @param requestIdsForCourier The list of request IDs for the courier.
      * @param courierId The ID of the courier.
      * @param pickupDelivery The pickup and delivery data.
-     * @return A map entry containing intersection IDs and precedence constraints.
+     * @return A map entry containing the list of vertices and the TSP precedence constraints.
      */
-    public java.util.Map.Entry<long[], HashMap<Integer, Set<Integer>>> generateTspPrecedences(
+    public java.util.Map.Entry<List<String>, HashMap<Integer, Set<Integer>>> generateTspPrecedences(
             ArrayList<Long> requestIdsForCourier,
             long courierId,
             PickupDelivery pickupDelivery) {
@@ -339,9 +331,9 @@ public class TourService {
                 }
             }
         }
-        long[] verticesIntersectionIds = extractIntersectionIds(vertices);
 
-        return java.util.Map.entry(verticesIntersectionIds, tspPrecs);
+
+        return java.util.Map.entry(vertices, tspPrecs);
     }
 
     /**
@@ -372,6 +364,58 @@ public class TourService {
         }
 
         return intersectionIds;
+    }
+
+    /**
+     * Extracts the request ID from a vertex string.
+     *
+     * @param vertix The vertex string.
+     * @return The extracted request ID.
+     */
+    public long extractRequestId(String vertix) {
+        long requestId;
+        String[] parts = vertix.split("/");
+        requestId = Long.parseLong(parts[0]);
+        return requestId;
+    }
+
+    /**
+     * Extracts the intersection ID from a vertex string.
+     *
+     * @param vertix The vertex string.
+     * @return The extracted intersection ID.
+     */
+    public long extractIntersectionId(String vertix) {
+        long intersectionId;
+        String[] parts = vertix.split("/");
+        intersectionId = Long.parseLong(parts[1]);
+        return intersectionId;
+    }
+
+    /**
+     * Extracts the stop type from a vertex string.
+     *
+     * @param vertix The vertex string.
+     * @return The extracted stop type.
+     */
+    public StopType extractStopType(String vertix) {
+        StopType stopType;
+        char typeChar;
+        String[] parts = vertix.split("/");
+        typeChar = parts[2].charAt(0);
+        if (typeChar != 'p' && typeChar != 'd' && typeChar != 'w') {
+            throw new IllegalArgumentException(
+                    "Incorrect StopType."
+            );
+        }
+        if (typeChar == 'p') {
+            stopType = StopType.PICKUP;
+        } else if (typeChar == 'd') {
+            stopType = StopType.DELIVERY;
+        } else {
+            stopType = StopType.WAREHOUSE;
+        }
+        return stopType;
     }
 
     public ArrayList<Courier> getCouriers() {

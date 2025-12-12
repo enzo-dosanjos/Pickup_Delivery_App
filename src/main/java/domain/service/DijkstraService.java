@@ -16,40 +16,48 @@ public class DijkstraService {
 
     private final Map map; // The map containing intersections and road segments.
 
-
-    private GrapheComplet g; // The complete graph representation used for storing shortest path costs.
+    private DijkstraTable dijkstraTable; // The Dijkstra table to store shortest path information.
 
     /**
      * Computes the shortest paths between all intersections that need to be visited.
+     * If some have already been computed, they are reused.
      *
-     * @param dijkstraTable the table used to store the shortest path information
+     * @param stops an array of intersection IDs representing the stops to be visited
+     * @return a complete graph with the shortest path costs between the specified stops
      */
-    public void computeShortestPath(DijkstraTable dijkstraTable) {
-        // Initialize the Dijkstra table with default values
-        for (Long row : map.getIntersections().keySet()) {
-            for (Long col : map.getIntersections().keySet()) {
-                double duration = row.equals(col) ? 0L : Double.MAX_VALUE;
-                long predecessor = -1;
-                boolean visited = false;
-                dijkstraTable.put(row, col, duration, predecessor, visited);
+    public GrapheComplet computeShortestPath(long[] stops) {
+        // Initialize the graph with the values in the DijkstraTable
+        GrapheComplet g = new GrapheComplet(stops, stops.length);
+        for (int i = 0; i < stops.length; i++) {
+            if (dijkstraTable.get(stops[i], stops[i]).isVisited()) {
+                for (int j = 0; j < stops.length; j++) {
+                    CellInfo cell = dijkstraTable.get(stops[i], stops[j]);
+                    if (cell != null) {
+                        g.setCout(i, j, cell.getDuration());
+                    }
+                }
             }
         }
 
+
         // Compute the shortest paths for each warehouse/pickup/delivery stop of this tour
         for (int i = 0; i < g.getNbSommets(); i++) {
-            dijkstra(i, dijkstraTable);
+            if (g.getCout(i,i) != Double.MAX_VALUE) continue; // already computed
+            g = dijkstra(i, g);
         }
+
+        return g;
     }
 
     /**
      * Executes Dijkstra's algorithm to calculate the shortest paths from a starting vertex.
      *
      * @param start the index of the starting vertex
-     * @param dijkstraTable the table used to store the shortest path information
+     * @param g     the complete graph to update with the shortest paths costs for the specified start vertex
+     * @return the updated complete graph with the shortest paths costs from the start vertex
      */
-    private void dijkstra(int start, DijkstraTable dijkstraTable) {
-        this.g.setCout(start, start, 0L);
-        long[] sommets = this.g.getSommets();
+    private GrapheComplet dijkstra(int start, GrapheComplet g) {
+        long[] sommets = g.getSommets();
         HashMap<Long, RoadSegment[]> adjacencyList = map.getAdjacencyList();
         PriorityQueue<Node> pq = new PriorityQueue<>();
         pq.add(new Node(sommets[start], 0));
@@ -83,27 +91,38 @@ public class DijkstraService {
             }
 
             // Update the cost in the complete graph if the vertex is part of it
-            for (int j = 0; j < this.g.getNbSommets(); j++) {
-                if (sommets[j] == currentVertex) {
-                    this.g.setCout(start, j, currentNode.getDuration());
+            for (int j = 0; j < g.getNbSommets(); j++) {
+                for (int i = 0; i< g.getNbSommets(); i++) {
+                    if (sommets[j] == currentVertex && sommets[i] == sommets[start]) {
+                        g.setCout(i, j, currentNode.getDuration());
+                    }
                 }
+            }
+        }
+        return g;
+    }
+
+    /**
+     * Constructs a new DijkstraService with the specified map and creates a DijkstraTable with default values.
+     *
+     * @param map the map containing intersections and road segments
+     */
+    public DijkstraService(Map map) {
+        this.map = map;
+        this.dijkstraTable = new DijkstraTable();
+        // Initialize the Dijkstra table with default values
+        for (Long row : this.map.getIntersections().keySet()) {
+            for (Long col : this.map.getIntersections().keySet()) {
+                double duration = row.equals(col) ? 0L : Double.MAX_VALUE;
+                long predecessor = -1;
+                boolean visited = false;
+                dijkstraTable.put(row, col, duration, predecessor, visited);
             }
         }
     }
 
-    /**
-     * Constructs a new DijkstraService with the specified map and complete graph.
-     *
-     * @param map the map containing intersections and road segments
-     * @param g the complete graph representation
-     */
-    public DijkstraService(Map map, GrapheComplet g) {
-        this.map = map;
-        this.g = g;
-    }
 
-
-    public GrapheComplet getGraph() {
-        return g;
+    public DijkstraTable getDijkstraTable() {
+        return dijkstraTable;
     }
 }
