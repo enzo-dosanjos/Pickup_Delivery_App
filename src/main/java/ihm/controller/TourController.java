@@ -80,9 +80,6 @@ public class TourController {
         tourService.loadCouriers(filepath);
     }
 
-
-
-
     /**
      * Updates the order of stops for a courier's tour and recomputes the tour.
      * If the update is invalid (e.g., involves the warehouse or stops from the same request),
@@ -127,8 +124,9 @@ public class TourController {
      * @return a map entry containing the request and its stop type
      */
     @PostMapping("/show-request-details")
-    public Map.Entry<Request, StopType> showRequestDetails(@RequestParam long instersectionId) {
-        return requestService.getPickupDelivery().findRequestByIntersectionId(instersectionId);  // todo: create a service method
+    public Map.Entry<Request, StopType> showRequestDetails(@RequestParam long instersectionId,
+                                                           @RequestParam long courierId) {
+        return requestService.getPickupDeliveryForCourier(courierId).findRequestByIntersectionId(instersectionId);
     }
 
     @GetMapping("/tours")
@@ -139,5 +137,26 @@ public class TourController {
     @GetMapping("/available-couriers")
     public List<Courier> getAvailableCouriers() {
         return tourService.getAvailableCouriers();
+    }
+
+    /**
+     * Persists a courier's tour to an XML file.
+     *
+     * @param courierId courier whose tour is exported.
+     * @param filepath output path for the XML file.
+     * @return HTTP 200 on success, 404 if tour missing, 500 if write fails.
+     */
+    @PostMapping("/save")
+    public ResponseEntity<?> saveTour(@RequestParam long courierId,
+                                      @RequestParam String filepath) {
+        try {
+            tourService.exportTour(courierId, filepath);
+            return ResponseEntity.ok().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Failed to export tour: " + e.getMessage());
+        }
     }
 }

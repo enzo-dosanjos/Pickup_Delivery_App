@@ -12,6 +12,7 @@ import domain.model.dijkstra.CellInfo;
 import domain.model.dijkstra.DijkstraTable;
 import org.springframework.stereotype.Service;
 import persistence.XMLParsers;
+import persistence.XMLWriters;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -79,11 +80,12 @@ public class TourService {
     }
 
     /**
-     * Loads couriers from an XML file and adds them to the service.
+     * Empties the couriers array, then loads couriers from an XML file and adds them to the service.
      *
      * @param filepath the path to the XML file containing courier data
      */
     public void loadCouriers(String filepath) {
+        couriers.clear();
         ArrayList<Courier> couriersToAdd = XMLParsers.parseCouriers(filepath);
 
         for (Courier courier : couriersToAdd) {
@@ -97,14 +99,13 @@ public class TourService {
      * Converts a TSP solution into a Tour object.
      *
      * @param pickupDelivery the PickupDelivery object containing requests
-     * @param startTime the start time of the tour
      * @param courierId the ID of the courier
      * @param solution the TSP solution as an array of vertex indices
      * @param vertices the list of vertex strings
      * @param costs the cost matrix representing travel times between vertices
      * @return the constructed Tour object
      */
-    public Tour convertGraphToTour(PickupDelivery pickupDelivery, LocalDateTime startTime, long courierId, Integer[] solution, List<String> vertices, double[][] costs) {
+    public Tour convertGraphToTour(PickupDelivery pickupDelivery, long courierId, Integer[] solution, List<String> vertices, double[][] costs) {
         long intersectionId;
         Integer previousTourStop = null;
 
@@ -116,7 +117,7 @@ public class TourService {
         LocalDateTime arrivalTime, departureTime;
         Duration duration;
 
-        Tour tour = new Tour(courierId, startTime);
+        Tour tour = new Tour(courierId, pickupDelivery.getDepartureTime());
         double minutes = 0.0;
         boolean first = true;
         Duration commuteDuration = Duration.ZERO;
@@ -276,19 +277,16 @@ public class TourService {
      * Initializes precedence constraints for a courier based on their requests.
      *
      * @param courierId The ID of the courier.
-     * @param requestsId The list of request IDs.
-     * @param pickupDelivery The pickup and delivery data.
+     * @param requests The list of requests assigned to the courier.
      */
-    public void initPrecedences(long courierId, ArrayList<Long> requestsId, PickupDelivery pickupDelivery) {
+    public void initPrecedences(long courierId, ArrayList<Request> requests) {
         HashMap<String, Set<String>> precs = new HashMap<>();
-        Request request;
         long delIntersectionId;
         long puIntersectionId;
-        for (long requestId : requestsId) {
-            request = pickupDelivery.findRequestById(requestId);
+        for (Request request : requests) {
             puIntersectionId = request.getPickupIntersectionId();
             delIntersectionId = request.getDeliveryIntersectionId();
-            precs.computeIfAbsent(parseParams(requestId, delIntersectionId, 'd'), k -> new HashSet<>()).add(parseParams(requestId, puIntersectionId, 'p'));
+            precs.computeIfAbsent(parseParams(request.getId(), delIntersectionId, 'd'), k -> new HashSet<>()).add(parseParams(request.getId(), puIntersectionId, 'p'));
         }
         precedencesByCourier.put(courierId, precs);
     }
@@ -296,27 +294,24 @@ public class TourService {
     /**
      * Generates TSP precedence constraints for a courier based on their requests.
      *
-     * @param requestIdsForCourier The list of request IDs for the courier.
+     * @param requests The list of request IDs for the courier.
+     * @param warehouseAddressId The address of the warehouse.
      * @param courierId The ID of the courier.
-     * @param pickupDelivery The pickup and delivery data.
-     * @return A map entry containing the list of vertices and the TSP precedence constraints.
+     * @return A map entry containing intersection IDs and precedence constraints.
      */
     public java.util.Map.Entry<List<String>, HashMap<Integer, Set<Integer>>> generateTspPrecedences(
-            ArrayList<Long> requestIdsForCourier,
-            long courierId,
-            PickupDelivery pickupDelivery) {
+            ArrayList<Request> requests,
+            long warehouseAddressId,
+            long courierId) {
 
         HashMap<String, Set<String>> precs = precedencesByCourier.get(courierId);
 
-        Request request;
+        List<String> vertices = new ArrayList<>(requests.size() * 2 + 1);
+        vertices.add(parseParams(-1, warehouseAddressId, 'w'));
 
-        List<String> vertices = new ArrayList<>(requestIdsForCourier.size() * 2 + 1);
-        vertices.add(parseParams(-1, pickupDelivery.getWarehouseAddressId(), 'w'));
-
-        for (long requestId : requestIdsForCourier) {
-            request = pickupDelivery.findRequestById(requestId);
-            vertices.add(parseParams(requestId, request.getPickupIntersectionId(), 'p'));
-            vertices.add(parseParams(requestId, request.getDeliveryIntersectionId(), 'd'));
+        for (Request request : requests) {
+            vertices.add(parseParams(request.getId(), request.getPickupIntersectionId(), 'p'));
+            vertices.add(parseParams(request.getId(), request.getDeliveryIntersectionId(), 'd'));
         }
 
         HashMap<Integer, Set<Integer>> tspPrecs = new HashMap<>();
@@ -444,5 +439,21 @@ public class TourService {
             }
         }
         return availableCouriers;
+    }
+
+    /**
+     * Exports the tour of the given courier to an XML file.
+     *
+     * @param courierId the courier whose tour must be exported
+     * @param filePath the destination XML file path
+     * @throws Exception if writing fails
+     */
+    public void exportTour(long courierId, String filePath) throws Exception {
+        Tour tour = tours.get(courierId);
+        if (tour == null) {
+            throw new IllegalArgumentException("No tour found for courier " + courierId);
+        }
+
+        XMLWriters.writeTour(tour, filePath);
     }
 }

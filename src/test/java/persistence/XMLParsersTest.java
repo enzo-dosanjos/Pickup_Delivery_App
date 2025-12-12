@@ -43,16 +43,14 @@ class XMLParsersTest {
         String filePath = "src/test/resources/testRequest.xml";
         PickupDelivery pickupDelivery = new PickupDelivery();
 
-        long courierId = 1L;
-
-        XMLParsers.parseRequests(filePath, courierId, pickupDelivery);
+        XMLParsers.parseRequests(filePath, pickupDelivery);
 
         assertNotNull(pickupDelivery, "The pickupDelivery should not be null after parsing");
         assertEquals(342873658, pickupDelivery.getWarehouseAddressId(), "The warehouse address should match the expected value");
-        assertEquals(208769039, pickupDelivery.getRequests().get(pickupDelivery.getRequestsPerCourier().get(1L).getFirst()).getPickupIntersectionId(), "The first request address for courier 1 should match the expected value");
-        assertEquals(25173820, pickupDelivery.getRequests().get(pickupDelivery.getRequestsPerCourier().get(1L).getFirst()).getDeliveryIntersectionId(), "The first request delivery address for courier 1 should match the expected value");
-        assertEquals(180, pickupDelivery.getRequests().get(pickupDelivery.getRequestsPerCourier().get(1L).getFirst()).getPickupDuration().toSeconds(), "The first request pickup duration for courier 1 should match the expected value");
-        assertEquals(240, pickupDelivery.getRequests().get(pickupDelivery.getRequestsPerCourier().get(1L).getFirst()).getDeliveryDuration().toSeconds(), "The first request delivery duration for courier 1 should match the expected value");
+        assertEquals(208769039, pickupDelivery.getRequests().get(0).getPickupIntersectionId(), "The first request address for courier 1 should match the expected value");
+        assertEquals(25173820, pickupDelivery.getRequests().get(0).getDeliveryIntersectionId(), "The first request delivery address for courier 1 should match the expected value");
+        assertEquals(180, pickupDelivery.getRequests().get(0).getPickupDuration().toSeconds(), "The first request pickup duration for courier 1 should match the expected value");
+        assertEquals(240, pickupDelivery.getRequests().get(0).getDeliveryDuration().toSeconds(), "The first request delivery duration for courier 1 should match the expected value");
     }
 
     /**
@@ -66,13 +64,15 @@ class XMLParsersTest {
 
         pickupDelivery.setWarehouseAddressId(123456789L); // Set a different warehouse ID
 
-        long courierId = 1L;
-
-        boolean result = XMLParsers.parseRequests(filePath, courierId, pickupDelivery);
+        boolean result = XMLParsers.parseRequests(filePath, pickupDelivery);
 
         assertFalse(result, "The parsing should return false due to different warehouse IDs");
     }
 
+    /**
+     * Tests that the {@code parseCouriers} method correctly loads courier data
+     * from a valid XML file.
+     */
     @Test
     void checkParseCouriersLoadsCouriers() {
         String filePath = "src/test/resources/testCouriers.xml";

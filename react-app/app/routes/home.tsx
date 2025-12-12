@@ -3,6 +3,7 @@ import { Map as MapComponent, type Intersection as MapIntersection, type Tour as
 import { useState, useEffect, useRef } from "react";
 import L from "leaflet";
 import { ModificationPanel, type Courier as PanelCourier } from "../components/ModificationPanel";
+import { CourierSelectionPanel } from "~/components/CourierSelectionPanel";
 import "../components/ModificationPanel.css";
 import Modal from "../components/Modal";
 import "./home.css";
@@ -29,8 +30,8 @@ type ApiTourStop = {
     type: MapStopType;
     requestID: number;
     intersectionId: number;
-    arrivalTime: number;
-    departureTime: number;
+    arrivalTime: string;
+    departureTime: string;
 };
 
 type ApiTour = {
@@ -68,9 +69,9 @@ export default function Home() {
     const [intersectionIdToRoadName, setIntersectionIdToRoadName] = useState<Map<number, string>>(new Map());
     const [bounds, setBounds] = useState<L.LatLngExpression[]>([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalMessage, setModalMessage] = useState("");
+    const [modalActions, setModalActions] = useState<{ label: string, onClick: () => void }[]>([]);
     const [isAddingRequest, setIsAddingRequest] = useState(false);
     const [isLoadingCouriers, setIsLoadingCouriers] = useState(false);
     const [isLoadingRequests, setIsLoadingRequests] = useState(false);
@@ -78,9 +79,10 @@ export default function Home() {
     const [isDeletingRequest, setIsDeletingRequest] = useState(false);
     const [tours, setTours] = useState<MapTour[]>([]);
     const [loadingTours, setLoadingTours] = useState(true);
+    const [isExportingTour, setIsExportingTour] = useState(false);
 
     const [isPanelOpen, setIsPanelOpen] = useState(false);
-    const [selectionMode, setSelectionMode] = useState<'pickup' | 'delivery' | null>(null);
+    const [selectionMode, setSelectionMode] = useState<'pickup' | 'delivery' | 'warehouse' | null>(null);
     const [pickupId, setPickupId] = useState<number | null>(null);
     const [deliveryId, setDeliveryId] = useState<number | null>(null);
     const [pickupName, setPickupName] = useState<string | null>(null);
@@ -90,13 +92,18 @@ export default function Home() {
     const [deliveryDuration, setDeliveryDuration] = useState<number>(defaultDuration);
     const [couriersList, setCouriersList] = useState<PanelCourier[]>([]);
     const [selectedCourier, setSelectedCourier] = useState<string>("0");
-    const [warehouseId, setWarehouseId] = useState<number | null>(null);
+    const [warehouseIds, setWarehouseIds] = useState<Map<string, number>>(() => new Map());
+    const [selectionHint, setSelectionHint] = useState<string | null>(null);
+    const [displayedCouriers, setDisplayedCouriers] = useState<string>("All");
+    const [displayedTours, setDisplayedTours] = useState<MapTour[]>([]);
+    const [displayedWarehouses, setDisplayedWarehouses] = useState<number[]>([]);
     const [prevStopIndex, setPrevStopIndex] = useState("");
     const [nextStopIndex, setNextStopIndex] = useState("");
 
     // file paths
     const [requestFilePath, setRequestFilePath] = useState<string>("src/main/resources/requests.xml");
     const [courierFilePath, setCourierFilePath] = useState<string>("src/main/resources/couriers.xml");
+    const [exportFilePath, setExportFilePath] = useState<string>("src/main/resources/exported_tour.xml");
 
     const fetchInitiated = useRef(false);
 
@@ -106,6 +113,7 @@ export default function Home() {
     const closeModal = () => {
         setIsModalOpen(false);
         setModalMessage("");
+        setModalActions([]);
     };
 
     useEffect(() => {
@@ -186,7 +194,7 @@ export default function Home() {
                 setRoadSegments(transformedRoadSegments);
 
                 // Finally, fetch and display tours
-                await displayTour();
+                await fetchTours();
 
             } catch (e: any) {
                 console.error("Caught error object:", e);
@@ -211,32 +219,72 @@ export default function Home() {
         }
     }, [couriersList]);
 
+    useEffect(() => {
+        if (displayedCouriers === "All") {
+            setDisplayedTours(tours);
+            setDisplayedWarehouses(Array.from(warehouseIds.values()));
+        } else {
+            setDisplayedTours(tours.filter(tour => tour.courierId.toString() === displayedCouriers))
+            setDisplayedWarehouses([warehouseIds.get(displayedCouriers) || -1]);
+        }
+
+    }, [tours, displayedCouriers]);
+
     const handleMapClick = (intersectionId: number) => {
         const roadName = intersectionIdToRoadName.get(intersectionId) || `Intersection ${intersectionId}`;
         if (selectionMode === 'pickup') {
             setPickupId(intersectionId);
             setPickupName(roadName);
             setSelectionMode(null); // Deactivate selection mode after a point is chosen
+            setSelectionHint(null);
         } else if (selectionMode === 'delivery') {
             setDeliveryId(intersectionId);
             setDeliveryName(roadName);
             setSelectionMode(null); // Deactivate selection mode
+            setSelectionHint(null);
+        } else if (selectionMode === 'warehouse') {
+            setSelectionMode(null);
+            setSelectionHint(null);
+            const params = new URLSearchParams();
+            params.append('warehouseId', intersectionId.toString());
+            params.append('courierId', selectedCourier);
+            fetch('http://localhost:8080/api/request/addWarehouse', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: params,
+            }).then(res => {
+                if (!res.ok) {
+                    throw new Error(`HTTP error! status: ${res.status}`);
+                }
+                setModalMessage("Warehouse set successfully. You can now add a request.");
+                setModalActions([]);
+                setIsModalOpen(true);
+                // Update warehouseIds state
+                fetchTours();
+            }).catch(e => {
+                setModalMessage(`Failed to set warehouse: ${e.message}`);
+                setModalActions([]);
+                setIsModalOpen(true);
+            });
         }
     };
 
-    const displayTour = async () => {
+    const fetchTours = async () => {
         if (!intersectionMapRef.current) {
             throw new Error("intersectionMap not initialized");
         }
         const intersectionMap = intersectionMapRef.current;
 
-        // Fetch warehouse ID
-        const warehouseResponse = await fetch('http://localhost:8080/api/request/warehouse');
-        if (!warehouseResponse.ok) {
-            throw new Error(`HTTP error! status: ${warehouseResponse.status}`);
+        const warehousesResponse = await fetch('http://localhost:8080/api/request/warehouse');
+
+        if (!warehousesResponse.ok) {
+            throw new Error(`HTTP error! status: ${warehousesResponse.status}`);
         }
-        const fetchedWarehouseId = await warehouseResponse.json();
-        setWarehouseId(fetchedWarehouseId);
+        const data = await warehousesResponse.json();
+        const fetchedWarehouseIds = new Map<string, number>(Object.entries(data));
+        setWarehouseIds(fetchedWarehouseIds);
 
         // Fetch tours from backend
         const toursResponse = await fetch("http://localhost:8080/api/tour/tours");
@@ -334,7 +382,8 @@ export default function Home() {
             console.log('Requests loaded successfully');
             setModalMessage("Requests loaded successfully!");
             setIsModalOpen(true);
-            await displayTour();
+            await fetchTours();
+            setDisplayedCouriers(selectedCourier);
 
         } catch (e: any) {
             console.error("Failed to load requests:", e);
@@ -363,7 +412,9 @@ export default function Home() {
             console.log("Couriers list fetched successfully");
         } catch (e: any) {
             console.error("Failed to fetch couriers:", e);
-            setError(`Failed to fetch couriers: ${e.message}`);
+            setModalMessage(`Failed to fetch couriers: ${e.message}`);
+            setModalActions([]);
+            setIsModalOpen(true);
         }
     }
 
@@ -379,12 +430,28 @@ export default function Home() {
             if (!warehouseResponse.ok) {
                 throw new Error(`HTTP error! status: ${warehouseResponse.status}`);
             }
-            const fetchedWarehouseId = await warehouseResponse.json();
-            setWarehouseId(fetchedWarehouseId);
+            const data = await warehouseResponse.json();
+            const fetchedWarehouseIds = new Map<string, number>(Object.entries(data));
+            setWarehouseIds(fetchedWarehouseIds);
+
+            // If warehouse not set yet, prompt user to add it before proceeding
+            if (warehouseIds?.get(selectedCourier) === -1) {
+                setModalMessage("Warehouse is not set. Click 'Add warehouse' then select a point on the map.");
+                setModalActions([{
+                    label: "Add warehouse",
+                    onClick: () => {
+                        closeModal();
+                        setSelectionMode('warehouse');
+                        setSelectionHint("Click a point on the map to set the warehouse.");
+                    }
+                }]);
+                setIsModalOpen(true);
+                return;
+            }
 
             // Now, add the request with the fetched warehouse ID
             const params = new URLSearchParams();
-            params.append('warehouseId', fetchedWarehouseId.toString());
+            params.append('warehouseId', warehouseIds?.get(selectedCourier)?.toString() || "");
             params.append('pickupIntersectionId', pickupId.toString());
             params.append('pickupDurationInSeconds', pickupDuration.toString());
             params.append('deliveryIntersectionId', deliveryId.toString());
@@ -412,7 +479,8 @@ export default function Home() {
             setIsModalOpen(true);
 
             // Finally, fetch and display tours
-            await displayTour();
+            await fetchTours();
+            setDisplayedCouriers(selectedCourier);
 
         } catch (e: any) {
             console.error("Failed to add request:", e);
@@ -450,22 +518,23 @@ export default function Home() {
             if (!response.ok) {
                 const errorText = await response.text();
                 // Show error in the app without throwing
-                setError(`Failed to update stop order: ${errorText}`);
+                setModalMessage(`Failed to update stop order: ${errorText}`);
+                setModalActions([]);
+                setIsModalOpen(true);
                 return; // stop further processing
             }
-
-            // Clear any previous error
-            setError("");
 
             console.log("Stop order updated successfully");
 
             // Reload the tour to see changes
-            await displayTour();
+            await fetchTours();
 
         } catch (e: any) {
             console.error("Unexpected error while updating stop order:", e);
             // Still catch unexpected errors without breaking the app
-            setError(`Unexpected error: ${e.message}`);
+            setModalMessage(`Unexpected error: ${e.message}`);
+            setModalActions([]);
+            setIsModalOpen(true);
         }
     };
 
@@ -539,7 +608,7 @@ export default function Home() {
             }
 
             console.log('Request deleted successfully');
-            await displayTour();
+            await fetchTours();
             setModalMessage("Request deleted successfully!");
             setIsModalOpen(true);
 
@@ -556,35 +625,59 @@ export default function Home() {
         }
     };
 
-    if (loading || loadingTours) {
-        return <div>Loading data...</div>;
+    const formatDateTime = (value?: string | null) => {
+        if (!value) return "N/A";
+        const parsed = new Date(value);
+        if (!isNaN(parsed.getTime())) {
+            return parsed.toLocaleString().split(" ")[1];
+        }
+        return value;
+    };
+
+    const handleExportTour = async () => {
+        if (!selectedCourier) {
+            setModalMessage("Please select a courier before exporting a tour.");
+            setIsModalOpen(true);
+            return;
+        }
+
+        setIsExportingTour(true);
+        try {
+            const params = new URLSearchParams();
+            params.append('courierId', selectedCourier);
+            params.append('filepath', exportFilePath);
+
+            const response = await fetch('http://localhost:8080/api/tour/save', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: params,
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(errorText || `HTTP error! status: ${response.status}`);
+            }
+
+            setModalMessage(`Tour exported successfully to ${exportFilePath}`);
+            setIsModalOpen(true);
+        } catch (e: any) {
+            setModalMessage(`Failed to export tour: ${e.message}`);
+            setIsModalOpen(true);
+        } finally {
+            setIsExportingTour(false);
+        }
     }
 
-    if (error) {
-        return <div
-            style={{
-                position: "fixed",
-                top: "20%",
-                left: "50%",
-                transform: "translateX(-50%)",
-                backgroundColor: "#f8d7da",
-                color: "#721c24",
-                padding: "20px",
-                border: "1px solid #f5c6cb",
-                borderRadius: "5px",
-                zIndex: 1000,
-                boxShadow: "0 0 10px rgba(0,0,0,0.3)",
-            }}
-        >
-            <p>{error}</p>
-            <button onClick={() => setError(null)}>Close</button>
-        </div>;
+    if (loading || loadingTours) {
+        return <div>Loading data...</div>;
     }
 
     return (
         <div>
             {isModalOpen && (
-                <Modal message={modalMessage} onClose={closeModal} />
+                <Modal message={modalMessage} onClose={closeModal} actions={modalActions}/>
             )}
             <h1>Welcome to our brand new pick-up & delivery app !</h1>
             <div>
@@ -618,9 +711,18 @@ export default function Home() {
 
                 <button
                     onClick={() => {
-                        const t = tours[0];
+                        if (displayedCouriers === "All") {
+                            setModalMessage("Please select a specific courier to update stop order.");
+                            setModalActions([]);
+                            setIsModalOpen(true);
+                            return;
+                        }
+
+                        const t = tours.find(t => t.courierId.toString() === displayedCouriers);
                         if (!t) {
-                            alert("No tour available.");
+                            setModalMessage("No tour available.");
+                            setModalActions([]);
+                            setIsModalOpen(true);
                             return;
                         }
 
@@ -628,7 +730,9 @@ export default function Home() {
                         const nextIndex = parseInt(nextStopIndex, 10);
 
                         if (isNaN(prevIndex) || isNaN(nextIndex)) {
-                            alert("Please enter valid indices.");
+                            setModalMessage("Please enter valid indices.");
+                            setModalActions([]);
+                            setIsModalOpen(true);
                             return;
                         }
 
@@ -689,6 +793,25 @@ export default function Home() {
                         {isLoadingCouriers ? "Loading..." : "Load Couriers"}
                     </button>
                 </div>
+
+                <div style={{ marginTop: "8px" }}>
+                    <label style={{ marginRight: "8px" }}>
+                        Export tour path:
+                        <input
+                            type="text"
+                            value={exportFilePath}
+                            onChange={(e) => setExportFilePath(e.target.value)}
+                            style={{ marginLeft: "8px", width: "300px" }}
+                        />
+                    </label>
+                    <button
+                        onClick={handleExportTour}
+                        style={{ padding: "8px", marginLeft: "8px" }}
+                        disabled={isExportingTour}
+                    >
+                        {isExportingTour ? "Exporting..." : "Export Tour"}
+                    </button>
+                </div>
             </div>
 
             <br />
@@ -718,13 +841,21 @@ export default function Home() {
                     intersections={intersections}
                     roadSegments={roadSegments}
                     bounds={bounds}
-                    tours={tours}
+                    tours={displayedTours}
                     onMapClick={handleMapClick}
                     selectionModeActive={isPanelOpen}
                     pickupId={pickupId}
                     deliveryId={deliveryId}
                     onDeleteRequest={handleDeleteRequest}
-                    warehouseId={warehouseId}
+                    warehouseIds={displayedWarehouses}
+                    formatDateTime={formatDateTime}
+                />
+            )}
+            {couriersList.length > 0 && (
+                <CourierSelectionPanel
+                    couriersList={couriersList}
+                    displayedCouriers={displayedCouriers}
+                    setDisplayedCouriers={setDisplayedCouriers}
                 />
             )}
         </div>

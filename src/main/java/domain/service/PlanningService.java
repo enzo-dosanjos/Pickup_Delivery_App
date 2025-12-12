@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Service class for planning and managing tours for couriers.
@@ -23,11 +24,9 @@ public class PlanningService {
 
     private MapService mapService; // Service for handling map data.
 
-
     private DijkstraService dijkstraService; // Service for computing shortest paths using Dijkstra's algorithm.
 
-    /**
-     * Constructs a PlanningService with the specified dependencies.
+    /** Constructs a new PlanningService with the specified services.
      *
      * @param requestService the service for handling requests
      * @param tourService    the service for handling tours
@@ -49,22 +48,19 @@ public class PlanningService {
      * @throws RuntimeException if the TSP algorithm does not find a solution
      */
     public void recomputeTourForCourier(long courierId) {
-        if (!requestService.getPickupDelivery().getRequestsPerCourier().containsKey(courierId)) {
-            throw new IllegalArgumentException("Courier ID " + courierId + " not found in requests.");
-        }
 
         // Create a local copy to avoid concurrency issues
-        PickupDelivery pickupDelivery = new PickupDelivery(requestService.getPickupDelivery());
-        TreeMap<Long, Request> requests = pickupDelivery.getRequests();
-        ArrayList<Long> requestIdsForCourier = pickupDelivery.getRequestsPerCourier().get(courierId);
+        PickupDelivery pickupDelivery = new PickupDelivery(requestService.getPickupDeliveryForCourier(courierId));
+        ArrayList<Request> requests = pickupDelivery.getRequests();
+        ArrayList<Long> requestIdsForCourier = pickupDelivery.getRequests().stream().map(Request::getId).collect(Collectors.toCollection(ArrayList::new));
 
 
         if (!tourService.getPrecedencesByCourier().containsKey(courierId)) {
-            tourService.initPrecedences(courierId, requestIdsForCourier, pickupDelivery);
+            tourService.initPrecedences(courierId, requests);
         }
         // 1. Generate TSP precedences and stops
 
-        java.util.Map.Entry<List<String>, HashMap<Integer, Set<Integer>>> result = tourService.generateTspPrecedences(requestIdsForCourier, courierId, pickupDelivery);
+        java.util.Map.Entry<List<String>, HashMap<Integer, Set<Integer>>> result = tourService.generateTspPrecedences(requests, pickupDelivery.getWarehouseAddressId(), courierId);
         List<String> vertices = result.getKey();
         long[] stops = tourService.extractIntersectionIds(vertices);
         HashMap<Integer, Set<Integer>> tspPrecedences = result.getValue();
@@ -83,14 +79,12 @@ public class PlanningService {
         Arrays.fill(serviceTimes, 0); // warehouse = 0
 
         int requestIndex = 0;
-        for (long reqId : requestIdsForCourier) {
-            Request r = requests.get(reqId);
-
+        for (Request req : requests) {
             int pickupIndex = 1 + requestIndex * 2;
             int deliveryIndex = pickupIndex + 1;
 
-            serviceTimes[pickupIndex]   = r.getPickupDuration().toSeconds();   // Pickup duration
-            serviceTimes[deliveryIndex] = r.getDeliveryDuration().toSeconds(); // Delivery duration
+            serviceTimes[pickupIndex]   = req.getPickupDuration().toSeconds();   // Pickup duration
+            serviceTimes[deliveryIndex] = req.getDeliveryDuration().toSeconds(); // Delivery duration
 
             requestIndex++;
         }
@@ -136,7 +130,7 @@ public class PlanningService {
         LocalDateTime start = LocalDateTime.now();
 
         Tour tour = tourService.convertGraphToTour(
-                pickupDelivery, start, courierId, sol, vertices, graph.getCout()
+                pickupDelivery, courierId, sol, vertices, graph.getCout()
         );
 
         // 8. add roads to tour
@@ -176,22 +170,24 @@ public class PlanningService {
      * Updates the precedence constraints for a courier by adding a new request.
      *
      * @param courierId The ID of the courier.
-     * @param newRequestId The ID of the new request to add.
-     * @param pickupDelivery The pickup and delivery data.
+     * @param newRequest The new request to be added.
      */
-    public void updatePrecedences(long courierId, long newRequestId, PickupDelivery pickupDelivery) {
+    public void updatePrecedences(long courierId, Request newRequest) {
         long puIntersectionId, delIntersectionId;
 
-        Request request = pickupDelivery.getRequests().get(newRequestId);
+        if (!tourService.getPrecedencesByCourier().containsKey(courierId)) {
+            tourService.initPrecedences(courierId, requestService.getPickupDeliveryForCourier(courierId).getRequests());
+        }
+
         HashMap<String, Set<String>> precs = tourService.getPrecedencesByCourier().get(courierId);
 
-        puIntersectionId = request.getPickupIntersectionId();
-        delIntersectionId = request.getDeliveryIntersectionId();
+        puIntersectionId = newRequest.getPickupIntersectionId();
+        delIntersectionId = newRequest.getDeliveryIntersectionId();
         if (precs == null) {
             precs = new HashMap<>();
             tourService.getPrecedencesByCourier().put(courierId, precs);
         }
-        precs.computeIfAbsent(tourService.parseParams(newRequestId, delIntersectionId, 'd'), k -> new HashSet<>()).add(tourService.parseParams(newRequestId, puIntersectionId, 'p'));
+        precs.computeIfAbsent(tourService.parseParams(newRequest.getId(), delIntersectionId, 'd'), k -> new HashSet<>()).add(tourService.parseParams(newRequest.getId(), puIntersectionId, 'p'));
     }
 
     /**
