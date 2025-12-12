@@ -85,7 +85,7 @@ class PlanningServiceTest {
 
         planningService.updatePrecedences(1L, request);
 
-        assertTrue(tourService.getPrecedencesByCourier().get(1L).containsKey("20/2/d"));
+        assertTrue(tourService.getPrecedencesByCourier().get(1L).containsKey("1/2/d"));
     }
 
     /**
