@@ -69,7 +69,6 @@ export default function Home() {
     const [intersectionIdToRoadName, setIntersectionIdToRoadName] = useState<Map<number, string>>(new Map());
     const [bounds, setBounds] = useState<L.LatLngExpression[]>([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalMessage, setModalMessage] = useState("");
     const [modalActions, setModalActions] = useState<{ label: string, onClick: () => void }[]>([]);
@@ -411,7 +410,9 @@ export default function Home() {
             console.log("Couriers list fetched successfully");
         } catch (e: any) {
             console.error("Failed to fetch couriers:", e);
-            setError(`Failed to fetch couriers: ${e.message}`);
+            setModalMessage(`Failed to fetch couriers: ${e.message}`);
+            setModalActions([]);
+            setIsModalOpen(true);
         }
     }
 
@@ -515,12 +516,11 @@ export default function Home() {
             if (!response.ok) {
                 const errorText = await response.text();
                 // Show error in the app without throwing
-                setError(`Failed to update stop order: ${errorText}`);
+                setModalMessage(`Failed to update stop order: ${errorText}`);
+                setModalActions([]);
+                setIsModalOpen(true);
                 return; // stop further processing
             }
-
-            // Clear any previous error
-            setError("");
 
             console.log("Stop order updated successfully");
 
@@ -530,7 +530,9 @@ export default function Home() {
         } catch (e: any) {
             console.error("Unexpected error while updating stop order:", e);
             // Still catch unexpected errors without breaking the app
-            setError(`Unexpected error: ${e.message}`);
+            setModalMessage(`Unexpected error: ${e.message}`);
+            setModalActions([]);
+            setIsModalOpen(true);
         }
     };
 
@@ -625,27 +627,6 @@ export default function Home() {
         return <div>Loading data...</div>;
     }
 
-    if (error) {
-        return <div
-            style={{
-                position: "fixed",
-                top: "20%",
-                left: "50%",
-                transform: "translateX(-50%)",
-                backgroundColor: "#f8d7da",
-                color: "#721c24",
-                padding: "20px",
-                border: "1px solid #f5c6cb",
-                borderRadius: "5px",
-                zIndex: 1000,
-                boxShadow: "0 0 10px rgba(0,0,0,0.3)",
-            }}
-        >
-            <p>{error}</p>
-            <button onClick={() => setError(null)}>Close</button>
-        </div>;
-    }
-
     return (
         <div>
             {isModalOpen && (
@@ -684,13 +665,17 @@ export default function Home() {
                 <button
                     onClick={() => {
                         if (displayedCouriers === "All") {
-                            alert("Please select a specific courier to update stop order.");
+                            setModalMessage("Please select a specific courier to update stop order.");
+                            setModalActions([]);
+                            setIsModalOpen(true);
                             return;
                         }
 
                         const t = tours.find(t => t.courierId.toString() === displayedCouriers);
                         if (!t) {
-                            alert("No tour available.");
+                            setModalMessage("No tour available.");
+                            setModalActions([]);
+                            setIsModalOpen(true);
                             return;
                         }
 
@@ -698,7 +683,9 @@ export default function Home() {
                         const nextIndex = parseInt(nextStopIndex, 10);
 
                         if (isNaN(prevIndex) || isNaN(nextIndex)) {
-                            alert("Please enter valid indices.");
+                            setModalMessage("Please enter valid indices.");
+                            setModalActions([]);
+                            setIsModalOpen(true);
                             return;
                         }
 
