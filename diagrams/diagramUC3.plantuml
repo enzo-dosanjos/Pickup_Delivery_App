@@ -1,32 +1,36 @@
 @startuml
-title UC3 - Importer programme depuis un fichier
+title UC3 – Importer programme depuis un fichier
 
 actor User
 participant "RequestController" as RC
 participant "RequestService" as RS
 participant "XMLParsers" as XP
-participant "TourService" as TS
+participant "PickupDelivery" as PD
 
-User -> RC : loadRequests(filepath), optional: List<NewCourrierID>
-activate RC
+alt Normal flow
+    User -> RC : loadRequests(filepath, courierId)
+    activate RC
 
-RC -> RS : loadRequests(filepath)
-activate RS
+    RC -> RS : loadRequests(filepath, courierId)
+    activate RS
 
-RS -> XP : parseRequests(filepath)
-activate XP
-XP --> RS : PickupDelivery
-deactivate XP
+        RS -> XP : parseRequests(filepath, courierId, pickupDeliveryToFill)
+        activate XP
+        XP --> RS : PickupDelivery (requests loaded)
+        deactivate XP
 
-RS --> RC : requestsLoaded
-deactivate RS
+        RS -> PD : update with new requests
+        activate PD
+        PD --> RS : updated data
+        deactivate PD
 
-RC -> TS : assignRequestsToCouriers(list<CourierID>)
-activate TS
-TS -> TS : assignRequestsToCouriers(list<CourierID>)
-TS --> RC : toursUpdated
-deactivate TS
+    RS --> RC : PickupDelivery loaded successfully
+    deactivate RS
 
-RC --> User : "Programme chargé et tournées recalculées"
-deactivate RC
+    RC --> User : "Demandes de livraison importées avec succès"
+    deactivate RC
+
+else Error during XML parsing or file loading
+    RC --> User : "Erreur lors de l'import du fichier de demandes"
+end
 @enduml

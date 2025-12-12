@@ -1,27 +1,56 @@
 @startuml
-title UC10 - Modifier l’ordre de la livraison
+title UC10 – Modifier l’ordre de la livraison
 
 actor User
 participant "TourController" as TC
 participant "TourService" as TS
-participant "TSP1" as TSP1
+participant "TSP1" as TSP
+participant "MapService" as MS
+participant "Map" as MAP
+participant "Tour" as TOUR
 
-User -> TC : updateRequestOrder(requestBeforeId, requestAfterId)
-activate TC
+alt Normal flow
+    User -> TC : updateRequestOrder(requestBeforeId, requestAfterId, courierId)
+    activate TC
 
-TC -> TS : updateRequestOrder(requestBeforeId, requestAfterId)
-activate TS
+    TC -> TS : updateRequestOrder(requestBeforeId, requestAfterId, courierId)
+    activate TS
 
-TS -> TS : apply precedence constraint(requestBeforeId, requestAfterId, courierId)
-TS -> TS : computeTourForCourier(courierId)
-TS -> TSP1 : chercheSolution(...)
-activate TSP1
-TSP1 --> TS : bestTour
-deactivate TSP1
+        ' --- APPLY PRECEDENCE CONSTRAINT DIRECTLY ON TSP ---
+        TS -> TSP : setPrecedences(Map<deliveryIndex, Set<pickupIndex>>)
+        activate TSP
+        TSP --> TS : precedences updated
+        deactivate TSP
 
-TS --> TC : updatedTour
-deactivate TS
+        ' --- RECOMPUTE TOUR WITH NEW CONSTRAINT ---
+        TS -> TSP : chercheSolution(timeLimit, graph)
+        activate TSP
+        TSP --> TS : meilleureSolution (bestTour)
+        deactivate TSP
 
-TC --> User : "Ordre modifié et tournée recalculée"
-deactivate TC
+        TS -> TOUR : convertGraphToTour(..., bestSolution)
+        activate TOUR
+        TOUR --> TS : Tour recalculated
+        deactivate TOUR
+
+        TS -> TS : setTourForCourier(courierId, Tour)
+        TS -> MS : updateMapView(Tour)
+        activate MS
+            MS -> MAP : updateTourOnMap(Tour)
+            activate MAP
+            MAP --> MS : confirmation
+            deactivate MAP
+        MS --> TS : map updated
+        deactivate MS
+
+    TS --> TC : updatedTour (Tour + map refreshed)
+    deactivate TS
+
+    TC --> User : "Ordre modifié et tournée recalculée"
+    deactivate TC
+
+else Error: contrainte incohérente / TSP sans solution
+    TS --> TC : erreur
+    TC --> User : "Erreur: impossible de recalculer la tournée"
+end
 @enduml

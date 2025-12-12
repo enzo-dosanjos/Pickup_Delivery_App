@@ -1,25 +1,36 @@
 @startuml
-title UC9 - Importer un plan
+title UC9 – Importer un plan
 
 actor User
 participant "MapController" as MC
 participant "MapService" as MS
 participant "XMLParsers" as XP
+participant "Map" as MAP
 
-User -> MC : loadMap(filepath)
-activate MC
+alt Normal flow
+    User -> MC : loadMap(filePath)
+    activate MC
 
-MC -> MS : loadMap(filepath)
-activate MS
+    MC -> MS : loadMap(filePath)
+    activate MS
 
-MS -> XP : parseGraph(filepath)
-activate XP
-XP --> MS : Map
-deactivate XP
+        MS -> XP : parseMap(filePath)
+        activate XP
+        XP --> MAP : Map (parsed city network)
+        deactivate XP
 
-MS --> MC : Map
-deactivate MS
+      
+        activate MAP
+        MAP --> MS : confirmation
+        deactivate MAP
 
-MC --> User : "Plan chargé"
-deactivate MC
+    MS --> MC : Map loaded
+    deactivate MS
+
+    MC --> User : "Plan chargé avec succès"
+    deactivate MC
+
+else Error: invalid or missing file
+    MC --> User : "Erreur : impossible de charger le plan"
+end
 @enduml

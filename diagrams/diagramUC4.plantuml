@@ -1,21 +1,27 @@
 @startuml
-title UC4 - Modifier le nombre de livreurs
+title UC4 - Modifier le nombre de livreurs (ajout d’un nouveau livreur)
 
 actor User
 participant "TourController" as TC
 participant "TourService" as TS
+participant "Courier" as C
 
-User -> TC : updateNumCouriers(num, list<NewCourierID>)
+User -> TC : addCourier(id: long, name: String, shiftDurationInSeconds: long)
 activate TC
 
-TC -> TS : updateNumCouriers(num, list<NewCourierID>)
+TC -> TS : addCourier(id: long, name: String, shiftDurationInSeconds: long)
 activate TS
 
-TS -> TS : numCouriers = num
-TS -> TS : assignRequestsToCouriers(List<courierID>) 
-TS --> TC : updatedTours
+TS -> C : new Courier(id, name, shiftDurationInSeconds)
+activate C
+C -> C : availabilityStatus = AVAILABLE
+C --> TS : courier instance created
+deactivate C
+
+TS -> TS : couriers.add(Courier)
+TS --> TC : updated couriers list
 deactivate TS
 
-TC --> User : "Nombre de livreurs mis à jour"
+TC --> User : "Nouveau livreur ajouté et nombre mis à jour"
 deactivate TC
 @enduml

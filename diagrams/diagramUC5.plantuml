@@ -1,28 +1,82 @@
 @startuml
-title UC5 - Gérer une demande de livraison
+title UC3 – Importer programme depuis un fichier
 
 actor User
 participant "RequestController" as RC
 participant "RequestService" as RS
+participant "PlanningService" as PS
+participant "RequestService" as RS2
 participant "TourService" as TS
+participant "MapService" as MS
+participant "Map" as MAP
+participant "DijkstraService" as DS
+participant "DijkstraTable" as DT
+participant "TSP1" as TSP
+participant "GrapheComplet" as GC
+participant "Tour" as TOUR
 
-User -> RC : addRequest(courierId: String, pickupIntersectionId: String, deliveryIntersectionId: String)
-activate RC
+alt Normal flow
+    User -> RC : recomputeTourForCourier(courierId)
+    activate RC
 
-RC -> RS : addRequest(courierId: String, pickupIntersectionId: String, deliveryIntersectionId: String)
-activate RS
-RS --> RC : requestId
-deactivate RS
+    RC -> PS : recomputeTourForCourier(courierId)
+    activate PS
 
-RC -> TS : computeTourForCourier(courierId)
-activate TS
-TS -> TSP1 : chercheSolution(...)  // TSP
-activate TSP1
-TSP1 --> TS : bestTour
-deactivate TSP1
-TS --> RC : updatedTour
-deactivate TS
+        PS -> RS2 : getPickupDelivery()
+        activate RS2
+        RS2 --> PS : PickupDelivery
+        deactivate RS2
 
-RC --> User : "Demande ajoutée et tournée mise à jour"
-deactivate RC
+        PS -> TS : getCouriers() / courierExists(courierId)
+        activate TS
+        TS --> PS : courier found
+        deactivate TS
+
+        ' ---------- BUILD GRAPH ----------
+        PS -> PS : buildStopsList(PickupDelivery)
+        PS -> GC : new GrapheComplet(stops, nbStops)
+        activate GC
+        GC --> PS : GrapheComplet
+        deactivate GC
+
+        ' ---------- DIJKSTRA CALCULATION ----------
+        PS -> MS : getMap()
+        activate MS
+            MS -> MAP : getMap()
+            MAP --> MS : Map
+        MS --> PS : Map
+        deactivate MS
+
+        PS -> DS : new DijkstraService(Map, GrapheComplet)
+        activate DS
+        PS -> DT : new DijkstraTable()
+        activate DT
+        DT --> PS : DijkstraTable
+        deactivate DT
+
+        DS -> DS : computeShortestPath(dijkstraTable)
+        DS --> PS : shortest paths computed
+        deactivate DS
+
+        ' ---------- TSP EXECUTION ----------
+        PS -> TSP : chercheSolution(30000, dijkstraService.getGraph())
+        activate TSP
+        TSP --> PS : meilleureSolution
+        deactivate TSP
+
+        ' ---------- CONVERT TO TOUR ----------
+        PS -> TS : convertGraphToTour(pickupDelivery, start, courierId, sol, vertices, graph.getCout())
+        activate TS
+        TS --> PS : Tour
+        deactivate TS
+
+    PS --> RC : tour recomputed and stored
+    deactivate PS
+
+    RC --> User : "Programme chargé avec succès"
+    deactivate RC
+
+else Alt: Error lors de l'import ou calcul
+    RC --> User : "Erreur de chargement ou de calcul d'itinéraire"
+end
 @enduml

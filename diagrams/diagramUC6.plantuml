@@ -3,15 +3,9 @@ title UC6 - Choisir un livreur
 
 actor User
 participant "RequestController" as RC
-participant "RequestService" as RS
 
-User -> RC : chooseCourier(courierId)
+User -> RC : chooseCourier(courierId) (via UI list or map)
 activate RC
-
-RC -> RS : getRequestsForCourier(courierId) 
-activate RS
-RS --> RC : vector<Request>
-deactivate RS
 
 RC --> User : courierSelected (UI updated)
 deactivate RC

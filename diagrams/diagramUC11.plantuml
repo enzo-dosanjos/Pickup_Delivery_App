@@ -1,26 +1,33 @@
 @startuml
-title UC11 - Sauvegarder le programme de la tournée
+title UC11 – Sauvegarder le programme de la tournée 
 
 actor User
 participant "TourController" as TC
 participant "TourService" as TS
+participant "Tour" as T
 participant "XMLWriters" as XW
 
-User -> TC : saveTours(filepath)
+User -> TC : saveTours(filePath)
 activate TC
 
-TC -> TS : saveTours(filepath)
+TC -> TS : saveTours(filePath)
 activate TS
 
-loop pour chaque tour
-    TS -> XW : writeTour(tour, filepath)
-    XW --> TS : confirmation
-end
 
-TS --> TC : confirmation
+TS -> T : getTourData()
+activate T
+T --> TS : tourData
+deactivate T
+
+TS -> XW : writeTour(Tour, filePath)
+activate XW
+XW --> TS : confirmation
+deactivate XW
+
+
+TS --> TC : confirmation (tours saved)
 deactivate TS
 
-TC --> User : "Programme sauvegardé"
+TC --> User : "Programme de la tournée sauvegardé avec succès"
 deactivate TC
-
 @enduml

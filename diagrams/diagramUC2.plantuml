@@ -1,28 +1,35 @@
 @startuml
-title UC2 - Sauvegarder Tournée dans un fichier
+title UC2 – Save Tours to File
 
 actor User
 participant "TourController" as TC
 participant "TourService" as TS
-participant "XMLWriters" as XW
 participant "Tour" as T
+participant "XMLWriters" as XW
+alt Normal flow
+    User -> TC : saveTours(filepath)
+    activate TC
 
-User -> TC : saveTours(filepath)
-activate TC
+    TC -> TS : saveTours(filepath)
+    activate TS
 
-TC -> TS : saveTours(filepath)
-activate TS
+    
+    TS -> T : getTourData()
+    activate T
+    T --> TS : tourData
+    deactivate T
 
-loop pour tous les tours disponibles
-    TS -> XW : writeTour(tour, filepath) 
+    TS -> XW : writeTour(tourData, filepath)
     activate XW
     XW --> TS : confirmation
     deactivate XW
+    
+
+    TS --> TC : confirmation
+    deactivate TS
+    TC --> User : "Tours successfully saved"
+    deactivate TC
+else File system error
+    TC --> User : "Error while writing file"
 end
-
-TS --> TC : confirmation
-deactivate TS
-
-TC --> User : "Tournées sauvegardées"
-deactivate TC
 @enduml
