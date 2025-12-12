@@ -2,8 +2,11 @@ package domain.service;
 
 import domain.model.Graphe;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * IteratorSeq is an iterator that iterates over the set of vertices in `nonVus`
@@ -12,11 +15,10 @@ import java.util.Iterator;
  */
 public class IteratorSeq implements Iterator<Integer> {
 
+	private final Iterator<Integer> iterator; // Array of candidate vertices to iterate over.
 
-    private Integer[] candidats; // Array of candidate vertices to iterate over.
 
-
-    private int nbCandidats; // Number of remaining candidates to iterate over.
+	private final List<Integer> candidats; // Number of remaining candidates to iterate over.
 
     /**
      * Constructs an iterator for iterating over the vertices in `nonVus` that
@@ -26,14 +28,18 @@ public class IteratorSeq implements Iterator<Integer> {
      * @param sommetCrt the current vertex
      * @param g the graph containing the vertices and edges
      */
-    public IteratorSeq(Collection<Integer> nonVus, int sommetCrt, Graphe g) {
-        this.candidats = new Integer[nonVus.size()];
-        Iterator<Integer> it = nonVus.iterator();
-        while (it.hasNext()) {
-            Integer s = it.next();
-            if (g.estArc(sommetCrt, s))
-                candidats[nbCandidats++] = s;
+	public IteratorSeq(Collection<Integer> nonVus, int sommetCrt, Graphe g) {
+        candidats = new ArrayList<>();
+        for (Integer s : nonVus) {
+            if (g.estArc(sommetCrt, s)) {
+                candidats.add(s);
+            }
         }
+        // Orders by higer cost (most promising first)
+        candidats.sort(
+                Comparator.comparingDouble(s -> g.getCout(sommetCrt, s))
+        );
+        iterator = candidats.iterator();
     }
 
     /**
@@ -41,9 +47,9 @@ public class IteratorSeq implements Iterator<Integer> {
      *
      * @return true if there are more candidates, false otherwise
      */
-    @Override
+	@Override
     public boolean hasNext() {
-        return nbCandidats > 0;
+        return iterator.hasNext();
     }
 
     /**
@@ -53,8 +59,7 @@ public class IteratorSeq implements Iterator<Integer> {
      */
     @Override
     public Integer next() {
-        nbCandidats--;
-        return candidats[nbCandidats];
+        return iterator.next();
     }
 
     /**
