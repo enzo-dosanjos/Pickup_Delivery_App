@@ -39,7 +39,7 @@ class TSPTest {
 
     @Test
     void testSimpleGraph() {
-        // 4 nodes (0 = depot)
+        // 4 nodes (0 = warehouse)
         double[][] cost = {
             {0, 2, 9, 10},
             {1, 0, 6, 4},
@@ -56,14 +56,6 @@ class TSPTest {
 
         double best = tsp.getCoutMeilleureSolution();
         assertTrue(best > 0 && best < Double.MAX_VALUE, "Solution cost should be valid");
-
-        // Print solution for curiosity (not required)
-        System.out.println("Best cost found: " + best);
-        System.out.print("Path order: ");
-        for (int i = 0; i < g.getNbSommets(); i++) {
-            System.out.print(tsp.getSolution(i) + " ");
-        }
-        System.out.println();
     }
 
     @Test
@@ -115,6 +107,5 @@ class TSPTest {
         double total = tsp.getCoutMeilleureSolution();
 
         assertTrue(total >= 30, "Total cost should include service times.");
-        System.out.println("Total cost with service times: " + total);
     }
 }

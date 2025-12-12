@@ -8,20 +8,26 @@ import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
+/**
+ * IteratorSeq is an iterator that iterates over the set of vertices in `nonVus`
+ * that are successors of `sommetCrt` in the graph `g`, in the order of their
+ * appearance in `nonVus`.
+ */
 public class IteratorSeq implements Iterator<Integer> {
 
-	//private Integer[] candidats;
-	//private int nbCandidats;
-	private final Iterator<Integer> iterator;
-	private final List<Integer> candidats;
+	private final Iterator<Integer> iterator; // Array of candidate vertices to iterate over.
 
-	/**
-	 * Cree un iterateur pour iterer sur l'ensemble des sommets de nonVus qui sont successeurs de sommetCrt dans le graphe g,
-	 * dans l'odre d'apparition dans <code>nonVus</code>
-	 * @param nonVus
-	 * @param sommetCrt
-	 * @param g
-	 */
+
+	private final List<Integer> candidats; // Number of remaining candidates to iterate over.
+
+    /**
+     * Constructs an iterator for iterating over the vertices in `nonVus` that
+     * are successors of `sommetCrt` in the graph `g`.
+     *
+     * @param nonVus the collection of vertices to consider
+     * @param sommetCrt the current vertex
+     * @param g the graph containing the vertices and edges
+     */
 	public IteratorSeq(Collection<Integer> nonVus, int sommetCrt, Graphe g) {
         candidats = new ArrayList<>();
         for (Integer s : nonVus) {
@@ -30,20 +36,36 @@ public class IteratorSeq implements Iterator<Integer> {
             }
         }
         // Orders by higer cost (most promising first)
-        candidats.sort(Comparator.comparingDouble(s -> g.getCout(sommetCrt, s)));
+        candidats.sort(
+                Comparator.comparingDouble(s -> g.getCout(sommetCrt, s))
+        );
         iterator = candidats.iterator();
     }
-	
+
+    /**
+     * Checks if there are more candidates to iterate over.
+     *
+     * @return true if there are more candidates, false otherwise
+     */
 	@Override
     public boolean hasNext() {
         return iterator.hasNext();
     }
 
+    /**
+     * Returns the next candidate in the iteration.
+     *
+     * @return the next candidate vertex
+     */
     @Override
     public Integer next() {
         return iterator.next();
     }
 
-	@Override
-	public void remove() {}
+    /**
+     * Removes the current element from the iteration. This method is not
+     * implemented and does nothing.
+     */
+    @Override
+    public void remove() {}
 }

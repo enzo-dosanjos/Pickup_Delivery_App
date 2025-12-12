@@ -11,20 +11,34 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+/**
+ * Abstract class providing a template for solving the Sequential Ordering Problem (SOP,
+ * an asymmetrical Traveling Salesman Problem (TSP) with precedence constraints)  using
+ * the branch-and-bound method. Subclasses must implement the `bound` and `iterator` methods.
+ */
 public abstract class TemplateTSP implements TSP {
-	
-	private Integer[] meilleureSolution;
-    protected Graphe g;
-    private double coutMeilleureSolution;
-    private int tpsLimite;
-    private long tpsDebut;
 
-    // --------
-    // Mapa: node -> leur precedences
-    private Map<Integer, Set<Integer>> precedences = new HashMap<>();
 
-    // Timps (seconds) pasee a chaque node 
-    private double[] serviceTimes = null;
+    private Integer[] meilleureSolution; // Array storing the best solution found so far.
+
+
+    protected Graphe g; // The graph representing the problem.
+
+
+    private double coutMeilleureSolution; // The cost of the best solution found so far.
+
+
+    private int tpsLimite; // Time limit for the solution search in milliseconds.
+
+
+    private long tpsDebut; // Start time of the solution search.
+
+
+    private Map<Integer, Set<Integer>> precedences = new HashMap<>(); // Map storing precedence constraints for nodes.
+
+
+    private double[] serviceTimes = null; // Array storing the service times for each node.
+
 
 	// Durée maximale en secondes (shift duration)
     private double maxDuration = Double.MAX_VALUE;
@@ -45,9 +59,11 @@ public abstract class TemplateTSP implements TSP {
         else this.precedences = precedences;
     }
 
+
     public Map<Integer, Set<Integer>> getPrecedences() {
         return this.precedences;
     }
+
 
     public void setServiceTimes(double[] serviceTimes) {
         this.serviceTimes = serviceTimes;
@@ -69,7 +85,7 @@ public abstract class TemplateTSP implements TSP {
      */
 	public void chercheSolution(int tpsLimite,Graphe g ){
 		if (tpsLimite <= 0) return;
-		tpsDebut = System.currentTimeMillis();	
+		tpsDebut = System.currentTimeMillis();
 		this.lastImprovementTime = tpsDebut;
 		this.stopSearch = false;
 		this.tpsLimite = tpsLimite;
@@ -79,50 +95,43 @@ public abstract class TemplateTSP implements TSP {
 		for (int i=1; i<g.getNbSommets(); i++) nonVus.add(i);
 		Collection<Integer> vus = new ArrayList<Integer>(g.getNbSommets());
 		vus.add(0); // le premier sommet visite est 0 depot
-		
-		System.out.println("Running Nearest Neighbor heuristic...");
+
     	double heuristicCost = nearestNeighborHeuristic();
-    
+
 		if (heuristicCost < Double.MAX_VALUE) {
 			coutMeilleureSolution = heuristicCost;
-			System.out.println(
-				"Nearest Neigbour initial solution: " + 
-				String.format("%.2f", heuristicCost / 3600.0) + "h");
-			} 
-		else{
-				coutMeilleureSolution = Integer.MAX_VALUE;
-				System.out.println("Nearest Neigbour heuristic failed, using no initial bound.");
+		} else{
+			coutMeilleureSolution = Integer.MAX_VALUE;
 			}
 
-    	System.out.println("Starting Branch & Bound optimization...");
 		branchAndBound(0, nonVus, vus, 0);
 	}
-	
+
 	public Integer getSolution(int i){
 		if (g != null && i>=0 && i<g.getNbSommets())
 			return meilleureSolution[i];
 		return -1;
 	}
-	
+
 	    public double getCoutSolution(){
 			if (g != null)
 				return coutMeilleureSolution;
 			return -1;
 		}
-	
+
 	    public double getCoutMeilleureSolution() {
 	        return coutMeilleureSolution;
 	    }
-		
+
 	/**
 	 * Methode devant etre redefinie par les sous-classes de TemplateTSP
 	 * @param sommetCourant
 	 * @param nonVus
-	 * @return une borne inferieure du cout des chemins de <code>g</code> partant de <code>sommetCourant</code>, visitant 
+	 * @return une borne inferieure du cout des chemins de <code>g</code> partant de <code>sommetCourant</code>, visitant
 	 * tous les sommets de <code>nonVus</code> exactement une fois, puis retournant sur le sommet <code>0</code>.
 	 */
 	protected abstract double bound(Integer sommetCourant, Collection<Integer> nonVus);
-	
+
 	/**
 	 * Methode devant etre redefinie par les sous-classes de TemplateTSP
 	 * @param sommetCrt
@@ -131,16 +140,16 @@ public abstract class TemplateTSP implements TSP {
 	 * @return un iterateur permettant d'iterer sur tous les sommets de <code>nonVus</code> qui sont successeurs de <code>sommetCourant</code>
 	 */
 	protected abstract Iterator<Integer> iterator(Integer sommetCrt, Collection<Integer> nonVus, Graphe g);
-	
+
 	/**
 	 * Methode definissant le patron (template) d'une resolution par separation et evaluation (branch and bound) du TSP pour le graphe <code>g</code>.
 	 * @param sommetCrt le dernier sommet visite
 	 * @param nonVus la liste des sommets qui n'ont pas encore ete visites
 	 * @param vus la liste des sommets deja visites (y compris sommetCrt)
 	 * @param coutVus la somme des couts des arcs du chemin passant par tous les sommets de vus dans l'ordre ou ils ont ete visites
-	 */	
+	 */
 	private void branchAndBound(int sommetCrt, Collection<Integer> nonVus, Collection<Integer> vus, double coutVus){
-		
+
 		long currentTime = System.currentTimeMillis();
 
 		if (stopSearch) return;
@@ -161,7 +170,7 @@ public abstract class TemplateTSP implements TSP {
             return;
         }
 		 // Case: all nodes visited
-	    if (nonVus.size() == 0){ 
+	    if (nonVus.size() == 0){
 	    	if (g.estArc(sommetCrt,0)){ // on peut retourner au sommet de depart (0)
 				double newCost = coutVus+g.getCout(sommetCrt,0);
 				if (newCost < coutMeilleureSolution){
@@ -180,25 +189,25 @@ public abstract class TemplateTSP implements TSP {
                 Set<Integer> preds = precedences.getOrDefault(prochainSommet, Collections.emptySet());
                 boolean ok = true;
                 for (Integer pred : preds) {
-                    if (!vus.contains(pred)) { 
+                    if (!vus.contains(pred)) {
                         ok = false;
                         break;
                     }
                 }
-                if (!ok) continue; 
-	        	vus.add(prochainSommet);
-	            nonVus.remove(prochainSommet);
-	           
+                if (!ok) continue;
+                vus.add(prochainSommet);
+                nonVus.remove(prochainSommet);
+
                 double addCost = g.getCout(sommetCrt, prochainSommet);
 
-                // Temps service
+                // Add service time if applicable
                 if (serviceTimes != null && prochainSommet >= 0 && prochainSommet < serviceTimes.length) {
                     addCost += serviceTimes[prochainSommet];
                 }
 
                 double nouveauCout = coutVus + addCost;
-                
-                // Pruning: ne pas explorer si on depasse la durée max
+
+                // Pruning: doesn't explore if exceeding max duration and not better than best solution
                 if (nouveauCout <= maxDuration || nouveauCout < coutMeilleureSolution) {
                     branchAndBound(prochainSommet, nonVus, vus, nouveauCout);
                 }
@@ -208,6 +217,7 @@ public abstract class TemplateTSP implements TSP {
 	        }	    
 	    }
 	}
+
 	/**
      * Generates a quick feasible solution using the Nearest Neighbor heuristic.
      * Used as the initial upper bound before Branch & Bound.
@@ -216,23 +226,23 @@ public abstract class TemplateTSP implements TSP {
 		int n = g.getNbSommets();
 		boolean[] visited = new boolean[n];
 		List<Integer> route = new ArrayList<>();
-		
+
 		int current = 0;
 		visited[0] = true;
 		route.add(0);
-		
+
 		double totalCost = 0.0;
-		
+
 		//make tour
 		while (route.size() < n) {
 			int nearest = -1;
 			double minCost = Double.MAX_VALUE;
-			
+
 			// search closest node
 			for (int next = 1; next < n; next++) {
 				if (visited[next]) continue;
-				
-				// Verifie precedence
+
+				// Verify precedences
 				Set<Integer> preds = precedences.getOrDefault(next, Collections.emptySet());
 				boolean precedencesOk = true;
 				for (Integer pred : preds) {
@@ -242,58 +252,58 @@ public abstract class TemplateTSP implements TSP {
 					}
 				}
 				if (!precedencesOk) continue;
-				
-				// Verifie arc
+
+				// Verify arc
 				if (!g.estArc(current, next)) continue;
-				
+
 				double cost = g.getCout(current, next);
-				
+
 				// service time
 				if (serviceTimes != null && next < serviceTimes.length) {
 					cost += serviceTimes[next];
 				}
-				
-				// Verificar shift duration constraint
+
+				// Verify shift duration constraint
 				if (totalCost + cost > maxDuration) continue;
-				
+
 				if (cost < minCost) {
 					minCost = cost;
 					nearest = next;
 				}
 			}
-			
+
 			// if there is no nearset
 			if (nearest == -1) {
 				return Double.MAX_VALUE;
 			}
-			
+
 			visited[nearest] = true;
 			route.add(nearest);
 			totalCost += minCost;
 			current = nearest;
 		}
-		
+
 
 		if (!g.estArc(current, 0)) {
 			return Double.MAX_VALUE;
 		}
-		
+
 		double returnCost = g.getCout(current, 0);
 		totalCost += returnCost;
-		
-		// vererifie shift duration
+
+		// verify shift duration
 		if (totalCost > maxDuration) {
 			System.out.println(
 				"NN heuristic found solution but exceeds shift duration: " +
 				String.format("%.2f", totalCost / 3600.0) + "h"
 			);
 		}
-		
+
 		// save heuristic
 		for (int i = 0; i < route.size(); i++) {
 			meilleureSolution[i] = route.get(i);
 		}
-		
+
 		return totalCost;
 	}
 }

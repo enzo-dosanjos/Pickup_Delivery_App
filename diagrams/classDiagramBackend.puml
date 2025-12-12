@@ -30,7 +30,7 @@ package "Domain" {
 
         class Map {
             - intersections : TreeMap<long, Intersection>  (key: intersection id)
-            - adjencyList : HashMap<long, RoadSegment[]>  (key: starting intersection id)
+            - adjacencyList : HashMap<long, RoadSegment[]>  (key: starting intersection id)
             + addIntersection(intersection: Intersection) : boolean
             + addRoadSegment(startIntersectionId: Long, roadSegment: RoadSegment) : boolean
             + getRoadSegment(startId: long, endId: long) : RoadSegment
@@ -81,6 +81,8 @@ package "Domain" {
             - name : string
             - shiftDuration : time.Duration
             - availabilityStatus : AvailabilityStatus
+            + isAvailable() : boolean
+            + isBusy() : boolean
         }
 
         enum AvailabilityStatus {
@@ -153,13 +155,14 @@ package "Domain" {
             + deleteRequest(courierId: Long, requestId: long) : void
             + loadRequests(filepath: String) : void
             + saveRequests(filepath: String) : void
+            + getRequestById(requestId: long) : Request
         }
 
         class TourService {
-            - couriers : ArrayList<Courier> (list of courier ids)
-            - numCouriers : int
-            - tours : TreeMap<long, Tour>  (key: courier id)
-            - requestOrder : TreeMap<Long, HashMap<Long, Long>>  (key: courier id, value: pair of ids of stop that should be before the other)
+            - couriers : ArrayList<Courier> (list of courier)
+            - numCouriers : int (number of couriers loaded)
+            - tours : TreeMap<long, Tour> (key: courier id → computed tour)
+            - precedencesByCourier : TreeMap<Long, HashMap<String, Set<String>>>  (key: courier id → precedences "reqId/interId/type" → set of predecessors)
             + saveTours(filepath: String) : void
             + loadTours(filepath: String) : void
             + setTourForCourier(courierId: long, tour: Tour) : void
@@ -182,6 +185,7 @@ package "Domain" {
             - mapService : MapService
             + recomputeTourForCourier(courierId: long) : void
             + courierExists(courierId: long) : boolean
+            + updatePrecedences(courierId: long, newRequestId: long, pickupDelivery: PickupDelivery) : void (add pickup-before-delivery constraints for a new request)
         }
 
         class IteratorSeq {
@@ -237,6 +241,7 @@ package "Presentation" {
     class RequestController {
         - requestService : RequestService
         - planningService : PlanningService
+        - tourService : TourService
         + addRequest(warehouseId: Long, pickupIntersectionId: Long, pickupDurationInSeconds: long, deliveryIntersectionId: Long, deliveryDurationInSeconds: long, courierId: Long) : void
         + loadRequests(filepath: String, courrierId: long) : void
         + saveRequests(filepath: String) : void
@@ -247,14 +252,15 @@ package "Presentation" {
     class TourController {
         - requestService : RequestService
         - tourService : TourService
+        - planningService : PlanningService
         + saveTours(filepath: String) : void
         + loadTours(filepath: String) : void
         + addCourier(id: long, name: String, shiftDurationInSeconds: long) : void
         + removeCourier(courierId: long) : void
         + loadCouriers(filePath: string) : void
-        + updateRequestOrder(requestBeforeId: long, requestAfterId: long, courierId: long) : void
-        + showRequestDetails(instersectionId: long) : void
+        + updateStopOrder(courierId: long, precStopIndex: Integer, followingStopIndex: Integer) : void (update constraints then recompute tour)        + showRequestDetails(instersectionId: long) : void
         + getTours() : Map<long, Tour>
+        + getAvailableCouriers() : List<Courier>
     }
 
     class MapController {
@@ -267,6 +273,8 @@ RequestController --> RequestService
 RequestController --> PlanningService
 TourController --> TourService
 TourController --> RequestService
+TourController --> PlanningService
+
 
 PlanningService --> RequestService
 PlanningService --> TourService

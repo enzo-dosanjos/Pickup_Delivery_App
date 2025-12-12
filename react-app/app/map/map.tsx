@@ -18,8 +18,8 @@ export type TourStop = {
     type: StopType;
     requestID: number;
     intersectionId: number;
-    arrivalTime: number;
-    departureTime: number;
+    arrivalTime: string;
+    departureTime: string;
 };
 
 export type Tour = {
@@ -28,6 +28,24 @@ export type Tour = {
     roadSegmentsTaken: L.LatLngExpression[][]; // Assuming road segments are also LatLngExpression[][] for rendering
     totalDistance: number;
     totalDuration: number;
+};
+
+const tourColors = [
+    "#d0021b", // red
+    "#417505", // green
+    "#4a3700", // blue
+    "#f5a623", // orange
+    "#9013fe", // purple
+    "#50e3c2", // teal
+    "#b8e986", // light green
+    "#f8e71c", // yellow
+    "#8b572a", // brown
+    "#7ed321", // lime
+];
+
+const getTourColor = (courierId: number) => {
+    const idx = Math.abs(Math.floor(courierId)) % tourColors.length;
+    return tourColors[idx];
 };
 
 const pickupIcon = new L.Icon({
@@ -49,9 +67,10 @@ const deliveryIcon = new L.Icon({
 });
 
 const warehouseIcon = new L.Icon({
-    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png', // Using blue for warehouse for now
+    // House-shaped marker for the warehouse
+    iconUrl: "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64' fill='none'%3E%3Cpath fill='%231e88e5' d='M27.6 8.2a4 4 0 0 1 4.8 0l21 16.2a4 4 0 0 1 1.6 3.2V52a4 4 0 0 1-4 4h-10a4 4 0 0 1-4-4V40h-10v12a4 4 0 0 1-4 4h-10a4 4 0 0 1-4-4V27.6a4 4 0 0 1 1.6-3.2l21-16.2Z'/%3E%3Cpath fill='%23fff' d='M28 36h8v-8a4 4 0 0 0-8 0v8Z'/%3E%3C/svg%3E",
     shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-    iconSize: [25, 41],
+    iconSize: [41, 41],
     iconAnchor: [12, 41],
     popupAnchor: [1, -34],
     shadowSize: [41, 41]
@@ -67,7 +86,8 @@ export function Map(props: {
     pickupId: number | null,
     deliveryId: number | null,
     onDeleteRequest?: (requestId: number, courierId: number) => void,
-    warehouseId: number | null,
+    warehouseIds: Array<number>,
+    formatDateTime: (value?: string | null) => string,
 }) {
     const mapBounds = useMemo(() => new L.LatLngBounds(props.bounds), [props.bounds]);
 
@@ -83,7 +103,7 @@ export function Map(props: {
             <Pane name="intersections-pane" style={{ zIndex: 500 }} />
 
             {props.intersections.map((intersection) => {
-                if (intersection.id === props.warehouseId) {
+                if (props.warehouseIds && props.warehouseIds.includes(intersection.id)) {
                     return (
                         <Marker
                             key={intersection.id}
@@ -127,10 +147,19 @@ export function Map(props: {
                 <Polyline key={id} positions={segment} pane="road-segments-pane" />
             ))}
 
-            {props.tours.map(tour => (
+            {props.tours.map(tour => {
+                const tourColor = getTourColor(tour.courierId);
+                return (
                 <div key={tour.courierId}>
                     {tour.roadSegmentsTaken.map((segment, index) => (
-                        <Polyline key={index} positions={segment} color="red" pane="tour-pane" />
+                        <Polyline
+                            key={index}
+                            positions={segment}
+                            color={tourColor}
+                            weight={5}
+                            opacity={0.85}
+                            pane="tour-pane"
+                        />
                     ))}
                     {tour.stops.map((stop, index) => {
                         const intersection = props.intersections.find(i => i.id === stop.intersectionId);
@@ -142,18 +171,24 @@ export function Map(props: {
                             } else if (stop.type === StopType.WAREHOUSE) {
                                 icon = warehouseIcon;
                             }
+                            const stopOrder = index;
 
                             return (
                                 <Marker key={`${tour.courierId}-${stop.intersectionId}-${index}`} position={intersection.position} icon={icon}>
                                     <Popup>
-                                        <div>
+                                        <div className="map-popup-content">
                                             Courier ID: {tour.courierId} <br />
                                             Stop Type: {stop.type} <br />
                                             Request ID: {stop.requestID} <br />
                                             Intersection ID: {stop.intersectionId} <br />
-                                            <button onClick={() => props.onDeleteRequest?.(stop.requestID, tour.courierId)}>
-                                                Delete Request
-                                            </button>
+                                            Order in tour: {stopOrder} <br />
+                                            Arrival time: {props.formatDateTime(stop.arrivalTime)} <br />
+                                            Departure time: {props.formatDateTime(stop.departureTime)} <br />
+                                            {stop.type !== StopType.WAREHOUSE && stop.requestID >= 0 && (
+                                                <button className="delete-button" onClick={() => props.onDeleteRequest?.(stop.requestID, tour.courierId)}>
+                                                    Delete Request
+                                                </button>
+                                            )}
                                         </div>
                                     </Popup>
                                 </Marker>
@@ -161,8 +196,8 @@ export function Map(props: {
                         }
                         return null;
                     })}
-                </div>
-            ))}
+                </div>)
+            })}
             <FitBounds bounds={tourBounds} />
         </MapContainer>
     );

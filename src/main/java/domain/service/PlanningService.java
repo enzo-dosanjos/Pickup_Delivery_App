@@ -9,57 +9,64 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 
+/**
+ * Service class for planning and managing tours for couriers.
+ * Provides functionality to recompute tours based on requests and map data.
+ */
 @Service
 public class PlanningService {
-    private final RequestService requestService;
-    private final TourService tourService;
-    private MapService mapService;
 
+    private final RequestService requestService; // Services for handling requests and tours.
+
+
+    private final TourService tourService; // Service for handling tours.
+
+
+    private MapService mapService; // Service for handling map data.
+
+    /** Constructs a new PlanningService with the specified services.
+     *
+     * @param requestService the service for handling requests
+     * @param tourService the service for handling tours
+     * @param mapService the service for handling map data
+     */
     @Autowired
     public PlanningService(RequestService requestService, TourService tourService, MapService mapService) {
         this.requestService = requestService;
         this.tourService = tourService;
-
         this.mapService = mapService;
     }
 
+    /**
+     * Recomputes the tour for a specific courier based on their requests.
+     *
+     * @param courierId the ID of the courier whose tour is to be recomputed
+     * @throws IllegalArgumentException if the courier ID is not found in requests
+     * @throws RuntimeException if the TSP algorithm does not find a solution
+     */
     public void recomputeTourForCourier(long courierId) {
-        if (!requestService.getPickupDelivery().getRequestsPerCourier().containsKey(courierId)) {
+        if (!requestService.getPickupDeliveryPerCourier().containsKey(courierId)) {
             throw new IllegalArgumentException("Courier ID " + courierId + " not found in requests.");
         }
-        
+
         // Create a local copy to avoid concurrency issues
-        PickupDelivery pickupDelivery = new PickupDelivery(requestService.getPickupDelivery());
-        TreeMap<Long, Request> requests = pickupDelivery.getRequests();
-        ArrayList<Long> requestIdsForCourier = pickupDelivery.getRequestsPerCourier().get(courierId);
+        PickupDelivery pickupDelivery = new PickupDelivery(requestService.getPickupDeliveryForCourier(courierId));
+        ArrayList<Request> requests = pickupDelivery.getRequests();
         Courier courier = courierInCharge(courierId);
         Duration shiftDuration = courier.getShiftDuration();
 
-        //----------------------------------------------------------------
 
-        System.out.println("========================================");
-        System.out.println("Computing tour for Courier #" + courierId);
-        System.out.println("Requests: " + requestIdsForCourier.size());
-        System.out.println("Shift Duration: " + formatDuration(shiftDuration.toSeconds()));
-        System.out.println("========================================");
-
-        //----------------------------------------------------------------
-
-        // 1. Build list of stops (warehouse + pickups + deliveries)
-        int nbStops = 2 * requestIdsForCourier.size() + 1;
-        long[] stops = new long[nbStops];
-
-        int idx = 0;
-        stops[idx++] = pickupDelivery.getWarehouseAdressId();
-
-        for (long reqId : requestIdsForCourier) {
-            Request r = requests.get(reqId);
-            stops[idx++] = r.getPickupIntersectionId();
-            stops[idx++] = r.getDeliveryIntersectionId();
+        if (!tourService.getPrecedencesByCourier().containsKey(courierId)) {
+            tourService.initPrecedences(courierId, requests);
         }
+        // 1. Generate TSP precedences and stops
+
+        java.util.Map.Entry<long[], HashMap<Integer, Set<Integer>>> result = tourService.generateTspPrecedences(requests, pickupDelivery.getWarehouseAddressId(), courierId);
+        long[] stops = result.getKey();
+        HashMap<Integer, Set<Integer>> tspPrecedences = result.getValue();
 
         // 2. build graph
-        GrapheComplet graph = new GrapheComplet(stops, nbStops);
+        GrapheComplet graph = new GrapheComplet(stops, stops.length);
 
         // 3. Distances with Dijkstra
         DijkstraTable dijkstraTable = new DijkstraTable();  // todo: store in DijkstraService
@@ -67,33 +74,21 @@ public class PlanningService {
         dijkstraService.computeShortestPath(dijkstraTable);
 
         // 4.Precedences
-        HashMap<Integer, Set<Integer>> precs = new HashMap<>();
-
-        int requestIndex = 0;
-        for (long reqId : requestIdsForCourier) {
-            int pickupIndex = 1 + requestIndex * 2;
-            int deliveryIndex = pickupIndex + 1;
-
-            precs.put(deliveryIndex, Set.of(pickupIndex));
-            requestIndex++;
-        }
-
         TSP1 tsp = new TSP1();
-        tsp.setPrecedences(precs);
+        tsp.setPrecedences(tspPrecedences);
+
 
         // 5. Service times
         double[] serviceTimes = new double[dijkstraService.getGraph().getNbSommets()];
         Arrays.fill(serviceTimes, 0); // warehouse = 0
 
-        requestIndex = 0;
-        for (long reqId : requestIdsForCourier) {
-            Request r = requests.get(reqId);
-
+        int requestIndex = 0;
+        for (Request req : requests) {
             int pickupIndex = 1 + requestIndex * 2;
             int deliveryIndex = pickupIndex + 1;
 
-            serviceTimes[pickupIndex]   = r.getPickupDuration().toSeconds();   // Pickup duration
-            serviceTimes[deliveryIndex] = r.getDeliveryDuration().toSeconds(); // Delivery duration
+            serviceTimes[pickupIndex]   = req.getPickupDuration().toSeconds();   // Pickup duration
+            serviceTimes[deliveryIndex] = req.getDeliveryDuration().toSeconds(); // Delivery duration
 
             requestIndex++;
         }
@@ -104,17 +99,16 @@ public class PlanningService {
         tsp.setMaxDuration(shiftDuration.toSeconds());
 
         // 6. execute TSP (SOP)
-        System.out.println("Running TSP algorithm...");
         long tspStartTime = System.currentTimeMillis();
 
 
-        
+
         int timeLimit;
         long NO_IMPROVEMENT_TIMEOUT;
-        if (nbStops <= 10) {
+        if (stops.length <= 10) {
             timeLimit = 7500; // 10s not many stops
             NO_IMPROVEMENT_TIMEOUT = 2000;
-        } else if (nbStops <= 15) {
+        } else if (stops.length <= 15) {
             timeLimit = 20000; // 30s
             NO_IMPROVEMENT_TIMEOUT = 3000;
         } else {
@@ -128,45 +122,30 @@ public class PlanningService {
         long tspEndTime = System.currentTimeMillis();
         long tspExecutionTime = tspEndTime - tspStartTime;
 
-        System.out.println("TSP execution time: " + tspExecutionTime + " ms");
 
         if (tsp.getCoutMeilleureSolution() == Integer.MAX_VALUE) {
-            System.err.println("No solution found!");
             throw new RuntimeException("TSP algorithm did not find a solution for courier " + courierId);}
 
         double tourDuration = tsp.getCoutMeilleureSolution();
-        
-        System.out.println("----------------------------------------");
-        System.out.println("Solution found!");
-        System.out.println(
-            "Tour duration: " + formatDuration(tourDuration)
-        );
-        System.out.println(
-            "Shift duration: " + formatDuration(shiftDuration.toSeconds())
-        );
-        
+
         // Check if solution exceeds shift duration
         if (tourDuration > shiftDuration.toSeconds()) {
             double exceedSeconds = tourDuration - shiftDuration.toSeconds();
-            System.err.println("⚠️  WARNING: Tour exceeds shift duration!");
-            System.err.println(
-                "Exceeds by: " + formatDuration(exceedSeconds)
-            );
         } else {
             double remainingSeconds = shiftDuration.toSeconds() - tourDuration;
             System.out.println(
-                "✓ Within shift duration (remaining: " + 
+                "✓ Within shift duration (remaining: " +
                 formatDuration(remainingSeconds) + ")"
             );
         }
-        
+
         // Print TSP solution
         System.out.println("----------------------------------------");
         System.out.println("Tour sequence:");
         printTSPSolution(
-            tsp, 
-            stops, 
-            dijkstraService.getGraph(), 
+            tsp,
+            stops,
+            dijkstraService.getGraph(),
             serviceTimes
         );
         System.out.println("========================================");
@@ -205,20 +184,80 @@ public class PlanningService {
 
         Long[] vertices = Arrays.stream(graph.getSommets()).boxed().toArray(Long[]::new);
 
-        LocalDateTime start = LocalDateTime.now();
-
         Tour tour = tourService.convertGraphToTour(
-                pickupDelivery, start, courierId, sol, vertices, graph.getCout()
+                pickupDelivery, courierId, sol, vertices, graph.getCout()
         );
 
         // 9. add roads to tour
         tour = tourService.addRoadsToTour(tour, dijkstraTable, mapService.getMap());
 
         tourService.setTourForCourier(courierId, tour);
+
+        // 10. Set courier's availability status to BUSY or AVAILABLE depending on tour duration
+        ArrayList<Courier> couriers = tourService.getCouriers();
+        int i;
+        for(i = 0; i < couriers.size(); i++) {
+            if (couriers.get(i).getId() == courierId) {
+                break;
+            }
+        }
+
+        if (i >= couriers.size()) {
+            return;
+        } else if (couriers.get(i).getShiftDuration().minus(tour.getTotalDuration()).toMinutes() < 30) {
+            tourService.getCouriers().get(i).setAvailabilityStatus(AvailabilityStatus.BUSY);
+        } else {
+            tourService.getCouriers().get(i).setAvailabilityStatus(AvailabilityStatus.AVAILABLE);
+        };
     }
 
+    /**
+     * Checks if a courier with the specified ID exists.
+     *
+     * @param courierId the ID of the courier to check
+     * @return true if the courier exists, false otherwise
+     */
     public boolean courierExists(long courierId) {
         return tourService.getCouriers().stream().anyMatch(courier -> courier.getId() == courierId);
+    }
+
+    /**
+     * Updates the precedence constraints for a courier by adding a new request.
+     *
+     * @param courierId The ID of the courier.
+     * @param newRequest The new request to be added.
+     */
+    public void updatePrecedences(long courierId, Request newRequest) {
+        long puIntersectionId, delIntersectionId;
+
+        if (!tourService.getPrecedencesByCourier().containsKey(courierId)) {
+            tourService.initPrecedences(courierId, requestService.getPickupDeliveryForCourier(courierId).getRequests());
+        }
+
+        HashMap<String, Set<String>> precs = tourService.getPrecedencesByCourier().get(courierId);
+
+        puIntersectionId = newRequest.getPickupIntersectionId();
+        delIntersectionId = newRequest.getDeliveryIntersectionId();
+        precs.computeIfAbsent(tourService.parseParams(newRequest.getId(), delIntersectionId, 'd'), k -> new HashSet<>()).add(tourService.parseParams(newRequest.getId(), puIntersectionId, 'p'));
+    }
+
+    /**
+     * Deletes the precedence constraints for a specific request of a courier.
+     *
+     * @param courierId The ID of the courier.
+     * @param requestId The ID of the request whose precedences need to be removed.
+     */
+    public void deletePrecedences(long courierId, long requestId) {
+        HashMap<String, Set<String>> precs = tourService.getPrecedencesByCourier().get(courierId);
+
+        // Remove keys starting with the request ID
+        precs.keySet().removeIf(key -> key.startsWith(String.valueOf(requestId)));
+
+        // Remove values starting with the request ID
+        precs.values().forEach(set -> set.removeIf(value -> value.startsWith(String.valueOf(requestId))));
+
+        // Clean up empty entries
+        precs.entrySet().removeIf(entry -> entry.getValue().isEmpty());
     }
 
     public Courier courierInCharge(long courierId) {
@@ -230,17 +269,17 @@ public class PlanningService {
 
 
     private void printTSPSolution(
-        TSP1 tsp, 
-        long[] stops, 
-        Graphe graph, 
+        TSP1 tsp,
+        long[] stops,
+        Graphe graph,
         double[] serviceTimes
     ) {
         double cumulativeTime = 0.0;
-        
+
         for (int i = 0; i < graph.getNbSommets(); i++) {
             int nodeIndex = tsp.getSolution(i);
             long stopAddress = stops[nodeIndex];
-            
+
             String stopType;
             if (i == 0) {
                 stopType = "Depot";
@@ -249,16 +288,16 @@ public class PlanningService {
             } else {
                 stopType = "Delivery";
             }
-            
+
             double travelTime = 0.0;
             if (i > 0) {
                 int prevIndex = tsp.getSolution(i - 1);
                 travelTime = graph.getCout(prevIndex, nodeIndex);
                 cumulativeTime += travelTime;
             }
-            
+
             double serviceTime = serviceTimes[nodeIndex];
-            
+
             System.out.printf(
                 "%2d. [%s] Stop #%d (Address: %d) | " +
                 "Travel: %s | Service: %s | Cumulative: %s%n",
@@ -270,15 +309,15 @@ public class PlanningService {
                 formatDuration(serviceTime),
                 formatDuration(cumulativeTime)
             );
-            
+
             cumulativeTime += serviceTime;
         }
-        
+
         // Return to depot
         int lastIndex = tsp.getSolution(graph.getNbSommets() - 1);
         double returnCost = graph.getCout(lastIndex, 0);
         cumulativeTime += returnCost;
-        
+
         System.out.printf(
             "    Return to Depot | Travel: %s | Total: %s%n",
             formatDuration(returnCost),
@@ -290,7 +329,7 @@ public class PlanningService {
         long hours = (long) (seconds / 3600);
         long minutes = (long) ((seconds % 3600) / 60);
         long secs = (long) (seconds % 60);
-        
+
         if (hours > 0) {
             return String.format("%dh %02dm %02ds", hours, minutes, secs);
         } else if (minutes > 0) {
