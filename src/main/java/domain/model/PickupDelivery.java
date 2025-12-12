@@ -1,5 +1,7 @@
 package domain.model;
 
+import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.*;
 import java.util.Map;
 
@@ -13,7 +15,7 @@ public class PickupDelivery {
 
 
     private ArrayList<Request> requests; // An array list of requests for pickup and delivery.
-
+    private LocalDateTime departureTime; // The start time of the tour.
     private long warehouseAddressId; // The ID of the warehouse address, used for pickup and delivery operations.
 
     /**
@@ -21,6 +23,7 @@ public class PickupDelivery {
      */
     public PickupDelivery() {
         requests = new ArrayList<>();
+        departureTime = LocalDate.now().atTime(8, 0).plusDays(1L);
         warehouseAddressId = -1;
     }
 
@@ -31,6 +34,7 @@ public class PickupDelivery {
      */
     public PickupDelivery(PickupDelivery other) {
         this.requests = new ArrayList<>(other.requests);
+        this.departureTime = other.departureTime;
         this.warehouseAddressId = other.warehouseAddressId;
     }
 
@@ -71,6 +75,10 @@ public class PickupDelivery {
     public void setWarehouseAddressId(long warehouseAddressId) {
         this.warehouseAddressId = warehouseAddressId;
     }
+
+    public LocalDateTime getDepartureTime() { return departureTime; }
+
+    public void setDepartureTime(LocalDateTime departureTime) { this.departureTime = departureTime; }
 
     /**
      * Finds a request by its unique ID.
