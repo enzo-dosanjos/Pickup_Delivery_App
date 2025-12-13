@@ -7,6 +7,7 @@ import { CourierSelectionPanel } from "~/components/CourierSelectionPanel";
 import "../components/ModificationPanel.css";
 import Modal from "../components/Modal";
 import { AnimatedHamburgerButton } from "~/components/HamburgerButton";
+import { SearchBar } from "~/components/SearchBar";
 import "./home.css";
 import {UpdateOrderPanel} from "~/components/UpdateOrderPanel";
 import {useMap} from "react-leaflet";
@@ -86,7 +87,7 @@ export default function Home() {
 
     const [isSidePanelOpen, setIsSidePanelOpen] = useState<boolean>(true);
     const [isModificationPanelOpen, setIsModificationPanelOpen] = useState(false);
-    const [selectionMode, setSelectionMode] = useState<'pickup' | 'delivery' | 'warehouse' | 'stops_only' | null>(null);
+    const [selectionMode, setSelectionMode] = useState<'pickup' | 'delivery' | 'warehouse' | null>(null);
     const [pickupId, setPickupId] = useState<number | null>(null);
     const [deliveryId, setDeliveryId] = useState<number | null>(null);
     const [pickupName, setPickupName] = useState<string | null>(null);
@@ -115,6 +116,11 @@ export default function Home() {
 
     // store intersectionMap globally for this component
     const intersectionMapRef = useRef<Map<number, ApiIntersection> | null>(null);
+
+    // Search bar
+    const [searchTerm, setSearchTerm] = useState("");
+    const [searchResults, setSearchResults] = useState<{ name: string; id: number }[]>([]);
+    const mapRef = useRef<L.Map | null>(null);
 
     const closeModal = () => {
         setIsModalOpen(false);
@@ -236,8 +242,63 @@ export default function Home() {
 
     }, [tours, displayedCouriers]);
 
+    useEffect(() => {
+        const fetchSearchResults = async () => {
+            if (!searchTerm.trim()) {
+                setSearchResults([]);
+                return;
+            }
+            try {
+                const response = await fetch(
+                    `http://localhost:8080/search?name=${encodeURIComponent(searchTerm)}`
+                );
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const segments: { name: string; startId: number; endId: number }[] = await response.json();
+
+                // Map to unique names with a representative intersection id (use startId)
+                const unique: { [key: string]: number } = {};
+                segments.forEach((s) => {
+                    if (!unique[s.name]) {
+                        unique[s.name] = s.startId;
+                    }
+                });
+
+                const results = Object.entries(unique).map(([name, id]) => ({
+                    name,
+                    id,
+                }));
+                setSearchResults(results);
+            } catch (e) {
+                console.error("Failed to search road segments:", e);
+                setSearchResults([]);
+            }
+        };
+
+        fetchSearchResults();
+    }, [searchTerm]);
+
+    const handleSearchSelect = (intersectionId: number) => {
+        const found = intersections.find((i) => i.id === intersectionId);
+        if (found && mapRef.current) {
+            const [lat, lng] = found.position as [number, number];
+            mapRef.current.flyTo([lat, lng], 18, { duration: 0.7 });
+        }
+
+        // Center map on selected intersection
+        if (found && mapRef.current) {
+            const [lat, lng] = found.position as [number, number];
+            mapRef.current.flyTo([lat, lng], 19, { duration: 0.7 });
+        }
+
+        setSearchTerm("");
+        setSearchResults([]);
+    };
+
     const handleMapClick = (intersectionId: number) => {
         const roadName = intersectionIdToRoadName.get(intersectionId) || `Intersection ${intersectionId}`;
+
         if (selectionMode === 'pickup') {
             setPickupId(intersectionId);
             setPickupName(roadName);
@@ -742,6 +803,13 @@ export default function Home() {
                 <Modal message={modalMessage} onClose={closeModal} actions={modalActions} />
             )}
 
+            <SearchBar
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+                results={searchResults}
+                onSelect={handleSearchSelect}
+            />
+
             <div className={`side-panel-and-toggle ${isSidePanelOpen ? "open" : "closed"}`}>
                 {/* Sliding side panel */}
                 <div className={`side-panel`}>
@@ -946,6 +1014,7 @@ export default function Home() {
                     onDeleteRequest={handleDeleteRequest}
                     warehouseIds={displayedWarehouses}
                     formatDateTime={formatDateTime}
+                    mapRef={mapRef}
                 />
             )}
 

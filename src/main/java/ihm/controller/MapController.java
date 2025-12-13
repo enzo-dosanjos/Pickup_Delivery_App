@@ -1,10 +1,15 @@
 package ihm.controller;
 
 import domain.model.Map;
+import domain.model.RoadSegment;
 import domain.service.MapService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.ArrayList;
 
 /**
  * Controller class for managing map-related operations.
@@ -31,5 +36,11 @@ public class MapController {
     @RequestMapping("/api/map")
     public Map getMap() {
         return mapService.getMap();
+    }
+
+    @GetMapping("/search")
+    public ArrayList<RoadSegment> searchRoadSegments(@RequestParam String name) {
+        ArrayList<RoadSegment> segments = mapService.searchRoadSegmentsByName(name);
+        return segments;
     }
 }

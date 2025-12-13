@@ -88,6 +88,7 @@ export function Map(props: {
     onDeleteRequest?: (requestId: number, courierId: number) => void,
     warehouseIds: Array<number>,
     formatDateTime: (value?: string | null) => string,
+    mapRef?: React.MutableRefObject<L.Map | null>;
 }) {
     const mapBounds = useMemo(() => new L.LatLngBounds(props.bounds), [props.bounds]);
 
@@ -98,7 +99,10 @@ export function Map(props: {
 
 
     return (
-        <MapContainer center={mapBounds.getCenter()}>
+        <MapContainer
+            center={mapBounds.getCenter()}
+            ref={props.mapRef as any}
+        >
             <Pane name="roads-pane" style={{ zIndex: 450 }} />
             <Pane name="intersections-pane" style={{ zIndex: 500 }} />
 

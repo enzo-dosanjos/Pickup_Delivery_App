@@ -177,6 +177,7 @@ package "Domain" {
         class MapService {
             - map : Map
             + loadMap(filePath: String) : void
+            + searchRoadSegmentsByName(name: string) : ArrayList<RoadSegment>
         }
 
         class PlanningService {
@@ -266,6 +267,7 @@ package "Presentation" {
     class MapController {
         - mapService : MapService
         + getMap() : Map
+        + searchRoadSegments(name: string) : ArrayList<RoadSegment>
     }
 }
 

@@ -17,7 +17,8 @@
 }
 
 .search-results {
-    background-color: white;
+    background-color: #EDC7B7;
+    color: #EADDFF;
     border: 1px solid #ccc;
     border-top: none;
     border-radius: 0 0 5px 5px;
