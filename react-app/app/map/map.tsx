@@ -1,4 +1,4 @@
-import { MapContainer, Marker, Popup, Polyline, useMap, Circle, Pane } from 'react-leaflet'
+import { MapContainer, Marker, Popup, Polyline, useMap, Circle, Pane, ZoomControl } from 'react-leaflet'
 import L from "leaflet";
 import { useEffect, useMemo } from 'react';
 
@@ -102,6 +102,7 @@ export function Map(props: {
         <MapContainer
             center={mapBounds.getCenter()}
             ref={props.mapRef as any}
+            zoomControl={false} // disable default top-left control
         >
             <Pane name="roads-pane" style={{ zIndex: 450 }} />
             <Pane name="intersections-pane" style={{ zIndex: 500 }} />

@@ -11,9 +11,9 @@
     width: 100%;
     padding: 10px;
     font-size: 16px;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    background-color: #f1f1f1;
+    border: thin solid #A33C5D;
+    color: #333333;
 }
 
 .search-results {
