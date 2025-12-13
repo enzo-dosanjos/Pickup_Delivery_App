@@ -6,6 +6,7 @@ import { ModificationPanel, type Courier as PanelCourier } from "../components/M
 import { CourierSelectionPanel } from "~/components/CourierSelectionPanel";
 import "../components/ModificationPanel.css";
 import Modal from "../components/Modal";
+import { AnimatedHamburgerButton } from "~/components/HamburgerButton";
 import "./home.css";
 import {UpdateOrderPanel} from "~/components/UpdateOrderPanel";
 import {useMap} from "react-leaflet";
@@ -868,6 +869,7 @@ export default function Home() {
                                 />
                             </label>
 
+                            <br/>
                             <label>
                                 Second stop index (must come AFTER):
                                 <input
@@ -884,15 +886,12 @@ export default function Home() {
                     </div>
 
                 </div>
-                {/* Arrow */}
+                {/* Hamburger button */}
                 <div
                     className="side-panel-toggle"
                     onClick={() => setIsSidePanelOpen((prev) => !prev)}
                 >
-                    <img
-                        src={"https://www.svgrepo.com/show/26445/menu-symbol-of-three-parallel-lines.svg"}
-                        alt={"3 horizontal bars icon"}
-                    />
+                    <AnimatedHamburgerButton active={isSidePanelOpen} />
                 </div>
             </div>
 
