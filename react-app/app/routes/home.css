@@ -96,15 +96,16 @@
 .side-panel-and-toggle .search-container {
     position: absolute;
     z-index: 1001;
-    width: 260px;
+    margin-top: 4%;
 }
 
 .side-panel-and-toggle.open .search-container {
-    left: 145px;
+    padding-left: 5px;
+    margin-left: 10px;
 }
 
 .side-panel-and-toggle.closed .search-container {
-    left: 600px;
+    left: 450px;
     transition: left 0.3s ease-in-out;
 }
 
