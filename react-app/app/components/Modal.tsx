@@ -17,7 +17,7 @@ const Modal: React.FC<ModalProps> = ({ message, onClose, actions = [] }) => {
     <div className="modal-overlay">
       <div className="modal-content">
         <p>{message}</p>
-        <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end", marginTop: "12px" }}>
+        <div className={"modal-actions"}>
           {actions.map((action, idx) => (
             <button key={idx} onClick={action.onClick}>
               {action.label}

@@ -15,7 +15,7 @@
 }
 
 .courier-selection {
-    bottom: 20px;
+    bottom: 5px;
     right: 20px;
 }
 
@@ -45,12 +45,17 @@
 }
 
 .modification-panel .add-button {
-    background-color: #007bff;
-    color: white;
+    background-color: #D17B96;
+    color: #EADDFF;
+}
+
+.home-container .add-button:hover {
+    font-weight: 1000;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .modification-panel .add-button:disabled {
-    background-color: #a0cfff;
+    background-color: rgba(209, 123, 150, 0.7);
     cursor: not-allowed;
 }
 
