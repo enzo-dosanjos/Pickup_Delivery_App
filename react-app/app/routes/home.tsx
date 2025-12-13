@@ -803,14 +803,14 @@ export default function Home() {
                 <Modal message={modalMessage} onClose={closeModal} actions={modalActions} />
             )}
 
-            <SearchBar
-                searchTerm={searchTerm}
-                setSearchTerm={setSearchTerm}
-                results={searchResults}
-                onSelect={handleSearchSelect}
-            />
-
             <div className={`side-panel-and-toggle ${isSidePanelOpen ? "open" : "closed"}`}>
+                <SearchBar
+                    searchTerm={searchTerm}
+                    setSearchTerm={setSearchTerm}
+                    results={searchResults}
+                    onSelect={handleSearchSelect}
+                />
+
                 {/* Sliding side panel */}
                 <div className={`side-panel`}>
 

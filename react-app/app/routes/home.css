@@ -90,6 +90,21 @@
     cursor: pointer;
 }
 
+.side-panel-and-toggle .search-container {
+    position: absolute;
+    z-index: 1001;
+    width: 260px;
+}
+
+.side-panel-and-toggle.open .search-container {
+    left: 150px;
+}
+
+.side-panel-and-toggle.closed .search-container {
+    left: 600px;
+    transition: left 0.3s ease-in-out;
+}
+
 .map-container {
     flex: 1;
 }
