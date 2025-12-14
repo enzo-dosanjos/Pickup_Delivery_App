@@ -301,24 +301,25 @@ RequestController --> TourService
 TourController --> TourService
 TourController --> RequestService
 TourController --> PlanningService
+MapController --> MapService
 
 
 PlanningService --> RequestService
 PlanningService --> TourService
-PlanningService --> Map
-PlanningService --> TSP1
+PlanningService --> MapService
 PlanningService --> DijkstraService
 
 TourService --> Tour
 TourService --> Courier
+
 RequestService --> PickupDelivery
 
-PickupDelivery --> XMLWriters
-Tour --> XMLWriters
+PickupDelivery <-- XMLWriters
+Tour <-- XMLWriters
 
-PickupDelivery --> XMLParsers
-Map --> XMLParsers
-Tour --> XMLParsers
+PickupDelivery <-- XMLParsers
+Map <-- XMLParsers
+Tour <-- XMLParsers
 
 TemplateTSP <|.. TSP1
 TemplateTSP --> Graphe
@@ -338,8 +339,8 @@ TourStop --> Request : requestId
 
 TourStop --> Intersection : intersectionId
 
-RoadSegment --> Intersection : startId
-RoadSegment --> Intersection : endId
+RoadSegment "0..*" --> "1" Intersection : startId
+RoadSegment "0..*" --> "1" Intersection : endId
 
 Map "1" *-- "*" Intersection
 Map "1" *-- "*" RoadSegment
@@ -354,6 +355,7 @@ TourStop --> StopType
 Tour --> RoadSegment
 
 DijkstraService --> DijkstraTable
+DijkstraService --> Map
 DijkstraTable --> CellInfo
 DijkstraService --> GrapheComplet
 DijkstraService --> Node
