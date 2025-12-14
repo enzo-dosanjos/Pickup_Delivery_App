@@ -76,7 +76,8 @@
 
 .side-panel {
     width: 380px;
-    height: calc(100% - 2%);
+    max-height: calc(100% - 2%);
+    overflow-y: auto;
     background-color: #EDC7B7;
     padding: 16px;
     padding-top: 60px;
