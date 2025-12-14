@@ -1,28 +1,70 @@
 @startuml
-title UC5 - Sauvegarder une tournée
 
-actor User
-participant "TourController" as TC
-participant "TourService" as TS
-participant "XMLWriters" as XW
-participant "Tour" as T
+title UC5 - Sauvegarder une tournée dans un fichier
 
-User -> TC : saveTours(filepath)
-activate TC
+actor "Utilisateur" as User
+participant "UI\n(IHM)" as UI
+participant "TourController" as TourController
+participant "TourService" as TourService
+participant "XMLWriters" as XMLWriters
 
-TC -> TS : saveTours(filepath)
-activate TS
+== Déclenchement du cas d'utilisation ==
+User -> UI : Demander la sauvegarde\nde la tournée (courierId, filepath)
+activate UI
 
-loop pour tous les tours disponibles
-    TS -> XW : writeTour(tour, filepath) 
-    activate XW
-    XW --> TS : confirmation
-    deactivate XW
+UI -> TourController : POST /api/tour/save(courierId, filepath)
+activate TourController
+
+TourController -> TourService : exportTour(courierId, filepath)
+activate TourService
+
+TourService -> TourService : tours.get(courierId)
+note right
+Récupération de la tournée\nassociée au `courierId`
+end note
+
+alt Tournée inexistante
+    TourService -> TourController : throw IllegalArgumentException\n("No tour found for courier " + courierId)
+    deactivate TourService
+
+    TourController -> TourController : catch IllegalArgumentException
+    TourController -> UI : ResponseEntity\nHTTP 404 NOT_FOUND\nbody = message d'erreur
+    deactivate TourController
+
+
+else Tournée trouvée
+    TourService -> XMLWriters : writeTour(tour, filepath)
+    activate XMLWriters
+
+    alt Écriture OK
+        XMLWriters --> TourService : succès
+        deactivate XMLWriters
+
+
+        TourService --> TourController : retour normal
+        deactivate TourService
+
+        TourController -> TourController : construction ResponseEntity.ok()
+        TourController -> UI : ResponseEntity\nHTTP 200 OK
+        deactivate TourController
+
+
+    else Erreur d'écriture fichier
+        XMLWriters -> TourService : throw Exception
+        deactivate XMLWriters
+
+
+        TourService -> TourController : propage Exception
+        deactivate TourService
+
+        TourController -> TourController : catch Exception
+        TourController -> UI : ResponseEntity\nHTTP 500 INTERNAL_SERVER_ERROR\nbody = "Failed to export tour: ..."
+        deactivate TourController
+
+    end
 end
 
-TS --> TC : confirmation
-deactivate TS
+UI -> User : Afficher le résultat\n(succès ou message d'erreur)
+deactivate UI
 
-TC --> User : "Tournées sauvegardées"
-deactivate TC
 @enduml

@@ -2,24 +2,32 @@
 title UC1 - Importer un plan
 
 actor User
+participant "UI" as UI
 participant "MapController" as MC
 participant "MapService" as MS
 participant "XMLParsers" as XP
 
-User -> MC : loadMap(filepath)
+User -> UI : Charge la page
+activate UI
+
+UI -> MC : getMap()
 activate MC
 
-MC -> MS : loadMap(filepath)
+MC -> MS : loadMap(filePath)
 activate MS
 
-MS -> XP : parseGraph(filepath)
+MS -> XP : parseMapXML(filePath)
 activate XP
-XP --> MS : Map
+
+XP --> MS : MapData
 deactivate XP
 
 MS --> MC : Map
 deactivate MS
 
-MC --> User : "Plan chargé"
+MC --> UI : Map
 deactivate MC
+
+UI --> User : Affiche la carte
+deactivate UI
 @enduml

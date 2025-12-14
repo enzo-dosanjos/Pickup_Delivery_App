@@ -1,0 +1,57 @@
+@startuml
+title UC7 - Afficher les détails d'une livraison
+
+actor "Utilisateur" as User
+
+participant "UI (Frontend)" as UI
+participant "TourController" as TourController
+participant "RequestService" as RequestService
+participant "PickupDelivery" as PickupDelivery
+participant "Request" as Request
+participant "StopType" as StopType
+
+' --- Scénario principal : l'utilisateur demande les détails d'une livraison ---
+
+User -> UI : Sélectionne une livraison\n(par intersectionId, courierId)
+activate UI
+
+UI -> TourController : POST /api/tour/show-request-details\nintersectionId, courierId
+activate TourController
+
+TourController -> RequestService : getPickupDeliveryForCourier(courierId)
+activate RequestService
+
+alt PickupDelivery inexistant pour ce courierId
+    RequestService -> RequestService : créer nouveau PickupDelivery\n(si absent)
+end
+
+RequestService --> TourController : PickupDelivery
+deactivate RequestService
+
+TourController -> PickupDelivery : findRequestByIntersectionId(intersectionId)
+activate PickupDelivery
+
+alt Intersection trouvée
+    PickupDelivery -> Request : récupérer Request associée
+    activate Request
+
+    PickupDelivery -> StopType : déterminer le type de stop\n(PICKUP ou DELIVERY)
+    activate StopType
+
+    PickupDelivery --> TourController : Map.Entry\<Request, StopType\>
+    deactivate StopType
+    deactivate Request
+
+else Aucune requête pour cette intersection
+    PickupDelivery --> TourController : null
+end
+
+deactivate PickupDelivery
+
+TourController --> UI : Map.Entry\<Request, StopType\> ou null
+deactivate TourController
+
+UI -> User : Affiche les détails de la livraison\n(id, pickup/delivery, durées, adresses)
+deactivate UI
+
+@enduml

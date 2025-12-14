@@ -1,0 +1,145 @@
+@startuml
+title UC6 - Afficher des tournées
+
+actor "Utilisateur" as User
+boundary "IHM (Frontend)" as IHM
+control "TourController" as TourCtrl
+control "PlanningService" as PlanningSvc
+control "TourService" as TourSvc
+control "RequestService" as ReqSvc
+control "MapService" as MapSvc
+entity "Map" as MapEntity
+entity "PickupDelivery\n(par coursier)" as PD
+entity "Tour\n(par coursier)" as TourEntity
+database "Fichiers XML\n(carte, demandes, coursiers)" as XMLStore
+
+== Demande d'affichage des tournées ==
+
+User -> IHM : sélectionner \"Afficher les tournées\"
+activate IHM
+
+IHM -> TourCtrl : GET /api/tour/tours
+activate TourCtrl
+
+' 1. Le contrôleur interroge le TourService pour les tournées déjà calculées
+TourCtrl -> TourSvc : getTours()
+activate TourSvc
+TourSvc --> TourCtrl : Map\<Long, Tour\>
+deactivate TourSvc
+
+' 2. Si nécessaire, obtenir les coursiers disponibles\n   (pour l'affichage, les filtres, etc.)
+TourCtrl -> TourSvc : getAvailableCouriers()
+activate TourSvc
+TourSvc --> TourCtrl : List\<Courier\>
+deactivate TourSvc
+
+deactivate TourCtrl
+
+' 3. Retour de la réponse HTTP vers l'IHM
+TourCtrl --> IHM : ResponseEntity\n(Map\<courierId, Tour\>)
+deactivate IHM
+
+== Variante : Aucune tournée encore calculée ==
+
+' L'IHM peut demander à calculer une tournée pour un coursier donné\n' avant de ré‑afficher la liste.
+
+User -> IHM : demander calcul des tournées\npour un coursier sélectionné
+activate IHM
+
+IHM -> TourCtrl : (ex.) POST /api/request/add\nou action de recalcul\navec courierId
+activate TourCtrl
+
+' 1. Le contrôleur délègue le recalcul au PlanningService
+TourCtrl -> PlanningSvc : recomputeTourForCourier(courierId)
+activate PlanningSvc
+
+' 1.1 Récupération des demandes du coursier
+PlanningSvc -> ReqSvc : getPickupDeliveryForCourier(courierId)
+activate ReqSvc
+ReqSvc --> PlanningSvc : PickupDelivery
+deactivate ReqSvc
+
+' 1.2 Récupération du coursier et de ses contraintes
+PlanningSvc -> TourSvc : courierInCharge(courierId)
+activate TourSvc
+TourSvc --> PlanningSvc : Courier
+deactivate TourSvc
+
+' 1.3 Initialisation / mise à jour des précédences
+PlanningSvc -> TourSvc : getPrecedencesByCourier()
+activate TourSvc
+TourSvc --> PlanningSvc : Map\<Long, Map\<String, Set\<String\>\>\>
+deactivate TourSvc
+
+' 1.4 Génération des sommets et précédences TSP
+PlanningSvc -> TourSvc : generateTspPrecedences(\n  requests, warehouseId, courierId\n)
+activate TourSvc
+TourSvc --> PlanningSvc : Entry\<long[], Map\<Integer, Set\<Integer\>\>\>
+deactivate TourSvc
+
+' 1.5 Construction du graphe complet et calcul Dijkstra
+PlanningSvc -> MapSvc : getMap()
+activate MapSvc
+MapSvc --> PlanningSvc : Map
+deactivate MapSvc
+
+PlanningSvc -> MapEntity : utiliser intersections,\nsegments pour Dijkstra
+activate MapEntity
+MapEntity --> PlanningSvc : adjacencyList, intersections
+deactivate MapEntity
+
+' DijkstraService (non Spring) est instancié et utilisé
+PlanningSvc -> "DijkstraService" as DijSvc : computeShortestPath(table)
+activate DijSvc
+DijSvc --> PlanningSvc : DijkstraTable rempli
+deactivate DijSvc
+
+' 1.6 Appel du TSP (SOP) avec contraintes\n\n
+PlanningSvc -> "TSP1\n(TemplateTSP)" as TSP : chercheSolution(timeLimit, graph)
+activate TSP
+TSP --> PlanningSvc : meilleureSolution, coût
+deactivate TSP
+
+' 1.7 Conversion de la solution en Tour métier
+PlanningSvc -> TourSvc : convertGraphToTour(\n  pickupDelivery, courierId,\n  solution, vertices, costs\n)
+activate TourSvc
+TourSvc --> PlanningSvc : Tour
+deactivate TourSvc
+
+' 1.8 Ajout des segments de route à la tournée
+PlanningSvc -> TourSvc : addRoadsToTour(tour, dijkstraTable, map)
+activate TourSvc
+TourSvc --> PlanningSvc : Tour complétée
+deactivate TourSvc
+
+' 1.9 Enregistrement de la tournée dans le service
+PlanningSvc -> TourSvc : setTourForCourier(courierId, tour)
+activate TourSvc
+TourSvc --> PlanningSvc : void
+deactivate TourSvc
+
+deactivate PlanningSvc
+
+' 2. Le contrôleur renvoie simplement le statut\n   (le détail des tournées sera obtenu par /tours)
+TourCtrl --> IHM : HTTP 200 OK
+deactivate TourCtrl
+deactivate IHM
+
+== Ré‑affichage après calcul ==
+
+User -> IHM : rafraîchir \"Afficher les tournées\"
+activate IHM
+
+IHM -> TourCtrl : GET /api/tour/tours
+activate TourCtrl
+
+TourCtrl -> TourSvc : getTours()
+activate TourSvc
+TourSvc --> TourCtrl : Map\<Long, Tour\>
+deactivate TourSvc
+
+TourCtrl --> IHM : ResponseEntity\n(Map\<courierId, Tour\>)
+deactivate TourCtrl
+deactivate IHM
+
+@enduml

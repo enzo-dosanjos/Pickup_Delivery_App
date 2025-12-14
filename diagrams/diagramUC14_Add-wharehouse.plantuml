@@ -1,0 +1,96 @@
+@startuml
+
+title CU14 - Ajouter l'entrepôt de livraison
+
+actor "Utilisateur" as user
+participant "UI\n(IHM)" as ui
+participant "RequestController" as rc
+participant "PlanningService" as ps
+participant "TourService" as ts
+participant "RequestService" as rs
+participant "PickupDelivery" as pd
+
+'--- Scénario principal : ajout d'un entrepôt pour un coursier sans entrepôt ---
+
+user -> ui : Saisie courierId,\nwarehouseId
+activate ui
+
+ui -> rc : POST /api/request/add\n(warehouseId, courierId,\n...autres params requête)
+activate rc
+
+rc -> ps : courierExists(courierId)
+activate ps
+ps -> ts : getCouriers()
+activate ts
+ts --> ps : liste des couriers
+deactivate ts
+ps --> rc : boolean existe / n'existe pas
+deactivate ps
+
+rc -> rc : Vérifie si le\ncoursier existe
+alt Coursier inexistant
+    rc --> ui : 404 NOT_FOUND\n"Courier ID n'existe pas"
+    deactivate rc
+    deactivate ui
+else Coursier existant
+
+    rc -> rs : getPickupDeliveryForCourier(courierId)
+    activate ui
+    activate rc
+    activate rs
+    rs -> rs : Crée PickupDelivery si absent\n(pickupDeliveryPerCourier.put(...))
+    rs --> rc : PickupDelivery
+    deactivate rs
+
+    rc -> pd : getWarehouseAddressId()
+    activate pd
+    pd --> rc : warehouseId courant (-1 si absent)
+    deactivate pd
+
+    alt Aucun entrepôt défini\n(warehouseId courant == -1)
+        rc -> rc : Vérifie warehouseId fourni\n(non null et > 0)
+        alt warehouseId invalide
+            rc --> ui : 400 BAD_REQUEST\n"Warehouse is not set..."
+            deactivate rc
+            deactivate ui
+        else warehouseId valide
+            rc -> rs : getPickupDeliveryForCourier(courierId)
+            activate ui
+            activate rc
+            activate rs
+            rs --> rc : PickupDelivery
+            deactivate rs
+
+            rc -> pd : setWarehouseAddressId(warehouseId)
+            activate pd
+            pd --> rc : (entrepôt mis à jour)
+            deactivate pd
+        end
+    else Entrepôt déjà défini\n(warehouseId courant != -1)
+        alt Nouveau warehouseId valide\net différent
+            rc -> rs : getPickupDeliveryForCourier(courierId)
+            activate rs
+            rs --> rc : PickupDelivery
+            deactivate rs
+
+            rc -> pd : setWarehouseAddressId(warehouseId)
+            activate pd
+            pd --> rc : (entrepôt mis à jour)
+            deactivate pd
+        else warehouseId null/\<=0\nou identique
+            rc -> rc : Ne modifie pas\nl'entrepôt
+        end
+    end
+
+    '--- Suite du cas d'utilisation CU14 ---
+    ' On considère ici que l'objectif fonctionnel est atteint\n
+    ' quand l'entrepôt est bien enregistré\n
+    ' La recomputation de tournée et l'ajout de requête\n
+    ' appartiennent à d'autres CU (ajout demande, calcul tour)
+
+    rc --> ui : 200 OK\nEntrepôt de livraison enregistré
+    deactivate rc
+    deactivate ui
+end
+
+@enduml

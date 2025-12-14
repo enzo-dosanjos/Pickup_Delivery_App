@@ -1,0 +1,45 @@
+@startuml
+title UC8 - Afficher la liste des couriers disponibles
+
+actor "Utilisateur" as User
+boundary "IHM\n(Fenêtre/Frontend)" as UI
+control "TourController\n(/api/tour)" as TourController
+control "TourService" as TourService
+entity "ArrayList\<Courier\>" as CourierList
+entity "Courier" as Courier
+
+User -> UI : Demander la liste\ndes coursiers disponibles
+
+UI -> TourController : GET /api/tour/available-couriers
+activate TourController
+
+TourController -> TourService : getAvailableCouriers()
+activate TourService
+
+TourService -> TourService : getCouriers()
+activate TourService #LightBlue
+TourService <-- TourService : liste de tous les couriers\n(ArrayList\<Courier\>)
+deactivate TourService #LightBlue
+
+loop Pour chaque Courier
+    TourService -> Courier : isAvailable()
+    activate Courier
+    Courier --> TourService : true / false
+    deactivate Courier
+
+    alt Courier disponible
+        TourService -> CourierList : add(courier)
+        activate CourierList
+        deactivate CourierList
+    end
+end
+
+TourService --> TourController : liste des couriers disponibles\n(List\<Courier\>)
+deactivate TourService
+
+TourController --> UI : 200 OK + JSON[List\<Courier\>]
+deactivate TourController
+
+UI --> User : Affiche la liste\ndes couriers disponibles
+
+@enduml

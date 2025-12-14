@@ -1,0 +1,341 @@
+@startuml
+title CU9 - Calculer la meilleure tournée
+
+actor ":Dispatcher" as Dispatcher
+participant ":UI" as UI
+participant "TourController" as TourController
+participant "PlanningService" as PlanningService
+participant "RequestService" as RequestService
+participant "TourService" as TourService
+participant "MapService" as MapService
+participant "DijkstraService" as DijkstraService
+participant "TSP1" as TSP
+participant "GrapheComplet" as Graphe
+participant "DijkstraTable" as DTable
+participant "Map" as Map
+participant "Tour" as Tour
+participant "PickupDelivery" as PickupDelivery
+
+== Déclenchement depuis l'interface ==
+
+Dispatcher -> UI: Demander calcul de la meilleure tournée\n(pour un `courierId`)
+activate UI
+
+UI -> TourController: POST /api/tour/recompute?courierId\n(ou action équivalente)
+activate TourController
+
+TourController -> PlanningService: recomputeTourForCourier(courierId)
+activate PlanningService
+
+== Récupération des données de requêtes ==
+
+PlanningService -> RequestService: getPickupDeliveryPerCourier()
+activate RequestService
+RequestService --> PlanningService: map<courierId, PickupDelivery>
+deactivate RequestService
+
+PlanningService -> RequestService: getPickupDeliveryForCourier(courierId)
+activate RequestService
+RequestService --> PlanningService: PickupDelivery
+deactivate RequestService
+
+PlanningService -> PickupDelivery: new PickupDelivery(copie)
+activate PickupDelivery
+PickupDelivery --> PlanningService: instance copiée
+deactivate PickupDelivery
+
+PlanningService -> PickupDelivery: getRequests()
+activate PickupDelivery
+PickupDelivery --> PlanningService: ArrayList\<Request\>
+deactivate PickupDelivery
+
+PlanningService -> TourService: courierInCharge(courierId)
+activate TourService
+TourService --> PlanningService: Courier
+deactivate TourService
+
+PlanningService -> Courier: getShiftDuration()
+activate Courier
+Courier --> PlanningService: Duration
+deactivate Courier
+
+== Initialisation / mise à jour des précédences ==
+
+PlanningService -> TourService: getPrecedencesByCourier()
+activate TourService
+TourService --> PlanningService: Map<courierId, precs>
+deactivate TourService
+
+PlanningService -> TourService: initPrecedences(courierId, requests)\n[si pas encore fait]
+activate TourService
+TourService -> PickupDelivery: getWarehouseAddressId()
+activate PickupDelivery
+PickupDelivery --> TourService: warehouseId
+deactivate PickupDelivery
+TourService --> PlanningService: précé­dences initialisées
+deactivate TourService
+
+== Génération des sommets et précédences TSP ==
+
+PlanningService -> PickupDelivery: getWarehouseAddressId()
+activate PickupDelivery
+PickupDelivery --> PlanningService: warehouseAddressId
+deactivate PickupDelivery
+
+PlanningService -> TourService: generateTspPrecedences(requests,\nwarehouseAddressId, courierId)
+activate TourService
+TourService -> TourService: build vertices (warehouse + pickups + deliveries)
+TourService -> TourService: extraire contraintes de precedences
+TourService --> PlanningService: (long[] stops, HashMap<Integer,Set<Integer>> precs)
+deactivate TourService
+
+== Construction du graphe complet et du Dijkstra ==
+
+PlanningService -> Graphe: new GrapheComplet(stops, stops.length)
+activate Graphe
+Graphe --> PlanningService: GrapheComplet
+deactivate Graphe
+
+PlanningService -> DTable: new DijkstraTable()
+activate DTable
+DTable --> PlanningService: DijkstraTable
+deactivate DTable
+
+PlanningService -> MapService: getMap()
+activate MapService
+MapService --> PlanningService: Map
+deactivate MapService
+
+PlanningService -> DijkstraService: new DijkstraService(map, graph)
+activate DijkstraService
+DijkstraService --> PlanningService: instance
+deactivate DijkstraService
+
+PlanningService -> DijkstraService: computeShortestPath(DTable)
+activate DijkstraService
+
+loop Pour chaque paire d'intersections
+    DijkstraService -> DTable: put(row, col, durée, prédécesseur, visité=false)
+end
+
+loop Pour chaque sommet de GrapheComplet
+    DijkstraService -> DijkstraService: dijkstra(start, DTable)
+    activate DijkstraService #DDDDDD
+
+    DijkstraService -> Map: getAdjacencyList()
+    activate Map
+    Map --> DijkstraService: voisins pour chaque intersection
+    deactivate Map
+
+    loop Parcours de la file de priorité
+        DijkstraService -> DTable: get(source, currentVertex)
+        DijkstraService -> DTable: put/update(source, neighbor, durée, prédécesseur)
+        DijkstraService -> Graphe: setCout(start, index, durée)
+        activate Graphe
+        Graphe --> DijkstraService: ok
+        deactivate Graphe
+    end
+
+    deactivate DijkstraService
+end
+
+DijkstraService --> PlanningService: DijkstraTable rempli
+deactivate DijkstraService
+
+== Préparation et exécution du TSP (SOP) ==
+
+PlanningService -> TSP: new TSP1()
+activate TSP
+
+PlanningService -> TSP: setPrecedences(tspPrecedences)
+PlanningService -> TSP: setServiceTimes(serviceTimes)
+PlanningService -> Courier: getShiftDuration()
+activate Courier
+Courier --> PlanningService: Duration
+deactivate Courier
+
+PlanningService -> TSP: setMaxDuration(shiftDuration.toSeconds())
+
+PlanningService -> TSP: chercheSolution(timeLimit, graph)
+activate TSP
+
+TSP -> TSP: nearestNeighborHeuristic()
+activate TSP #DDDDDD
+TSP -> Graphe: getCout / estArc
+activate Graphe
+Graphe --> TSP: coûts arcs
+deactivate Graphe
+TSP --> TSP: initialise meilleureSolution + coût
+deactivate TSP
+
+loop Branch & Bound
+    TSP -> TSP: branchAndBound(sommetCourant,\nnonVus, vus, coutVus)
+    activate TSP #EEEEEE
+
+    alt Tous les sommets visités
+        TSP -> Graphe: estArc(last, 0) / getCout(last, 0)
+        activate Graphe
+        Graphe --> TSP: coût retour dépôt
+        deactivate Graphe
+        TSP -> TSP: mise à jour meilleureSolution\nsi coût amélioré
+    else Encore des sommets
+        TSP -> TSP: bound(sommetCourant, nonVus)
+        TSP -> TSP: iterator(sommetCourant, nonVus, g)
+        loop Pour chaque prochainSommet
+            TSP -> TSP: vérifier précédences\net durée max
+            TSP -> Graphe: getCout(sommetCourant, prochainSommet)
+            activate Graphe
+            Graphe --> TSP: coût arc
+            deactivate Graphe
+            TSP -> TSP: ajouter serviceTime[prochainSommet]
+            TSP -> TSP: appel récursif branchAndBound(...)
+        end
+    end
+
+    deactivate TSP
+end
+
+TSP --> PlanningService: meilleureSolution + coutMeilleureSolution
+deactivate TSP
+
+== Conversion solution -> Tour métier ==
+
+PlanningService -> Graphe: getSommets()
+activate Graphe
+Graphe --> PlanningService: long[] sommets
+deactivate Graphe
+
+PlanningService -> TourService: convertGraphToTour(pickupDelivery,\n courierId, solution, vertices, g.getCout())
+activate TourService
+
+TourService -> PickupDelivery: getDepartureTime()
+activate PickupDelivery
+PickupDelivery --> TourService: LocalDateTime départ
+deactivate PickupDelivery
+
+loop Pour chaque sommet (warehouse + pickups/deliveries)
+    TourService -> PickupDelivery: findRequestByIntersectionId(intersectionId)
+    activate PickupDelivery
+    PickupDelivery --> TourService: (Request, StopType) ou null
+    deactivate PickupDelivery
+
+    alt Premier sommet
+        TourService -> TourService: créer TourStop(WAREHOUSE)
+    else Pickup / Delivery
+        TourService -> Request: getPickupDuration() / getDeliveryDuration()
+        activate Request
+        Request --> TourService: Duration
+        deactivate Request
+        TourService -> TourService: calcul arrival/departure\n+ commuteDuration
+    end
+
+    TourService -> Tour: addStop(tourStop)
+    activate Tour
+    Tour --> TourService: ok
+    deactivate Tour
+    TourService -> Tour: updateTotalDuration(...)
+    activate Tour
+    Tour --> TourService: ok
+    deactivate Tour
+end
+
+TourService -> Tour: updateTotalDuration(dernier retour dépôt)
+activate Tour
+Tour --> TourService: ok
+deactivate Tour
+
+TourService --> PlanningService: Tour (sans roads)
+deactivate TourService
+
+== Ajout des segments de route ==
+
+PlanningService -> TourService: addRoadsToTour(tour, DTable, map)
+activate TourService
+
+TourService -> Tour: getStops()
+activate Tour
+Tour --> TourService: List\<TourStop\>
+deactivate Tour
+
+loop Pour chaque paire de stops consécutifs + retour dépôt
+    TourService -> DTable: get(sourceIntersection,\n targetIntersection)
+    activate DTable
+    DTable --> TourService: CellInfo (predecessor)
+    deactivate DTable
+
+    loop Reconstruction du chemin inverse
+        TourService -> DTable: get(predecessor,...)
+        activate DTable
+        DTable --> TourService: CellInfo
+        deactivate DTable
+    end
+
+    TourService -> MapService: getMap()
+    activate MapService
+    MapService --> TourService: Map
+    deactivate MapService
+
+    TourService -> Map: getRoadSegment(from,to)
+    activate Map
+    Map --> TourService: RoadSegment
+    deactivate Map
+
+    TourService -> Tour: addRoadSegment(road)
+    activate Tour
+    Tour --> TourService: ok
+    deactivate Tour
+end
+
+TourService --> PlanningService: Tour complété (avec routes)
+deactivate TourService
+
+== Enregistrement du Tour et statut du livreur ==
+
+PlanningService -> TourService: setTourForCourier(courierId, tour)
+activate TourService
+TourService --> PlanningService: ok
+deactivate TourService
+
+PlanningService -> TourService: getCouriers()
+activate TourService
+TourService --> PlanningService: ArrayList\<Courier\>
+deactivate TourService
+
+PlanningService -> Courier: getShiftDuration()
+activate Courier
+Courier --> PlanningService: Duration
+deactivate Courier
+
+PlanningService -> Tour: getTotalDuration()
+activate Tour
+Tour --> PlanningService: Duration
+deactivate Tour
+
+alt Tour ~> shiftDuration - 30min
+    PlanningService -> Courier: setAvailabilityStatus(BUSY)
+    activate Courier
+    Courier --> PlanningService: ok
+    deactivate Courier
+else Suffisamment de marge
+    PlanningService -> Courier: setAvailabilityStatus(AVAILABLE)
+    activate Courier
+    Courier --> PlanningService: ok
+    deactivate Courier
+end
+
+PlanningService --> TourController: fin OK (ou exception)
+deactivate PlanningService
+
+== Réponse HTTP ==
+
+alt Succès
+    TourController --> UI: HTTP 200 OK
+else Erreur (courierId invalide,\nTSP sans solution, etc.)
+    TourController --> UI: HTTP 4xx/5xx + message
+end
+deactivate TourController
+
+UI --> Dispatcher: Affiche la tournée calculée\nou le message d'erreur
+deactivate UI
+
+@enduml

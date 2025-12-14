@@ -1,0 +1,270 @@
+@startuml
+title CU11 - Supprimer une demande de livraison
+
+actor "Dispatcher\n(IHM)" as IHM
+
+participant "TourController\n`ihm.controller`" as TourController
+participant "RequestService\n`domain.service`" as RequestService
+participant "PlanningService\n`domain.service`" as PlanningService
+participant "TourService\n`domain.service`" as TourService
+participant "PickupDelivery\n`domain.model`" as PickupDelivery
+participant "Request\n`domain.model`" as Request
+participant "TSP1 / TemplateTSP\n`domain.service`" as TSP
+participant "GrapheComplet\n`domain.model`" as Graphe
+participant "DijkstraService\n`domain.service`" as DijkstraService
+participant "DijkstraTable\n`domain.model.dijkstra`" as DijkstraTable
+participant "MapService\n`domain.service`" as MapService
+
+== Demande de suppression ==
+
+IHM -> TourController : POST /api/request/delete\nrequestId, courierId
+activate TourController
+
+TourController -> RequestService : getRequestById(requestId, courierId)
+activate RequestService
+
+RequestService -> PickupDelivery : findRequestById(requestId)
+activate PickupDelivery
+PickupDelivery --> RequestService : Request
+deactivate PickupDelivery
+
+RequestService --> TourController : Request
+deactivate RequestService
+
+alt Request introuvable
+    TourController --> IHM : HTTP 404\n"Request not found"
+    deactivate TourController
+else Request trouvée
+
+    == Suppression spéculative ==
+
+    TourController -> PlanningService : deletePrecedences(courierId, requestId)
+    activate PlanningService
+
+    PlanningService -> TourService : getPrecedencesByCourier()
+    activate TourService
+    TourService --> PlanningService : HashMap<String, Set<String>>
+    deactivate TourService
+
+    PlanningService -> TourService : getPrecedencesByCourier().get(courierId)
+    activate TourService
+    TourService --> PlanningService : précs courierId
+    deactivate TourService
+
+    PlanningService -> PlanningService : supprimer toutes les clés/valeurs\nliées au requestId
+    deactivate PlanningService
+
+    TourController -> RequestService : deleteRequest(courierId, requestId)
+    activate RequestService
+
+    RequestService -> PickupDelivery : removeRequest(requestId)
+    activate PickupDelivery
+    PickupDelivery --> RequestService : (void)
+    deactivate PickupDelivery
+
+    RequestService --> TourController : (void)
+    deactivate RequestService
+
+    == Recalcul du tour ==
+
+    TourController -> PlanningService : recomputeTourForCourier(courierId)
+    activate PlanningService
+
+    PlanningService -> RequestService : getPickupDeliveryPerCourier()
+    activate RequestService
+    RequestService --> PlanningService : Map<courierId, PickupDelivery>
+    deactivate RequestService
+
+    PlanningService -> RequestService : getPickupDeliveryForCourier(courierId)
+    activate RequestService
+    RequestService --> PlanningService : PickupDelivery courant
+    deactivate RequestService
+
+    PlanningService -> PickupDelivery : new PickupDelivery(PickupDelivery)
+    activate PickupDelivery
+    PickupDelivery --> PlanningService : copie PickupDelivery
+    deactivate PickupDelivery
+
+    PlanningService -> PlanningService : requests = pickupDelivery.getRequests()
+
+    PlanningService -> TourService : courierInCharge(courierId)
+    activate TourService
+    TourService --> PlanningService : Courier
+    deactivate TourService
+
+    PlanningService -> TourService : getPrecedencesByCourier()
+    activate TourService
+    TourService --> PlanningService : Map<courierId, précs>
+    deactivate TourService
+
+    alt Précédences non initialisées
+        PlanningService -> TourService : initPrecedences(courierId, requests)
+        activate TourService
+        TourService -> TourService : construire précs pickup -> livraison\npar requête
+        deactivate TourService
+    end
+
+    PlanningService -> TourService : generateTspPrecedences(requests,\nwarehouseAddressId, courierId)
+    activate TourService
+    TourService -> TourService : construire vertices et tspPrecedences
+    TourService --> PlanningService : long[] stops,\nHashMap<Integer, Set<Integer>> tspPrecs
+    deactivate TourService
+
+    PlanningService -> Graphe : new GrapheComplet(stops, stops.length)
+    activate Graphe
+    Graphe --> PlanningService : GrapheComplet
+    deactivate Graphe
+
+    PlanningService -> DijkstraTable : new DijkstraTable()
+    activate DijkstraTable
+    DijkstraTable --> PlanningService : DijkstraTable
+    deactivate DijkstraTable
+
+    PlanningService -> MapService : getMap()
+    activate MapService
+    MapService --> PlanningService : Map
+    deactivate MapService
+
+    PlanningService -> DijkstraService : new DijkstraService(Map, Graphe)
+    activate DijkstraService
+    DijkstraService --> PlanningService : DijkstraService
+    deactivate DijkstraService
+
+    PlanningService -> DijkstraService : computeShortestPath(dijkstraTable)
+    activate DijkstraService
+    DijkstraService -> DijkstraTable : initialiser toutes les cellules
+    activate DijkstraTable
+    DijkstraTable --> DijkstraService : (ok)
+    deactivate DijkstraTable
+
+    DijkstraService -> DijkstraService : dijkstra(i, dijkstraTable)\n(pour chaque sommet TSP)
+    DijkstraService -> DijkstraTable : MAJ durées / prédécesseurs
+    activate DijkstraTable
+    DijkstraTable --> DijkstraService : (ok)
+    deactivate DijkstraTable
+
+    DijkstraService -> Graphe : setCout(start, j, duration)
+    activate Graphe
+    Graphe --> DijkstraService : (ok)
+    deactivate Graphe
+
+    DijkstraService --> PlanningService : (void)
+    deactivate DijkstraService
+
+    == Lancement TSP (SOP) ==
+
+    PlanningService -> TSP : new TSP1()
+    activate TSP
+    TSP --> PlanningService : instance TSP1
+    deactivate TSP
+
+    PlanningService -> TSP : setPrecedences(tspPrecs)
+    activate TSP
+    TSP --> PlanningService : (void)
+    deactivate TSP
+
+    PlanningService -> TSP : setServiceTimes(serviceTimes)
+    activate TSP
+    TSP --> PlanningService : (void)
+    deactivate TSP
+
+    PlanningService -> TSP : setMaxDuration(shiftDuration.toSeconds())
+    activate TSP
+    TSP --> PlanningService : (void)
+    deactivate TSP
+
+    PlanningService -> TSP : chercheSolution(timeLimit, Graphe)
+    activate TSP
+
+    TSP -> TSP : nearestNeighborHeuristic()
+    TSP -> TSP : branchAndBound(0, nonVus, vus, 0)
+
+    TSP --> PlanningService : meilleureSolution,\ncoutMeilleureSolution
+    deactivate TSP
+
+    alt Aucune solution trouvée
+        PlanningService --> TourController : RuntimeException\n"no solution"
+        deactivate PlanningService
+
+        TourController --> IHM : HTTP 409\n"unplannable tour"
+        deactivate TourController
+    else Solution trouvée
+
+        PlanningService -> Graphe : getSommets(), getCout()
+        activate Graphe
+        Graphe --> PlanningService : sommets, matrice des coûts
+        deactivate Graphe
+
+        PlanningService -> TourService : convertGraphToTour(pickupDelivery,\ncourierId, solution, sommets, coûts)
+        activate TourService
+
+        TourService -> Tour : new Tour(courierId, departureTime)
+        activate Tour
+        Tour --> TourService : Tour
+        deactivate Tour
+
+        TourService -> PickupDelivery : findRequestByIntersectionId(...)
+        activate PickupDelivery
+        PickupDelivery --> TourService : (Request, StopType)
+        deactivate PickupDelivery
+
+        TourService -> Tour : addStop(tourStop), updateTotalDuration(...)
+        activate Tour
+        Tour --> TourService : (ok)
+        deactivate Tour
+
+        TourService --> PlanningService : Tour
+        deactivate TourService
+
+        PlanningService -> MapService : getMap()
+        activate MapService
+        MapService --> PlanningService : Map
+        deactivate MapService
+
+        PlanningService -> TourService : addRoadsToTour(tour, dijkstraTable, Map)
+        activate TourService
+
+        TourService -> DijkstraTable : get(source, target)
+        activate DijkstraTable
+        DijkstraTable --> TourService : CellInfo
+        deactivate DijkstraTable
+
+        TourService -> Tour : addRoadSegment(road)
+        activate Tour
+        Tour --> TourService : (ok)
+        deactivate Tour
+
+        TourService --> PlanningService : Tour complété
+        deactivate TourService
+
+        PlanningService -> TourService : setTourForCourier(courierId, tour)
+        activate TourService
+        TourService --> PlanningService : (ok)
+        deactivate TourService
+
+        == Mise à jour dispo coursier ==
+
+        PlanningService -> TourService : getCouriers()
+        activate TourService
+        TourService --> PlanningService : List<Courier>
+        deactivate TourService
+
+        PlanningService -> Tour : getTotalDuration()
+        activate Tour
+        Tour --> PlanningService : Duration
+        deactivate Tour
+
+        PlanningService -> TourService : getCouriers().get(i).setAvailabilityStatus(...)
+        activate TourService
+        TourService --> PlanningService : (ok)
+        deactivate TourService
+
+        PlanningService --> TourController : (ok)
+        deactivate PlanningService
+
+        TourController --> IHM : HTTP 200 OK
+        deactivate TourController
+    end
+end
+
+@enduml

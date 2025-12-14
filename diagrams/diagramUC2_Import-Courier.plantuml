@@ -1,0 +1,45 @@
+@startuml
+title UC2 - Importer la liste des couriers
+
+actor User
+participant "UI" as UI
+participant "TourController" as TC
+participant "TourService" as TS
+participant "XMLParsers" as XP
+
+User -> UI : Charge les couriers (chemin_couriers_XML)
+activate UI
+
+UI -> TC : loadCouriers(chemin_couriers_XML)
+activate TC
+
+TC -> TS : loadCouriers(chemin_couriers_XML)
+activate TS
+
+TS -> XP : parseMapXML(chemin_couriers_XML)
+activate XP
+
+XP --> TS : List<Courier>
+deactivate XP
+
+TS --> TC :
+deactivate TS
+
+TC --> UI :
+deactivate TC
+
+UI --> TC : getAvailableCouriers()
+activate TC
+
+TC --> TS : getAvailableCouriers()
+activate TS
+
+TS --> TC : List<Courier>
+deactivate TS
+
+TC --> UI : List<Courier>
+deactivate TC
+
+UI --> User : Affiche la liste des couriers
+deactivate UI
+@enduml

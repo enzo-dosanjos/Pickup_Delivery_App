@@ -1,24 +1,36 @@
 @startuml
-title UC3 - Importer une liste de requests pour un livreur
+title UC3 - Importer une liste de requests pour un livreur depuis un fichier
 
 actor User
+participant "UI" as UI
 participant "RequestController" as RC
+participant "PlanningService" as PS
 participant "RequestService" as RS
 participant "XMLParsers" as XP
 participant "TourService" as TS
 
-User -> RC : loadRequests(filepath), optional: List<NewCourrierID>
+User -> UI : Charger les requêtes(filepath, CourrierID)
+activate UI
+
+UI -> RC : loadRequests(filepath, CourrierID)
 activate RC
 
-RC -> RS : loadRequests(filepath)
+RC --> PS : courierExists(CourierID)
+activate PS
+
+PS --> RC : boolean
+deactivate PS
+
+RC -> RS : loadRequests(filepath, CourierID)
 activate RS
 
-RS -> XP : parseRequests(filepath)
+RS -> XP : parseRequests(filepath, pickupDeliveryToFill)
 activate XP
-XP --> RS : PickupDelivery
+
+XP --> RS : boolean
 deactivate XP
 
-RS --> RC : requestsLoaded
+RS --> RC : boolean
 deactivate RS
 
 RC -> TS : assignRequestsToCouriers(list<CourierID>)
@@ -27,6 +39,9 @@ TS -> TS : assignRequestsToCouriers(list<CourierID>)
 TS --> RC : toursUpdated
 deactivate TS
 
-RC --> User : "Programme chargé et tournées recalculées"
+RC --> UI : "Programme chargé et tournées recalculées"
 deactivate RC
+
+UI --> User : Affiche message de succès
+deactivate UI
 @enduml

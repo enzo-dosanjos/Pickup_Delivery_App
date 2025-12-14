@@ -1,0 +1,59 @@
+@startuml
+title CU13 - Rechercher un RoadSegment
+
+actor "Utilisateur" as User
+boundary "IHM\n(Client)" as UI
+control "TourController" as TourCtrl
+control "PlanningService" as Planning
+control "MapService" as MapSvc
+entity "Map" as Map
+entity "RoadSegment" as RoadSeg
+
+== Rechercher un RoadSegment (CU13) ==
+
+User -> UI : sélectionner origine/destination\net demander la recherche de RoadSegment
+activate UI
+
+UI -> TourCtrl : GET /api/map/roadSegment\n(originId, destinationId)
+activate TourCtrl
+
+TourCtrl -> Planning : getMapService() / accès au service\n(ou appel dédié de recherche)
+activate Planning
+
+Planning -> MapSvc : getMap()
+activate MapSvc
+
+MapSvc -> Map : getRoadSegment(originId, destinationId)
+activate Map
+
+Map --> MapSvc : RoadSegment | null
+deactivate Map
+
+MapSvc --> Planning : RoadSegment | null
+deactivate MapSvc
+
+alt RoadSegment trouvé
+    Planning -> TourCtrl : RoadSegment
+    deactivate Planning
+
+    TourCtrl --> UI : 200 OK + RoadSegment
+    deactivate TourCtrl
+
+    UI --> User : afficher les détails du RoadSegment
+    deactivate UI
+
+else RoadSegment introuvable
+    activate TourCtrl
+    activate Planning
+    Planning -> TourCtrl : signaler absence\n(Option: exception ou valeur null)
+    activate UI
+    deactivate Planning
+
+    TourCtrl --> UI : 404 NOT FOUND
+    deactivate TourCtrl
+
+    UI --> User : afficher message d'erreur
+    deactivate UI
+end
+
+@enduml

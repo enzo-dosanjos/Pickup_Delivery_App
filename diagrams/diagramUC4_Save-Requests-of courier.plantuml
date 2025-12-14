@@ -1,0 +1,33 @@
+@startuml
+title UC4 - Sauvegarder la liste des requests d'un livreur
+
+actor User
+participant "UI" as UI
+participant "RequestController" as RC
+participant "RequestService" as RS
+participant "XMLWriters" as XP
+
+User -> UI : clickSaveRequests(courierId, filepath)
+activate UI
+
+UI -> RC : saveRequests(filepath, courierId)
+activate RC
+
+RC -> RS : saveRequests(filepath, courierId)
+activate RS
+
+RS -> XP : writeRequests(List<PickupDeliveries>, filepath)
+activate XP
+
+XP --> RS :
+deactivate XP
+
+RS --> RC :
+deactivate RS
+
+RC --> UI : Success message
+deactivate RC
+
+UI --> User : show "Requests saved"
+deactivate UI
+@enduml

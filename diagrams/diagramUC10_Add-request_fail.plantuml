@@ -1,0 +1,46 @@
+@startuml
+title UC10 - Ajouter une demande de livraison (échoue)
+
+actor User
+participant "RequestController" as RC
+participant "RequestService" as RS
+participant "TourService" as TS
+
+User -> RC : addRequest(courierId: String, pickupIntersectionId: String, deliveryIntersectionId: String)
+activate RC
+
+RC -> RS : addRequest(courierId: String, pickupIntersectionId: String, deliveryIntersectionId: String)
+activate RS
+RS --> RC : requestId
+deactivate RS
+
+RC -> TS : computeTourForCourier(courierId)
+activate TS
+TS -> TSP1 : chercheSolution(...)  // TSP
+activate TSP1
+TSP1 --> TS : erreur pas posible de trouver une solution
+deactivate TSP1
+TS --> RC : erreour
+deactivate TS
+
+RC --> User : "Demande de changer les couriers"
+User -> RC : addRequest(courierId: String, pickupIntersectionId: String, deliveryIntersectionId: String)
+
+
+RC -> RS : addRequest(courierId: String, pickupIntersectionId: String, deliveryIntersectionId: String)
+activate RS
+RS --> RC : requestId
+deactivate RS
+
+RC -> TS : computeTourForCourier(courierId)
+activate TS
+TS -> TSP1 : chercheSolution(...)  // TSP
+activate TSP1
+TSP1 --> TS : bestTour
+deactivate TSP1
+TS --> RC : updatedTour
+deactivate TS
+
+RC --> User : "Demande ajoutée et tournée mise à jour"
+deactivate RC
+@enduml
