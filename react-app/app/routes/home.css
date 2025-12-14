@@ -21,6 +21,12 @@
 
 .home-container label {
     margin-right: 8px;
+    font-size: 16px;
+    color: #A33C5D;
+}
+
+.home-container h1 {
+    color: #123D6A;
 }
 
 .success-message {
@@ -73,6 +79,7 @@
     height: calc(100% - 2%);
     background-color: #EDC7B7;
     padding: 16px;
+    padding-top: 60px;
     display: flex;
     margin: 2% 0;
     border-radius: 8px;
@@ -95,7 +102,6 @@
 
 .side-panel-and-toggle .search-container {
     position: absolute;
-    z-index: 1001;
     margin-top: 4%;
 }
 
