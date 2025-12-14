@@ -29,12 +29,12 @@ package "Domain" {
         }
 
         class Map {
-            - intersections : TreeMap<long, Intersection>  (key: intersection id)
-            - adjacencyList : HashMap<long, RoadSegment[]>  (key: starting intersection id)
+            - intersections : TreeMap<Long, Intersection>
+            - adjacencyList : HashMap<Long, RoadSegment[]>
             + addIntersection(intersection: Intersection) : boolean
             + addRoadSegment(startIntersectionId: Long, roadSegment: RoadSegment) : boolean
-            + getRoadSegment(startId: long, endId: long) : RoadSegment
-            + getRoadSegmentByName(name: string) : ArrayList<RoadSegment>  (can give partial name)
+            + getRoadSegment(startId: Long, endId: Long) : RoadSegment
+            + getRoadSegmentByName(name: String) : ArrayList<RoadSegment>
         }
 
         class Tour {
@@ -43,7 +43,8 @@ package "Domain" {
             - roadSegmentsTaken : ArrayList<RoadSegment>
             - totalDistance : double
             - startTime : LocalDateTime
-            - totalDuration : time.Duration
+            - totalDuration : Duration
+            + Tour(courierId: long, startTime: LocalDateTime)
             + addStop(stop: TourStop) : void
             + addRoadSegment(roadSegment: RoadSegment) : void
             + updateTotalDistance(distance: double) : void
@@ -78,11 +79,12 @@ package "Domain" {
 
         class Courier {
             - id : long
-            - name : string
-            - shiftDuration : time.Duration
+            - name : String
+            - shiftDuration : Duration
             - availabilityStatus : AvailabilityStatus
-            + isAvailable() : boolean
-            + isBusy() : boolean
+            + Courier(id: long, name: String, shiftDuration: Duration)
+            + isAvailable() : Boolean
+            + isBusy() : Boolean
         }
 
         enum AvailabilityStatus {
@@ -91,12 +93,12 @@ package "Domain" {
         }
 
         class PickupDelivery {
-            - warehouseAdressId : long
-            - requests : TreeMap<long, Request>  (key: request id)
-            - requestsPerCourier : TreeMap<long, ArrayList<Long>>  (key: courier id, value: list of request ids)
-            + getRequestsForCourier(courierId: long) : Request[]
-            + addRequestToCourier(courierId: Long, request: Request) : boolean
-            + removeRequestFromCourier(courierId: Long, requestId: long) : boolean
+            - requests : ArrayList<Request>
+            - departureTime : LocalDateTime
+            - warehouseAddressId : long
+            + PickupDelivery(other: PickupDelivery)
+            + addRequest(request: Request) : void
+            + removeRequest(requestId: long) : void
             + findRequestById(requestId: long) : Request
             + findRequestByIntersectionId(intersectionId: long) : Map.Entry<Request, StopType>
         }
@@ -110,29 +112,30 @@ package "Domain" {
         class GrapheComplet {
             - sommets : long[]
             - nbSommets : int
-            - cout : int[][]
-            + GrapheComplet(sommets: long[]) : void
-            + GrapheComplet(nbSommets: int) : void
-            + estArc(i: int, j: int): boolean
+            - cout : double[][]
+            + GrapheComplet(nbSommets: int)
+            + GrapheComplet(sommets: long[], nbSommets: int)
+            + estArc(i: int, j: int) : boolean
         }
 
         package dijkstra {
             class Node {
                 - vertex : Long
-                - distance : double
+                - duration : double
                 + Node(v: Long, d: double) : void
                 + compareTo(other: Node) : int
             }
 
             class CellInfo {
-                - distance : double
+                - duration : double
                 - predecessor : long
                 - visited : boolean
             }
 
             class DijkstraTable {
-                - table : HashMap<Long, HashMap<Long, CellInfo>>  (key: startId, value: map of (key: endId, value: CellInfo))
-                + put(row: lonf, col: long, distance: double, predecessor, visited: boolean) : void
+                - table : HashMap<Long, HashMap<Long, CellInfo>>
+                + DijkstraTable()
+                + put(row: long, col: long, duration: double, predecessor: long, visited: boolean) : void
                 + put(row: long, col: long, cellInfo: CellInfo) : void
                 + get(row: long, col: long) : CellInfo
                 + contains(row: long, col: long) : boolean
@@ -144,35 +147,45 @@ package "Domain" {
     package "service" {
         class DijkstraService {
             - map : Map
-            - g : GrapheComplet
-            + computeShortestPath(dijkstraTable: DijkstraTable) : void
-            + dijkstra(start: int, dijkstraTable: DijkstraTable) : void
+            - dijkstraTable : DijkstraTable
+            + DijkstraService(map: Map)
+            + computeShortestPath(stops: long[]) : GrapheComplet
+            - dijkstra(start: int, g: GrapheComplet) : GrapheComplet
         }
 
         class RequestService {
-            - pickupDelivery : PickupDelivery
-            + addRequest(courierId: Long, request: Request) : void
-            + deleteRequest(courierId: Long, requestId: long) : void
-            + loadRequests(filepath: String) : void
-            + saveRequests(filepath: String) : void
-            + getRequestById(requestId: long) : Request
+            - pickupDeliveryPerCourier : TreeMap<Long, PickupDelivery>
+            + addRequest(courierId: long, request: Request) : void
+            + deleteRequest(courierId: long, requestId: long) : void
+            + loadRequests(filepath: String, courierId: long) : boolean
+            + saveRequests(filepath: String, courierId: long) : void
+            + getAllWarehouseIds() : TreeMap<Long, Long>
+            + getRequestById(requestId: long, courierId: long) : Request
+            + setWarehouseAddress(warehouseId: long, courierId: long) : void
         }
 
         class TourService {
-            - couriers : ArrayList<Courier> (list of courier)
-            - numCouriers : int (number of couriers loaded)
-            - tours : TreeMap<long, Tour> (key: courier id → computed tour)
-            - precedencesByCourier : TreeMap<Long, HashMap<String, Set<String>>>  (key: courier id → precedences "reqId/interId/type" → set of predecessors)
-            + saveTours(filepath: String) : void
-            + loadTours(filepath: String) : void
-            + setTourForCourier(courierId: long, tour: Tour) : void
+            - numCouriers : int
+            - couriers : ArrayList<Courier>
+            - tours : TreeMap<Long, Tour>
+            - precedencesByCourier : TreeMap<Long, HashMap<String, Set<String>>>
             + addCourier(courier: Courier) : boolean
             + removeCourier(courierId: long) : boolean
-            + loadCouriers(filePath: string) : void
-            + updateRequestOrder(requestBeforeId: long, requestAfterId: long, courierId: long) : void
-            + convertGraphToTour(pickupDelivery: PickupDelivery, startTime: LocalDateTime, courierId: long, solution: Integer[], vertices: long[], costs: double[][]) : Tour
+            + loadCouriers(filepath: String) : void
+            + convertGraphToTour(pickupDelivery: PickupDelivery, courierId: long, solution: Integer[], vertices: List<String>, costs: double[][]) : Tour
             + addRoadsToTour(tour: Tour, table: DijkstraTable, map: Map) : Tour
+            + updateStopOrder(courierId: long, beforeStopIndex: Integer, afterStopIndex: Integer) : void
+            + initPrecedences(courierId: long, requests: ArrayList<Request>) : void
+            + generateTspPrecedences(requests: ArrayList<Request>, warehouseAddressId: long, courierId: long) : Entry<List<String>, HashMap<Integer, Set<Integer>>>
+            + parseParams(requestId: long, intersectionID: long, type: char) : String
+            + extractIntersectionIds(vertices: List<String>) : long[]
+            + extractRequestId(vertix: String) : long
+            + extractIntersectionId(vertix: String) : long
+            + extractStopType(vertix: String) : StopType
+            + getAvailableCouriers() : ArrayList<Courier>
+            + exportTour(courierId: long, filePath: String) : void
         }
+
 
         class MapService {
             - map : Map
@@ -184,44 +197,57 @@ package "Domain" {
             - requestService : RequestService
             - tourService : TourService
             - mapService : MapService
+            - dijkstraService : DijkstraService
+            + PlanningService(requestService: RequestService, tourService: TourService, mapService: MapService)
             + recomputeTourForCourier(courierId: long) : void
             + courierExists(courierId: long) : boolean
-            + updatePrecedences(courierId: long, newRequestId: long, pickupDelivery: PickupDelivery) : void (add pickup-before-delivery constraints for a new request)
+            + updatePrecedences(courierId: long, newRequest: Request) : void
+            + deletePrecedences(courierId: long, requestId: long) : void
+            + courierInCharge(courierId: long) : Courier
+            - printTSPSolution(tsp: TSP1, stops: long[], graph: Graphe, serviceTimes: double[]) : void
+            - formatDuration(seconds: double) : String
         }
 
         class IteratorSeq {
-            - candidats : int[]
-            - nbCandidats : int
-            + IteratorSeq(nonVus: Collection<int>, sommetCrt: int, g: Graphe) : void
+            - iterator : Iterator<Integer>
+            - candidats : List<Integer>
+            + IteratorSeq(nonVus: Collection<Integer>, sommetCrt: int, g: Graphe)
             + hasNext() : boolean
-            + next() : int
+            + next() : Integer
             + remove() : void
         }
 
-        class TemplateTSP {
-            - meilleureSolution : int[]
-            - g : Graphe
-            - coutMeilleureSolution : int
+        abstract class TemplateTSP {
+
+            # g : Graphe
+            - meilleureSolution : Integer[]
+            - coutMeilleureSolution : double
             - tpsLimite : int
             - tpsDebut : long
+            - precedences : Map<Integer, Set<Integer>>
+            - serviceTimes : double[]
+            - maxDuration : double
+            - lastImprovementTime : long
+            - NO_IMPROVEMENT_TIMEOUT : long
+            - stopSearch : boolean
             + chercheSolution(tpsLimite: int, g: Graphe) : void
-            + getSolution(i: int) : int
-            + getCoutSolution() : int
-            + getCoutMeilleureSolution() : double
-            + bound(sommetCourant: int, nonVus: Collection<int>) : int
-            + iterator(sommetCrt: int, nonVus: Collection<int>, g: Graphe) : Iterator<int>
-            + branchAndBound(sommetCrt: int, nonVus: Collection<int>, vus: Collection<int>, coutVus: int) : void
+            + getCoutSolution() : double
+            # bound(sommetCourant: Integer, nonVus: Collection<Integer>) : double
+            # iterator(sommetCrt: Integer, nonVus: Collection<Integer>, g: Graphe) : Iterator<Integer>
+            - branchAndBound(sommetCrt: int, nonVus: Collection<Integer>, vus: Collection<Integer>, coutVus: double) : void
+            # nearestNeighborHeuristic() : double
         }
 
         class TSP {
             + chercheSolution(tspLimite: int, g: Graphe): void
-            + getSolution(i: int) : int
-            + getCoutSolution() : int
+            + getSolution(i: int) : Integer
+            + getCoutSolution() : double
         }
 
         class TSP1 {
-            + bound(sommetCourant: int, nonVus: Collection<int>) : int
-            + iterator(sommetCrt: int, nonVus: Collection<int>, g: Graphe) : Iterator<int>
+            + bound(sommetCourant: Integer, nonVus: Collection<Integer>) : double
+            + iterator(sommetCrt: Integer, nonVus: Collection<Integer>, g: Graphe) : Iterator<Integer>
+            - computeMSTCost(nonVus: Collection<Integer>) : double
         }
     }
 
@@ -235,44 +261,45 @@ package "Domain" {
 
 
 package "Presentation" {
-    class Main {
-        + main(args: String[]): void
-    }
 
     class RequestController {
-        - requestService : RequestService
-        - planningService : PlanningService
-        - tourService : TourService
-        + addRequest(warehouseId: Long, pickupIntersectionId: Long, pickupDurationInSeconds: long, deliveryIntersectionId: Long, deliveryDurationInSeconds: long, courierId: Long) : void
-        + loadRequests(filepath: String, courrierId: long) : void
-        + saveRequests(filepath: String) : void
-        + deleteRequest(requestId: long, courierId: long) : void
-        + getWarehouseAddress(): long
+        - requestService: RequestService
+        - planningService: PlanningService
+        - tourService: TourService
+        + RequestController(requestService: RequestService, planningService: PlanningService, tourService: TourService)
+        + addRequest(warehouseId: Long, pickupIntersectionId: long, pickupDurationInSeconds: long, deliveryIntersectionId: long, deliveryDurationInSeconds: long, courierId: Long): ResponseEntity<?>
+        + loadRequests(filepath: String, courierId: long): ResponseEntity<?>
+        + saveRequests(filepath: String, courierId: long): ResponseEntity<?>
+        + deleteRequest(requestId: long, courierId: long): ResponseEntity<?>
+        + addWarehouse(warehouseId: long, courierId: long): void
+        + getWarehouseAddress(): Map<Long, Long>
     }
 
     class TourController {
-        - requestService : RequestService
-        - tourService : TourService
-        - planningService : PlanningService
-        + saveTours(filepath: String) : void
-        + loadTours(filepath: String) : void
-        + addCourier(id: long, name: String, shiftDurationInSeconds: long) : void
-        + removeCourier(courierId: long) : void
-        + loadCouriers(filePath: string) : void
-        + updateStopOrder(courierId: long, precStopIndex: Integer, followingStopIndex: Integer) : void (update constraints then recompute tour)        + showRequestDetails(instersectionId: long) : void
-        + getTours() : Map<long, Tour>
-        + getAvailableCouriers() : List<Courier>
+        - planningService: PlanningService
+        - tourService: TourService
+        - requestService: RequestService
+        + TourController(tourService: TourService, requestService: RequestService, planningService: PlanningService)
+        + addCourier(id: long, name: String, shiftDurationInSeconds: long): boolean
+        + removeCourier(courierId: long): boolean
+        + loadCouriers(filepath: String): void
+        + updateStopOrder(courierId: long, precStopIndex: Integer, followingStopIndex: Integer): ResponseEntity<?>
+        + showRequestDetails(intersectionId: long, courierId: long): Map.Entry<Request, StopType>
+        + getTours(): Map<Long, Tour>
+        + getAvailableCouriers(): List<Courier>
+        + saveTour(courierId: long, filepath: String): ResponseEntity<?>
     }
 
     class MapController {
-        - mapService : MapService
-        + getMap() : Map
+        - mapService: MapService
+        + MapController(mapService: MapService)
         + searchRoadSegments(name: string) : ArrayList<RoadSegment>
     }
 }
 
 RequestController --> RequestService
 RequestController --> PlanningService
+RequestController --> TourService
 TourController --> TourService
 TourController --> RequestService
 TourController --> PlanningService
@@ -282,6 +309,7 @@ PlanningService --> RequestService
 PlanningService --> TourService
 PlanningService --> Map
 PlanningService --> TSP1
+PlanningService --> DijkstraService
 
 TourService --> Tour
 TourService --> Courier

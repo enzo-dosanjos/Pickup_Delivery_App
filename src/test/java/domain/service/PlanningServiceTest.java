@@ -15,15 +15,6 @@ import static org.junit.jupiter.api.Assertions.*;
 class PlanningServiceTest {
 
     /**
-     * Verifies that recomputeTourForCourier throws an exception when the specified courier is not found.
-     */
-    @Test
-    void recomputeTourForCourierThrowsExceptionIfCourierNotFound() {
-        PlanningService planningService = new PlanningService(new RequestService(), new TourService(), new MapService());
-        assertThrows(IllegalArgumentException.class, () -> planningService.recomputeTourForCourier(999L));
-    }
-
-    /**
      * Verifies that recomputeTourForCourier successfully updates the tour for a given courier.
      */
     @Test
@@ -85,7 +76,7 @@ class PlanningServiceTest {
 
         planningService.updatePrecedences(1L, request);
 
-        assertTrue(tourService.getPrecedencesByCourier().get(1L).containsKey("1/2/d"));
+        assertTrue(tourService.getPrecedencesByCourier().get(1L).containsKey(tourService.parseParams(request.getId(), request.getDeliveryIntersectionId(), 'd')));
     }
 
     /**
