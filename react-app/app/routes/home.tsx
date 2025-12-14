@@ -68,26 +68,39 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Home() {
+    // Map variables
     const [intersections, setIntersections] = useState<MapIntersection[]>([]);
     const [roadSegments, setRoadSegments] = useState<L.LatLngExpression[][]>([]);
     const [intersectionIdToRoadName, setIntersectionIdToRoadName] = useState<Map<number, string>>(new Map());
+    const [warehouseIds, setWarehouseIds] = useState<Map<string, number>>(() => new Map());
     const [bounds, setBounds] = useState<L.LatLngExpression[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [selectionMode, setSelectionMode] = useState<'pickup' | 'delivery' | 'warehouse' | null>(null);
+
+    // Modal variables
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalMessage, setModalMessage] = useState("");
     const [modalActions, setModalActions] = useState<{ label: string, onClick: () => void }[]>([]);
-    const [isAddingRequest, setIsAddingRequest] = useState(false);
+
+    // Loading state variables
+    const [loading, setLoading] = useState(true);
     const [isLoadingCouriers, setIsLoadingCouriers] = useState(false);
     const [isLoadingRequests, setIsLoadingRequests] = useState(false);
     const [isSavingRequests, setIsSavingRequests] = useState(false);
-    const [isDeletingRequest, setIsDeletingRequest] = useState(false);
-    const [tours, setTours] = useState<MapTour[]>([]);
     const [loadingTours, setLoadingTours] = useState(true);
     const [isExportingTour, setIsExportingTour] = useState(false);
+    const [isAddingRequest, setIsAddingRequest] = useState(false);
+    const [isUpdatingOrder, setIsUpdatingOrder] = useState(false);
 
+    // Tour variables
+    const [tours, setTours] = useState<MapTour[]>([]);
+
+    // Side panel variables
     const [isSidePanelOpen, setIsSidePanelOpen] = useState<boolean>(true);
+    const [selectedCourier, setSelectedCourier] = useState<string>("0");
+
+    // Modification panel variables
     const [isModificationPanelOpen, setIsModificationPanelOpen] = useState(false);
-    const [selectionMode, setSelectionMode] = useState<'pickup' | 'delivery' | 'warehouse' | null>(null);
+    const [addRequestSelectedCourier, setAddRequestSelectedCourier] = useState<string>("0");
     const [pickupId, setPickupId] = useState<number | null>(null);
     const [deliveryId, setDeliveryId] = useState<number | null>(null);
     const [pickupName, setPickupName] = useState<string | null>(null);
@@ -95,18 +108,21 @@ export default function Home() {
     const defaultDuration = 120;
     const [pickupDuration, setPickupDuration] = useState<number>(defaultDuration);
     const [deliveryDuration, setDeliveryDuration] = useState<number>(defaultDuration);
+
+    // Update panel variables
+    const [isUpdatePanelOpen, setIsUpdatePanelOpen] = useState(false);
+    const [stopsOnly, setStopsOnly] = useState<boolean>(false);
+    const [updateSelectedCourier, setUpdateSelectedCourier] = useState<string>("0");
+    const [prevStopIndex, setPrevStopIndex] = useState<number>(0);
+    const [nextStopIndex, setNextStopIndex] = useState<number>(0);
+
+    // Courier selection panel variables
     const [couriersList, setCouriersList] = useState<PanelCourier[]>([]);
-    const [selectedCourier, setSelectedCourier] = useState<string>("0");
-    const [warehouseIds, setWarehouseIds] = useState<Map<string, number>>(() => new Map());
-    const [selectionHint, setSelectionHint] = useState<string | null>(null);
     const [displayedCouriers, setDisplayedCouriers] = useState<string>("All");
     const [displayedTours, setDisplayedTours] = useState<MapTour[]>([]);
     const [displayedWarehouses, setDisplayedWarehouses] = useState<number[]>([]);
-    const [prevStopIndex, setPrevStopIndex] = useState("");
-    const [nextStopIndex, setNextStopIndex] = useState("");
-    const [isUpdatingOrder, setIsUpdatingOrder] = useState(false);
 
-    // file paths
+    // File path variables
     const [requestFilePath, setRequestFilePath] = useState<string>("src/main/resources/requests.xml");
     const [courierFilePath, setCourierFilePath] = useState<string>("src/main/resources/couriers.xml");
     const [exportTourFilePath, setExportTourFilePath] = useState<string>("src/main/resources/exported_tour.xml");
@@ -228,6 +244,8 @@ export default function Home() {
     useEffect(() => {
         if (couriersList && couriersList.length > 0) {
             setSelectedCourier(couriersList[0].id.toString());
+            setAddRequestSelectedCourier(couriersList[0].id.toString());
+            setUpdateSelectedCourier(couriersList[0].id.toString());
         }
     }, [couriersList]);
 
@@ -296,26 +314,30 @@ export default function Home() {
         setSearchResults([]);
     };
 
-    const handleMapClick = (intersectionId: number) => {
+    const handleMapClick = (intersectionId: number, index: number | null) => {
         const roadName = intersectionIdToRoadName.get(intersectionId) || `Intersection ${intersectionId}`;
-
-        if (selectionMode === 'pickup') {
-            setPickupId(intersectionId);
+        if (stopsOnly && selectionMode === 'pickup' && index !== null) {
+            setPrevStopIndex(index);
             setPickupName(roadName);
             setSelectionMode(null); // Deactivate selection mode after a point is chosen
-            setSelectionHint(null);
+        } else if (stopsOnly && selectionMode === 'delivery' && index !== null) {
+            setNextStopIndex(index);
+            setDeliveryName(roadName);
+            setSelectionMode(null); // Deactivate selection mode
+        } else if (selectionMode === 'pickup') {
+            setPickupId(intersectionId);
+            setPickupName(roadName);
+            setSelectionMode(null); // Deactivate selection mode
         } else if (selectionMode === 'delivery') {
             setDeliveryId(intersectionId);
             setDeliveryName(roadName);
             setSelectionMode(null); // Deactivate selection mode
-            setSelectionHint(null);
         } else if (selectionMode === 'warehouse') {
             setSelectionMode(null);
-            setSelectionHint(null);
 
             const params = new URLSearchParams();
             params.append('warehouseId', intersectionId.toString());
-            params.append('courierId', selectedCourier);
+            params.append('courierId', addRequestSelectedCourier);
 
             fetch('http://localhost:8080/api/request/addWarehouse', {
                 method: 'POST',
@@ -513,7 +535,7 @@ export default function Home() {
             const fetchedWarehouseIds = new Map<string, number>(Object.entries(data));
             setWarehouseIds(fetchedWarehouseIds);
 
-            const courierWarehouseId = fetchedWarehouseIds.get(selectedCourier);
+            const courierWarehouseId = fetchedWarehouseIds.get(addRequestSelectedCourier);
 
 
             // If warehouse not set yet, prompt user to add it before proceeding
@@ -524,7 +546,6 @@ export default function Home() {
                     onClick: () => {
                         closeModal();
                         setSelectionMode('warehouse');
-                        setSelectionHint("Click a point on the map to set the warehouse.");
                     }
                 }]);
                 setIsModalOpen(true);
@@ -533,12 +554,12 @@ export default function Home() {
 
             // Now, add the request with the fetched warehouse ID
             const params = new URLSearchParams();
-            params.append('warehouseId', warehouseIds?.get(selectedCourier)?.toString() || "");
+            params.append('warehouseId', warehouseIds?.get(addRequestSelectedCourier)?.toString() || "");
             params.append('pickupIntersectionId', pickupId.toString());
             params.append('pickupDurationInSeconds', pickupDuration.toString());
             params.append('deliveryIntersectionId', deliveryId.toString());
             params.append('deliveryDurationInSeconds', deliveryDuration.toString());
-            params.append('courierId', selectedCourier);
+            params.append('courierId', addRequestSelectedCourier);
 
             const response = await fetch('http://localhost:8080/api/request/add', {
                 method: 'POST',
@@ -562,10 +583,7 @@ export default function Home() {
 
             // Finally, fetch and display tours
             await fetchTours();
-            setDisplayedCouriers(selectedCourier);
-
-            setPickupId(null)
-            setDeliveryId(null)
+            setDisplayedCouriers(addRequestSelectedCourier);
         } catch (e: any) {
             console.error("Failed to add request:", e);
             if (e.message && e.message.includes("TSP algorithm did not find a solution")) {
@@ -576,17 +594,12 @@ export default function Home() {
             setIsModalOpen(true);
         } finally {
             setIsAddingRequest(false);
-            setIsModificationPanelOpen(false);
-            setSelectionMode(null);
-            setPickupName(null);
-            setDeliveryName(null);
-            setPickupDuration(defaultDuration);
-            setDeliveryDuration(defaultDuration);
+            handleCloseModificationPanel();
         }
     };
 
     const handleUpdateOrderClick = async () => {
-        if (displayedCouriers === "All") {
+        if (!updateSelectedCourier) {
             setModalMessage("Please select a specific courier to update stop order.");
             setModalActions([]);
             setIsModalOpen(true);
@@ -601,19 +614,9 @@ export default function Home() {
             return;
         }
 
-        const prevIndex = parseInt(prevStopIndex, 10);
-        const nextIndex = parseInt(nextStopIndex, 10);
-
-        if (isNaN(prevIndex) || isNaN(nextIndex)) {
-            setModalMessage("Please enter valid indices.");
-            setModalActions([]);
-            setIsModalOpen(true);
-            return;
-        }
-
         setIsUpdatingOrder(true);
         try {
-            await handleUpdateStopOrder(t.courierId, prevIndex, nextIndex);
+            await handleUpdateStopOrder(t.courierId, prevStopIndex, nextStopIndex);
         } finally {
             setIsUpdatingOrder(false);
         }
@@ -661,7 +664,7 @@ export default function Home() {
         }
     };
 
-    const handleClosePanel = () => {
+    const handleCloseModificationPanel = () => {
         setIsModificationPanelOpen(false);
         setSelectionMode(null);
         setPickupId(null);
@@ -672,9 +675,23 @@ export default function Home() {
         setDeliveryDuration(defaultDuration);
     };
 
+    const handleCloseUpdatePanel = () => {
+        setIsUpdatePanelOpen(false);
+        setSelectionMode(null);
+        setStopsOnly(false);
+        // À compléter !!
+    }
+
     const openModificationPanel = () => {
         fetchAvailableCouriers();
         setIsModificationPanelOpen(true);
+        setIsUpdatePanelOpen(false);
+    };
+
+    const openUpdatePanel = () => {
+        fetchAvailableCouriers();
+        setIsUpdatePanelOpen(true);
+        setIsModificationPanelOpen(false);
     };
 
     const handleSaveRequests = async () => {
@@ -708,7 +725,6 @@ export default function Home() {
     };
 
     const handleDeleteRequest = async (requestId: number, courierId: number) => {
-        setIsDeletingRequest(true);
         try {
             const params = new URLSearchParams();
             params.append('requestId', requestId.toString());
@@ -743,8 +759,6 @@ export default function Home() {
                 setModalMessage(`Failed to delete request: ${e.message}`);
             }
             setIsModalOpen(true);
-        } finally {
-            setIsDeletingRequest(false);
         }
     };
 
@@ -820,7 +834,7 @@ export default function Home() {
                         {/* Couriers XML + load */}
                         <div className="side-panel-section">
                             <label>
-                                Couriers XML path:&nbsp;&nbsp;
+                                Couriers XML path:
                                 <input
                                     type="text"
                                     value={courierFilePath}
@@ -837,9 +851,8 @@ export default function Home() {
                         </div>
 
                         {/* Selected courier */}
-                        <div className="side-panel-section">
                         <span className="info-label">
-                            Selected courier:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                            Selected courier:
                         </span>
                             <select
                                 id={"courier"}
@@ -853,13 +866,12 @@ export default function Home() {
                                     </option>
                                 ))}
                             </select>
-                        </div>
 
                         {/* Requests / export paths */}
-                        <div className="side-panel-section">
+                        <div className="side-panel-section courier-options">
                             <div>
                                 <label>
-                                    Requests XML path:&nbsp;&nbsp;
+                                    Load requests path:
                                     <input
                                         type="text"
                                         value={requestFilePath}
@@ -877,7 +889,7 @@ export default function Home() {
 
                             <div>
                                 <label>
-                                    Export tour path:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                    Export tour path:
                                     <input
                                         type="text"
                                         value={exportTourFilePath}
@@ -893,7 +905,7 @@ export default function Home() {
                                 </button>
                             </div>
 
-                            <div>
+                            <div style={{margin: "3px"}}>
                                 <label>
                                     Export requests path:
                                     <input
@@ -912,48 +924,24 @@ export default function Home() {
                             </div>
                         </div>
 
-                        {/* Add request / save requests buttons */}
-                        <div className="side-panel-section">
-                            <button onClick={openModificationPanel} className={"home-button"}>
-                                Add a request
-                            </button>
-                            <button
-                                onClick={handleSaveRequests}
-                                className={"home-button"}
-                                disabled={isSavingRequests}
-                            >
-                                {isSavingRequests ? "Saving..." : "Save Requests"}
-                            </button>
-                        </div>
-
-                        {/* Stop order update controls */}
-                        <div className="side-panel-section">
-                            <label>
-                                First stop index (must come BEFORE):
-                                <input
-                                    type="number"
-                                    value={prevStopIndex}
-                                    onChange={(e) => setPrevStopIndex(e.target.value)}
-                                />
-                            </label>
-
-                            <br/>
-                            <label>
-                                Second stop index (must come AFTER):
-                                <input
-                                    type="number"
-                                    value={nextStopIndex}
-                                    onChange={(e) => setNextStopIndex(e.target.value)}
-                                />
-                            </label>
-
-                            <button className={"home-button"} onClick={handleUpdateOrderClick} disabled={isUpdatingOrder}>
-                                {isUpdatingOrder ? "Updating..." : "Apply Update"}
-                            </button>
+                        {/* Add request / save requests / stop order updaptes buttons */}
+                        <div  className="side-panel-section">
+                            <div>
+                                <button onClick={openModificationPanel}
+                                        className={"home-button"}>
+                                    Add A Request
+                                </button>
+                            </div>
+                            <div>
+                                <button onClick={openUpdatePanel}
+                                        className={"home-button"}>
+                                    Update Order
+                                </button>
+                            </div>
                         </div>
                     </div>
-
                 </div>
+
                 {/* Hamburger button */}
                 <div
                     className="side-panel-toggle"
@@ -976,47 +964,48 @@ export default function Home() {
                     setPickupDuration={setPickupDuration}
                     setDeliveryDuration={setDeliveryDuration}
                     couriersList={couriersList}
-                    selectedCourier={selectedCourier}
-                    setSelectedCourier={setSelectedCourier}
+                    selectedCourier={addRequestSelectedCourier}
+                    setSelectedCourier={setAddRequestSelectedCourier}
                     onAddRequest={handleAddRequest}
-                    onCancel={handleClosePanel}
+                    onCancel={handleCloseModificationPanel}
                     selectionMode={selectionMode}
                     setSelectionMode={setSelectionMode}
                     isAddingRequest={isAddingRequest}
                 />
             )}
-
-            {/*<UpdateOrderPanel
-                firstId={pickupId}
-                secondId={deliveryId}
-                firstName={pickupName}
-                secondName={deliveryName}
-                couriersList={couriersList}
-                selectedCourier={selectedCourier}
-                setSelectedCourier={setSelectedCourier}
-                onUpdateOrder={handleUpdateOrderClick}
-                onCancel={handleClosePanel}
-                selectionMode={selectionMode}
-                setSelectionMode={(mode) => setSelectionMode(mode)}
-                isUpdatingOrder={isUpdatingOrder}
-            />*/}
-
-            {bounds.length > 0 && (
-                <MapComponent
-                    intersections={intersections}
-                    roadSegments={roadSegments}
-                    bounds={bounds}
-                    tours={displayedTours}
-                    onMapClick={handleMapClick}
-                    selectionModeActive={isModificationPanelOpen}
-                    pickupId={pickupId}
-                    deliveryId={deliveryId}
-                    onDeleteRequest={handleDeleteRequest}
-                    warehouseIds={displayedWarehouses}
-                    formatDateTime={formatDateTime}
-                    mapRef={mapRef}
+            {isUpdatePanelOpen && (
+                <UpdateOrderPanel
+                    firstId={prevStopIndex}
+                    secondId={nextStopIndex}
+                    firstName={pickupName}
+                    secondName={deliveryName}
+                    couriersList={couriersList}
+                    selectedCourier={updateSelectedCourier}
+                    setSelectedCourier={setUpdateSelectedCourier}
+                    onUpdateOrder={handleUpdateOrderClick}
+                    onCancel={handleCloseUpdatePanel}
+                    selectionMode={selectionMode}
+                    setSelectionMode={(mode) => setSelectionMode(mode)}
+                    stopsOnly={stopsOnly}
+                    setStopsOnly={(mode) => setStopsOnly(mode)}
+                    isUpdatingOrder={isUpdatingOrder}
                 />
             )}
+            <MapComponent
+                intersections={intersections}
+                roadSegments={roadSegments}
+                bounds={bounds}
+                tours={displayedTours}
+                onMapClick={handleMapClick}
+                selectionModeActive={isModificationPanelOpen || isUpdatePanelOpen}
+                stopsOnly={stopsOnly}
+                pickupId={pickupId}
+                deliveryId={deliveryId}
+                onDeleteRequest={handleDeleteRequest}
+                warehouseIds={displayedWarehouses}
+                formatDateTime={formatDateTime}
+                mapRef={mapRef}
+            />
 
             {couriersList.length > 0 && (
                 <CourierSelectionPanel

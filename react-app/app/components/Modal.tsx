@@ -14,7 +14,7 @@ interface ModalProps {
 
 const Modal: React.FC<ModalProps> = ({ message, onClose, actions = [] }) => {
   return (
-    <div className="modal-overlay">
+    <div className="modal-overlay" style={{margin: 0}}>
       <div className="modal-content">
         <p>{message}</p>
         <div className={"modal-actions"}>

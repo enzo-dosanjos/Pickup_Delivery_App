@@ -20,8 +20,8 @@ export function CourierSelectionPanel({
 }: CourierSelectionPanelProps) {
     return (
         <div className="modification-panel courier-selection">
-            <h3>Select a courier to display their tour</h3>
-            <div>
+            <h3>Select a Courier to Display</h3>
+            <div className="radio-input">
                 <label>
                     <p> All tours </p>
                     <input type={"radio"}

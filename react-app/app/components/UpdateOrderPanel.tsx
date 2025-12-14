@@ -17,8 +17,10 @@ type UpdateOrderPanelProps = {
     setSelectedCourier: (courier: string) => void;
     onUpdateOrder: () => void;
     onCancel: () => void;
-    selectionMode: 'pickup' | 'delivery' | 'warehouse' | 'stops_only' | null;
-    setSelectionMode: (mode: 'stops_only') => void;
+    selectionMode: 'pickup' | 'delivery' | 'warehouse' | null;
+    setSelectionMode: (mode: 'pickup' | 'delivery' | 'warehouse') => void;
+    stopsOnly: boolean;
+    setStopsOnly: (mode: boolean) => void;
     isUpdatingOrder: boolean;
 };
 
@@ -34,11 +36,13 @@ export function UpdateOrderPanel({
                                      onCancel,
                                      selectionMode,
                                      setSelectionMode,
+                                     stopsOnly,
+                                     setStopsOnly,
                                      isUpdatingOrder
                                  }: UpdateOrderPanelProps) {
     return (
-        <div className="modification-panel">
-            <h3>Add a New Request</h3>
+        <div className="modification-panel update-order">
+            <h3>Update tour stops order</h3>
             <div className="info">
                 <div>
                     <span className="info-label">First vertex (must come before):</span>
@@ -46,11 +50,11 @@ export function UpdateOrderPanel({
                 </div>
                 <div>
                     <button
-                        className={`select-button ${selectionMode === 'stops_only' ? 'active' : ''}`}
-                        onClick={() => setSelectionMode('stops_only')}
+                        className={`select-button ${selectionMode === 'pickup' ? 'active' : ''}`}
+                        onClick={() => {setSelectionMode('pickup'); setStopsOnly(true)}}
                         disabled={isUpdatingOrder}
                     >
-                        Select Pickup
+                        Select first
                     </button>
                 </div>
             </div>
@@ -61,11 +65,11 @@ export function UpdateOrderPanel({
                 </div>
                 <div>
                     <button
-                        className={`select-button ${selectionMode === 'stops_only' ? 'active' : ''}`}
-                        onClick={() => setSelectionMode('stops_only')}
+                        className={`select-button ${selectionMode === 'delivery' ? 'active' : ''}`}
+                        onClick={() => {setSelectionMode('delivery'); setStopsOnly(true)}}
                         disabled={isUpdatingOrder}
                     >
-                        Select Delivery
+                        Select second
                     </button>
                 </div>
             </div>
@@ -86,7 +90,7 @@ export function UpdateOrderPanel({
                     onClick={onUpdateOrder}
                     disabled={firstId === null || secondId === null || isUpdatingOrder}
                 >
-                    {isUpdatingOrder ? "Updating..." : "Updating Order"}
+                    {isUpdatingOrder ? "Updating..." : "Set order"}
                 </button>
             </div>
         </div>

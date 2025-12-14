@@ -108,7 +108,7 @@ export function ModificationPanel({
                     onClick={onAddRequest}
                     disabled={pickupId === null || deliveryId === null || isAddingRequest}
                 >
-                    {isAddingRequest ? "Adding..." : "Add Request"}
+                    {isAddingRequest ? "Adding..." : "Add request"}
                 </button>
             </div>
         </div>

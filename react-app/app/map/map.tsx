@@ -81,14 +81,15 @@ export function Map(props: {
     roadSegments: L.LatLngExpression[][],
     bounds: L.LatLngExpression[],
     tours: Tour[],
-    onMapClick?: (intersectionId: number) => void,
+    onMapClick?: (intersectionId: number, index: number | null) => void,
     selectionModeActive: boolean,
+    stopsOnly: boolean,
     pickupId: number | null,
     deliveryId: number | null,
     onDeleteRequest?: (requestId: number, courierId: number) => void,
     warehouseIds: Array<number>,
     formatDateTime: (value?: string | null) => string,
-    mapRef?: React.MutableRefObject<L.Map | null>;
+    mapRef?: React.RefObject<L.Map | null>;
 }) {
     const mapBounds = useMemo(() => new L.LatLngBounds(props.bounds), [props.bounds]);
 
@@ -97,6 +98,11 @@ export function Map(props: {
         return tourPoints.length > 0 ? new L.LatLngBounds(tourPoints) : mapBounds;
     }, [props.tours, mapBounds]);
 
+    const stopIntersectionIds = useMemo(() => {
+        return new Set(
+            props.tours.flatMap(tour => tour.stops.filter(stop => stop.type != StopType.WAREHOUSE).map(stop => stop.intersectionId))
+        );
+    }, [props.tours]);
 
     return (
         <MapContainer
@@ -108,6 +114,12 @@ export function Map(props: {
             <Pane name="intersections-pane" style={{ zIndex: 500 }} />
 
             {props.intersections.map((intersection) => {
+                const isStop = stopIntersectionIds.has(intersection.id);
+
+                if (props.stopsOnly && !isStop) {
+                    return null; // ne pas afficher l'intersection
+                }
+
                 if (props.warehouseIds && props.warehouseIds.includes(intersection.id)) {
                     return (
                         <Marker
@@ -138,7 +150,7 @@ export function Map(props: {
                         eventHandlers={{
                             click: () => {
                                 if (props.onMapClick) {
-                                    props.onMapClick(intersection.id);
+                                    props.onMapClick(intersection.id, null);
                                 }
                             },
                         }}
@@ -179,7 +191,17 @@ export function Map(props: {
                             const stopOrder = index;
 
                             return (
-                                <Marker key={`${tour.courierId}-${stop.intersectionId}-${index}`} position={intersection.position} icon={icon}>
+                                <Marker key={`${tour.courierId}-${stop.intersectionId}-${index}`}
+                                        position={intersection.position}
+                                        icon={icon}
+                                        eventHandlers={{
+                                            click: () => {
+                                                if (props.onMapClick && props.stopsOnly) {
+                                                    props.onMapClick(intersection.id, stopOrder);
+                                                }
+                                            },
+                                        }}
+                                >
                                     <Popup>
                                         <div className="map-popup-content">
                                             Courier ID: {tour.courierId} <br />

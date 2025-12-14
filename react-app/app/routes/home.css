@@ -25,10 +25,6 @@
     color: #A33C5D;
 }
 
-.home-container h1 {
-    color: #123D6A;
-}
-
 .success-message {
     color: green;
     margin-top: 10px;
@@ -56,6 +52,7 @@
 .home-container {
     display: flex;
     height: 100vh;
+    margin-bottom: 0;
 }
 
 .side-panel-and-toggle {
@@ -118,4 +115,10 @@
 
 .map-container {
     flex: 1;
+}
+
+.courier-options {
+    border: thin solid #A33C5D;
+    border-radius: 6px;
+    padding: 6px;
 }
