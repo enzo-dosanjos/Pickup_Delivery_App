@@ -4,7 +4,7 @@ package "Persistence" {
     class XMLParsers {
         + parseMap(filePath: string) : Map
         + parseRequests(filePath: string, courierId: long, pickupDeliveryToFill: PickupDelivery) : void
-        + parseTours(filePath: string) : Tour
+        + parseCouriers(filePath: string) : ArrayList<Courier>
     }
 
     class XMLWriters {
@@ -22,7 +22,7 @@ package "Domain" {
         }
 
         class RoadSegment {
-            - name : string
+            - name : String
             - length : double
             - startId : long
             - endId : long
@@ -272,6 +272,7 @@ package "Presentation" {
         + deleteRequest(requestId: long, courierId: long): ResponseEntity<?>
         + addWarehouse(warehouseId: long, courierId: long): void
         + getWarehouseAddress(): Map<Long, Long>
+        - recomputeTourAndHandleExceptions(courierId: long): ResponseEntity<?>
     }
 
     class TourController {
@@ -308,19 +309,32 @@ PlanningService --> RequestService
 PlanningService --> TourService
 PlanningService --> MapService
 PlanningService --> DijkstraService
+PlanningService --> TSP1
+PlanningService --> Graphe
+PlanningService ..> GrapheComplet
 
 TourService --> Tour
 TourService --> Courier
+TourService --> DijkstraTable
+TourService --> PickupDelivery
+TourService ..> XMLParsers
+TourService ..> XMLWriters
 
 RequestService --> PickupDelivery
+RequestService --> Request
+RequestService ..> XMLParsers
+RequestService ..> XMLWriters
+
+MapService ..> XMLParsers
 
 PickupDelivery <-- XMLWriters
 Tour <-- XMLWriters
 
 PickupDelivery <-- XMLParsers
 Map <-- XMLParsers
-Tour <-- XMLParsers
+Courier <-- XMLParsers
 
+IteratorSeq <-- TSP1
 TemplateTSP <|.. TSP1
 TemplateTSP --> Graphe
 TSP <|-- TemplateTSP
