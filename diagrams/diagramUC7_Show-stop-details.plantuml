@@ -1,5 +1,5 @@
 @startuml
-title UC12 - Consulter les détails d'une étape
+title UC7 - Afficher les détails d'une livraison
 
 actor User
 participant "UI (MapView)" as UI

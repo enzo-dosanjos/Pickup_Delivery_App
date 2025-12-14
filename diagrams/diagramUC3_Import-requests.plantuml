@@ -1,5 +1,5 @@
 @startuml
-title UC3 - Importer programme depuis un fichier
+title UC3 - Importer une liste de requests pour un livreur
 
 actor User
 participant "RequestController" as RC

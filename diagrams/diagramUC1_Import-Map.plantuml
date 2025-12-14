@@ -1,5 +1,5 @@
 @startuml
-title UC9 - Importer un plan
+title UC1 - Importer un plan
 
 actor User
 participant "MapController" as MC
