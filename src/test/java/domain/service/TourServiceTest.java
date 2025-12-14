@@ -319,4 +319,30 @@ class TourServiceTest {
         assertEquals("Courier 3", couriers.get(2).getName(), "Third courier name should match expected value");
         assertEquals(Duration.ofHours(7), couriers.get(2).getShiftDuration(), "Third courier shift duration should match expected value");
     }
+
+    /**
+     * Tests that the exportTour method successfully writes the
+     * courier's tour to an XML file (no exception and file created).
+     */
+    @Test
+    void checkExportTour() throws Exception {
+        TourService tourService = new TourService();
+        long courierId = 1L;
+
+        LocalDateTime startTime = LocalDateTime.now();
+        Tour tour = new Tour(courierId, startTime);
+        TourStop tourStop1 = new TourStop(StopType.PICKUP, 1L, 2L, LocalDateTime.now(), LocalDateTime.now());
+        tour.addStop(tourStop1);
+        tourService.setTourForCourier(courierId, tour);
+
+        String filePath = "src/test/resources/outputTour.xml";
+
+        tourService.exportTour(courierId, filePath);
+
+        java.io.File outFile = new java.io.File(filePath);
+        assertTrue(outFile.exists());
+
+        // Clean up
+        outFile.delete();
+    }
 }
