@@ -1,6 +1,6 @@
 .modification-panel {
     position: absolute;
-    background-color: #ffffff;
+    background-color: #EDC7B7;
     padding: 20px;
     border-radius: 8px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -14,19 +14,39 @@
     right: 20px;
 }
 
-.courier-selection {
-    bottom: 20px;
+.update-order {
+    top: 20px;
     right: 20px;
+}
+
+.courier-selection {
+    bottom: 5px;
+    right: 20px;
+}
+
+.courier-selection > div {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.courier-selection label {
+    display: flex;
+    align-items: center;
+}
+
+.courier-selection p {
+    width: 175px;
+}
+
+.courier-selection input[type="radio"] {
+    width: fit-content;
 }
 
 .modification-panel h3 {
     margin-top: 0;
-    font-size: 18px;
-    color: #333;
-}
-
-.modification-panel .info {
-    margin-bottom: 15px;
+    font-size: 20px;
+    color: #A33C5D;
 }
 
 .modification-panel .info-label {
@@ -42,24 +62,25 @@
 .modification-panel .actions {
     display: flex;
     justify-content: space-between;
+    margin-bottom: 0;
 }
 
 .modification-panel button {
     padding: 10px 15px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 600;
 }
 
 .modification-panel .add-button {
-    background-color: #007bff;
-    color: white;
+    background-color: #D17B96;
+    color: #EADDFF;
+}
+
+.home-container .add-button:hover {
+    font-weight: 1000;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
 }
 
 .modification-panel .add-button:disabled {
-    background-color: #a0cfff;
+    background-color: rgba(209, 123, 150, 0.7);
     cursor: not-allowed;
 }
 
@@ -78,24 +99,24 @@
     background-color: #28a745;
 }
 
-.modification-panel select {
-    border-radius: 5px;
-    background-color: #f1f1f1;
-    color: #333333;
-    padding-left: 5px;
-    margin-left: 10px;
-}
-
-.modification-panel input {
+.modification-panel .panel-input {
     width: 3rem;
-    border: thin solid #6c757d;
-    border-radius: 3px;
-    color: #333333;
-    padding-left: 5px;
-    margin-left: 10px;
 }
 
-.modification-panel label {
-    display: block;
+.modification-panel select {
+    color: #333333;
+}
+
+.radio-input {
+    margin-bottom: 0;
+}
+
+.radio-input input[type="radio"] {
+    width: auto;
+}
+
+.radio-input label {
+    display: flex;
+    gap: 8px;
     color: #333333;
 }

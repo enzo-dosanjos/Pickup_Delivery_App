@@ -56,7 +56,7 @@ export function ModificationPanel({
                 </div>
                 <div>
                     <span className="info-value">Duration (s):</span>
-                    <input name={"pickupDuration"} defaultValue={defaultDuration?.toString()}
+                    <input name={"pickupDuration"} defaultValue={defaultDuration?.toString()} className={"panel-input"}
                            value={pickupDuration} onChange={(duration) => setPickupDuration(Number(duration.target.value))}
                     />
                 </div>
@@ -77,7 +77,7 @@ export function ModificationPanel({
                 </div>
                 <div>
                     <span className="info-value">Duration (s):</span>
-                    <input name={"deliveryDuration"} defaultValue={defaultDuration?.toString()}
+                    <input name={"deliveryDuration"} defaultValue={defaultDuration?.toString()} className={"panel-input"}
                            value={deliveryDuration} onChange={(duration) => setDeliveryDuration(Number(duration.target.value))}
                     />
                 </div>
@@ -108,7 +108,7 @@ export function ModificationPanel({
                     onClick={onAddRequest}
                     disabled={pickupId === null || deliveryId === null || isAddingRequest}
                 >
-                    {isAddingRequest ? "Adding..." : "Add Request"}
+                    {isAddingRequest ? "Adding..." : "Add request"}
                 </button>
             </div>
         </div>

@@ -80,11 +80,14 @@ public class RequestController {
                                           @RequestParam long courierId) {
         // check if courier exists
         if (!planningService.courierExists(courierId)) {
-            throw new IllegalArgumentException("Courier ID " + courierId + " does not exist.");
-        }
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("Courier ID " + courierId + " does not exist.");        }
 
         // Load requests from the specified file for the given courier
-        requestService.loadRequests(filepath, courierId);
+        if (!requestService.loadRequests(filepath, courierId)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("The request at " + filepath + " does not have the same warehouse as the courier");
+        }
 
         return recomputeTourAndHandleExceptions(courierId);
     }

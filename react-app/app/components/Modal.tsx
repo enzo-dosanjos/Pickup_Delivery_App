@@ -14,10 +14,10 @@ interface ModalProps {
 
 const Modal: React.FC<ModalProps> = ({ message, onClose, actions = [] }) => {
   return (
-    <div className="modal-overlay">
+    <div className="modal-overlay" style={{margin: 0}}>
       <div className="modal-content">
         <p>{message}</p>
-        <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end", marginTop: "12px" }}>
+        <div className={"modal-actions"}>
           {actions.map((action, idx) => (
             <button key={idx} onClick={action.onClick}>
               {action.label}
