@@ -105,6 +105,17 @@ public class TourTest {
     }
 
     /**
+     * Verifies that retrieving a stop by intersection ID returns null if the intersection doesn't exists.
+     */
+    @Test
+    void getStopByIntersectionIdReturnsNull() {
+        Tour tour = new Tour(1L, LocalDateTime.now());
+
+        TourStop retrievedStop = tour.getStopByIntersectionId(52L);
+        assertNull(retrievedStop);
+    }
+
+    /**
      * Verifies that the toString method handles an empty tour correctly.
      */
     @Test

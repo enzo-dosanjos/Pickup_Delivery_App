@@ -133,25 +133,7 @@ public class PlanningService {
             double exceedSeconds = tourDuration - shiftDuration.toSeconds();
         } else {
             double remainingSeconds = shiftDuration.toSeconds() - tourDuration;
-            System.out.println(
-                "✓ Within shift duration (remaining: " +
-                formatDuration(remainingSeconds) + ")"
-            );
         }
-
-        // Print TSP solution
-        System.out.println("----------------------------------------");
-        System.out.println("Tour sequence:");
-        printTSPSolution(
-            tsp,
-            stops,
-            dijkstraService.getGraph(),
-            serviceTimes
-        );
-        System.out.println("========================================");
-
-
-
 
         // 7. result
         double[] serviceTimesUsed = tsp.getServiceTimes();
@@ -265,77 +247,5 @@ public class PlanningService {
             .filter(courier -> courier.getId() == courierId)
             .findFirst()
             .orElse(null);
-    }
-
-
-    private void printTSPSolution(
-        TSP1 tsp,
-        long[] stops,
-        Graphe graph,
-        double[] serviceTimes
-    ) {
-        double cumulativeTime = 0.0;
-
-        for (int i = 0; i < graph.getNbSommets(); i++) {
-            int nodeIndex = tsp.getSolution(i);
-            long stopAddress = stops[nodeIndex];
-
-            String stopType;
-            if (i == 0) {
-                stopType = "Depot";
-            } else if (nodeIndex % 2 == 1) {
-                stopType = "Pickup";
-            } else {
-                stopType = "Delivery";
-            }
-
-            double travelTime = 0.0;
-            if (i > 0) {
-                int prevIndex = tsp.getSolution(i - 1);
-                travelTime = graph.getCout(prevIndex, nodeIndex);
-                cumulativeTime += travelTime;
-            }
-
-            double serviceTime = serviceTimes[nodeIndex];
-
-            System.out.printf(
-                "%2d. [%s] Stop #%d (Address: %d) | " +
-                "Travel: %s | Service: %s | Cumulative: %s%n",
-                i,
-                stopType,
-                nodeIndex,
-                stopAddress,
-                formatDuration(travelTime),
-                formatDuration(serviceTime),
-                formatDuration(cumulativeTime)
-            );
-
-            cumulativeTime += serviceTime;
-        }
-
-        // Return to depot
-        int lastIndex = tsp.getSolution(graph.getNbSommets() - 1);
-        double returnCost = graph.getCout(lastIndex, 0);
-        cumulativeTime += returnCost;
-
-        System.out.printf(
-            "    Return to Depot | Travel: %s | Total: %s%n",
-            formatDuration(returnCost),
-            formatDuration(cumulativeTime)
-        );
-    }
-
-    private String formatDuration(double seconds) {
-        long hours = (long) (seconds / 3600);
-        long minutes = (long) ((seconds % 3600) / 60);
-        long secs = (long) (seconds % 60);
-
-        if (hours > 0) {
-            return String.format("%dh %02dm %02ds", hours, minutes, secs);
-        } else if (minutes > 0) {
-            return String.format("%dm %02ds", minutes, secs);
-        } else {
-            return String.format("%ds", secs);
-        }
     }
 }

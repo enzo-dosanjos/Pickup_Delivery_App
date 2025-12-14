@@ -4,6 +4,7 @@ import domain.model.Intersection;
 import domain.model.RoadSegment;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
@@ -28,9 +29,25 @@ class MapServiceTest {
         assertEquals(2, mapService.getMap().getIntersections().size(), "Precondition: Map should have 2 intersections");
         assertEquals(1, mapService.getMap().getAdjacencyList().size(), "Precondition: Map should have 1 adjacency entry");
 
-        mapService.loadMap("src/test/resources/empty_test_map.xml");
+        mapService.loadMap("src/test/resources/emptyTestMap.xml");
 
         assertTrue(mapService.getMap().getIntersections().isEmpty(), "Intersections should be updated");
         assertTrue(mapService.getMap().getAdjacencyList().isEmpty(), "Adjacency list should be updated");
+    }
+
+    /**
+     * Verifies that searchRoadSegmentsByName returns the correct result.
+     */
+    @Test
+    void checkSearchRoadSegmentsByNameReturnsCorrectResult() {
+        MapService mapService = new MapService();
+
+        mapService.loadMap("src/test/resources/testMap.xml");
+
+        ArrayList<RoadSegment> result = mapService.searchRoadSegmentsByName("Rue");
+
+        assertEquals(2, result.size());
+        assertEquals("Rue Danton", result.get(0).getName());
+        assertEquals("Rue de l'Abondance", result.get(1).getName());
     }
 }

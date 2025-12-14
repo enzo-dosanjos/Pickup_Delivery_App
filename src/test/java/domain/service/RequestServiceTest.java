@@ -5,6 +5,7 @@ import domain.model.Request;
 import org.junit.jupiter.api.Test;
 
 import java.time.Duration;
+import java.util.TreeMap;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.jupiter.api.Assertions.*;
@@ -31,11 +32,16 @@ class RequestServiceTest {
         assertNotNull(requestService.getPickupDeliveryPerCourier());
     }
 
+    /**
+     * Tests the getters and setters of RequestService. Test setWarehouseAddress for a courier that already has a
+     * request and for one that doesn't. Also test getAllWarehouseIds for the 2 couriers.
+     */
     @Test
     void checkGettersAndSetters() {
         RequestService requestService = new RequestService();
 
         long courierId = 1L;
+        long courierWithNoRequestId = 2L;
 
         String filePath = "src/test/resources/testRequest.xml";
         Request request = new Request(100L, Duration.ofMinutes(10), 200L, Duration.ofMinutes(20));
@@ -46,6 +52,15 @@ class RequestServiceTest {
         requestService.setWarehouseAddress(50L, courierId);
 
         assertEquals(50L, requestService.getPickupDeliveryForCourier(courierId).getWarehouseAddressId());
+
+        requestService.setWarehouseAddress(60L, courierWithNoRequestId);
+
+        assertEquals(60L, requestService.getPickupDeliveryForCourier(courierWithNoRequestId).getWarehouseAddressId());
+
+        TreeMap<Long, Long> result = requestService.getAllWarehouseIds();
+
+        assertEquals(50L, result.get(courierId));
+        assertEquals(60L, result.get(courierWithNoRequestId));
     }
 
     /**
