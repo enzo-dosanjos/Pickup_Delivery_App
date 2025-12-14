@@ -19,8 +19,9 @@ type UpdateOrderPanelProps = {
     onCancel: () => void;
     selectionMode: 'pickup' | 'delivery' | 'warehouse' | null;
     setSelectionMode: (mode: 'pickup' | 'delivery' | 'warehouse') => void;
-    stopsOnly: boolean;
     setStopsOnly: (mode: boolean) => void;
+    setPrevStopIndex: (index: number) => void;
+    setNextStopIndex: (index: number) => void;
     isUpdatingOrder: boolean;
 };
 
@@ -36,13 +37,23 @@ export function UpdateOrderPanel({
                                      onCancel,
                                      selectionMode,
                                      setSelectionMode,
-                                     stopsOnly,
                                      setStopsOnly,
+                                     setPrevStopIndex,
+                                     setNextStopIndex,
                                      isUpdatingOrder
                                  }: UpdateOrderPanelProps) {
     return (
         <div className="modification-panel update-order">
             <h3>Update tour stops order</h3>
+            <div className="info">
+                <span className="info-label">Courier:</span>
+                <select id={"courier"} value={selectedCourier} onChange={(e) => {
+                    setSelectedCourier(e.target.value); setPrevStopIndex(-1); setNextStopIndex(-1);}}>
+                    {couriersList?.map(courier => (
+                        <option key={courier.id.toString()} value={courier.id.toString()}>{courier.name}</option>
+                    ))}
+                </select>
+            </div>
             <div className="info">
                 <div>
                     <span className="info-label">First vertex (must come before):</span>
@@ -72,14 +83,6 @@ export function UpdateOrderPanel({
                         Select second
                     </button>
                 </div>
-            </div>
-            <div className="info">
-                <span className="info-label">Courier:</span>
-                <select id={"courier"} value={selectedCourier} onChange={(e) => setSelectedCourier(e.target.value)}>
-                    {couriersList?.map(courier => (
-                        <option key={courier.id.toString()} value={courier.id.toString()}>{courier.name}</option>
-                    ))}
-                </select>
             </div>
             <div className="actions">
                 <button className="cancel-button" onClick={onCancel} disabled={isUpdatingOrder}>

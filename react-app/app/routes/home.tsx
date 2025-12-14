@@ -100,7 +100,6 @@ export default function Home() {
 
     // Modification panel variables
     const [isModificationPanelOpen, setIsModificationPanelOpen] = useState(false);
-    const [addRequestSelectedCourier, setAddRequestSelectedCourier] = useState<string>("0");
     const [pickupId, setPickupId] = useState<number | null>(null);
     const [deliveryId, setDeliveryId] = useState<number | null>(null);
     const [pickupName, setPickupName] = useState<string | null>(null);
@@ -112,9 +111,8 @@ export default function Home() {
     // Update panel variables
     const [isUpdatePanelOpen, setIsUpdatePanelOpen] = useState(false);
     const [stopsOnly, setStopsOnly] = useState<boolean>(false);
-    const [updateSelectedCourier, setUpdateSelectedCourier] = useState<string>("0");
-    const [prevStopIndex, setPrevStopIndex] = useState<number>(0);
-    const [nextStopIndex, setNextStopIndex] = useState<number>(0);
+    const [prevStopIndex, setPrevStopIndex] = useState<number>(-1);
+    const [nextStopIndex, setNextStopIndex] = useState<number>(-1);
 
     // Courier selection panel variables
     const [couriersList, setCouriersList] = useState<PanelCourier[]>([]);
@@ -242,10 +240,8 @@ export default function Home() {
     }, []);
 
     useEffect(() => {
-        if (couriersList && couriersList.length > 0) {
+        if (couriersList && couriersList.length > 0 && !couriersList.find((courier) => courier.id.toString() === selectedCourier)) {
             setSelectedCourier(couriersList[0].id.toString());
-            setAddRequestSelectedCourier(couriersList[0].id.toString());
-            setUpdateSelectedCourier(couriersList[0].id.toString());
         }
     }, [couriersList]);
 
@@ -259,6 +255,24 @@ export default function Home() {
         }
 
     }, [tours, displayedCouriers]);
+
+    useEffect(() => {
+        if (displayedCouriers !== 'All') {
+            setDisplayedCouriers(selectedCourier);
+        }
+    }, [selectedCourier]);
+
+    useEffect(() => {
+        if (prevStopIndex === -1) {
+            setPickupName(null);
+        }
+    }, [prevStopIndex]);
+
+    useEffect(() => {
+        if (nextStopIndex === -1) {
+            setDeliveryName(null);
+        }
+    }, [nextStopIndex]);
 
     useEffect(() => {
         const fetchSearchResults = async () => {
@@ -337,7 +351,7 @@ export default function Home() {
 
             const params = new URLSearchParams();
             params.append('warehouseId', intersectionId.toString());
-            params.append('courierId', addRequestSelectedCourier);
+            params.append('courierId', selectedCourier);
 
             fetch('http://localhost:8080/api/request/addWarehouse', {
                 method: 'POST',
@@ -535,7 +549,7 @@ export default function Home() {
             const fetchedWarehouseIds = new Map<string, number>(Object.entries(data));
             setWarehouseIds(fetchedWarehouseIds);
 
-            const courierWarehouseId = fetchedWarehouseIds.get(addRequestSelectedCourier);
+            const courierWarehouseId = fetchedWarehouseIds.get(selectedCourier);
 
 
             // If warehouse not set yet, prompt user to add it before proceeding
@@ -554,12 +568,12 @@ export default function Home() {
 
             // Now, add the request with the fetched warehouse ID
             const params = new URLSearchParams();
-            params.append('warehouseId', warehouseIds?.get(addRequestSelectedCourier)?.toString() || "");
+            params.append('warehouseId', warehouseIds?.get(selectedCourier)?.toString() || "");
             params.append('pickupIntersectionId', pickupId.toString());
             params.append('pickupDurationInSeconds', pickupDuration.toString());
             params.append('deliveryIntersectionId', deliveryId.toString());
             params.append('deliveryDurationInSeconds', deliveryDuration.toString());
-            params.append('courierId', addRequestSelectedCourier);
+            params.append('courierId', selectedCourier);
 
             const response = await fetch('http://localhost:8080/api/request/add', {
                 method: 'POST',
@@ -583,7 +597,7 @@ export default function Home() {
 
             // Finally, fetch and display tours
             await fetchTours();
-            setDisplayedCouriers(addRequestSelectedCourier);
+            setDisplayedCouriers(selectedCourier);
         } catch (e: any) {
             console.error("Failed to add request:", e);
             if (e.message && e.message.includes("TSP algorithm did not find a solution")) {
@@ -599,7 +613,7 @@ export default function Home() {
     };
 
     const handleUpdateOrderClick = async () => {
-        if (!updateSelectedCourier) {
+        if (!selectedCourier) {
             setModalMessage("Please select a specific courier to update stop order.");
             setModalActions([]);
             setIsModalOpen(true);
@@ -964,8 +978,8 @@ export default function Home() {
                     setPickupDuration={setPickupDuration}
                     setDeliveryDuration={setDeliveryDuration}
                     couriersList={couriersList}
-                    selectedCourier={addRequestSelectedCourier}
-                    setSelectedCourier={setAddRequestSelectedCourier}
+                    selectedCourier={selectedCourier}
+                    setSelectedCourier={setSelectedCourier}
                     onAddRequest={handleAddRequest}
                     onCancel={handleCloseModificationPanel}
                     selectionMode={selectionMode}
@@ -980,14 +994,15 @@ export default function Home() {
                     firstName={pickupName}
                     secondName={deliveryName}
                     couriersList={couriersList}
-                    selectedCourier={updateSelectedCourier}
-                    setSelectedCourier={setUpdateSelectedCourier}
+                    selectedCourier={selectedCourier}
+                    setSelectedCourier={setSelectedCourier}
                     onUpdateOrder={handleUpdateOrderClick}
                     onCancel={handleCloseUpdatePanel}
                     selectionMode={selectionMode}
                     setSelectionMode={(mode) => setSelectionMode(mode)}
-                    stopsOnly={stopsOnly}
                     setStopsOnly={(mode) => setStopsOnly(mode)}
+                    setPrevStopIndex={(index) => setPrevStopIndex(index)}
+                    setNextStopIndex={(index) => setNextStopIndex(index)}
                     isUpdatingOrder={isUpdatingOrder}
                 />
             )}
