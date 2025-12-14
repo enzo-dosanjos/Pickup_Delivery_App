@@ -1,4 +1,4 @@
-import { MapContainer, Marker, Popup, Polyline, useMap, Circle, Pane, ZoomControl } from 'react-leaflet'
+import { MapContainer, Marker, Popup, Polyline, useMap, Circle, Pane } from 'react-leaflet'
 import L from "leaflet";
 import { useEffect, useMemo } from 'react';
 
@@ -234,7 +234,7 @@ function FitBounds({ bounds }: { bounds: L.LatLngBounds }) {
     const map = useMap();
     useEffect(() => {
         if (bounds.isValid()) {
-            map.fitBounds(bounds, { padding: [50, 50] });
+            map.fitBounds(bounds, { padding: [320, 50] });
         }
     }, [map, bounds]);
     return null;

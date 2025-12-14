@@ -538,6 +538,7 @@ export default function Home() {
         }
 
         setIsAddingRequest(true);
+        let hasWarehouse = true;
         try {
             // First, get the warehouse ID from the backend
             const warehouseResponse = await fetch('http://localhost:8080/api/request/warehouse');
@@ -554,6 +555,7 @@ export default function Home() {
 
             // If warehouse not set yet, prompt user to add it before proceeding
             if (courierWarehouseId === undefined || courierWarehouseId === -1) {
+                hasWarehouse = false;
                 setModalMessage("Warehouse is not set. Click 'Add warehouse' then select a point on the map.");
                 setModalActions([{
                     label: "Add warehouse",
@@ -607,14 +609,23 @@ export default function Home() {
             }
             setIsModalOpen(true);
         } finally {
-            setIsAddingRequest(false);
-            handleCloseModificationPanel();
+            if (hasWarehouse) {
+                setIsAddingRequest(false);
+                handleCloseModificationPanel();
+            }
         }
     };
 
     const handleUpdateOrderClick = async () => {
         if (!selectedCourier) {
             setModalMessage("Please select a specific courier to update stop order.");
+            setModalActions([]);
+            setIsModalOpen(true);
+            return;
+        }
+
+        if (prevStopIndex === -1 || nextStopIndex === -1) {
+            setModalMessage("Please select both vertices to update stop order.");
             setModalActions([]);
             setIsModalOpen(true);
             return;
