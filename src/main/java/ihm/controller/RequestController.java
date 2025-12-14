@@ -143,7 +143,14 @@ public class RequestController {
         planningService.updatePrecedences(courierId, newRequest);
 
         // Recompute the tour for the courier
-        return recomputeTourAndHandleExceptions(courierId);
+        ResponseEntity<?> response = recomputeTourAndHandleExceptions(courierId);
+
+        // Delete request if the tour computation failed
+        if (!response.getStatusCode().is2xxSuccessful()) {
+            requestService.deleteRequest(courierId, newRequest.getId());
+        }
+
+        return response;
     }
 
     /**
