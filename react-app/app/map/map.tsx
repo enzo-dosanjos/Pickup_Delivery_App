@@ -1,6 +1,6 @@
 import { MapContainer, Marker, Popup, Polyline, useMap, Circle, Pane } from 'react-leaflet'
 import L from "leaflet";
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 export type Intersection = {
     id: number;
@@ -93,6 +93,9 @@ export function Map(props: {
 }) {
     const mapBounds = useMemo(() => new L.LatLngBounds(props.bounds), [props.bounds]);
 
+    // State to track current stop index per intersection when multiple stops exist there
+    const [currentStopIndexByKey, setCurrentStopIndexByKey] = useState<Record<string, number>>({});
+
     const tourBounds = useMemo(() => {
         const tourPoints = props.tours.flatMap(tour => tour.roadSegmentsTaken.flat());
         return tourPoints.length > 0 ? new L.LatLngBounds(tourPoints) : mapBounds;
@@ -108,6 +111,11 @@ export function Map(props: {
         <MapContainer
             center={mapBounds.getCenter()}
             ref={props.mapRef as any}
+            whenCreated={map => {
+                if (props.mapRef) {
+                    props.mapRef.current = map;
+                }
+            }}
             zoomControl={false} // disable default top-left control
         >
             <Pane name="roads-pane" style={{ zIndex: 450 }} />
@@ -167,63 +175,124 @@ export function Map(props: {
             {props.tours.map(tour => {
                 const tourColor = getTourColor(tour.courierId);
                 return (
-                <div key={tour.courierId}>
-                    {tour.roadSegmentsTaken.map((segment, index) => (
-                        <Polyline
-                            key={index}
-                            positions={segment}
-                            color={tourColor}
-                            weight={5}
-                            opacity={0.85}
-                            pane="tour-pane"
-                        />
-                    ))}
-                    {tour.stops.map((stop, index) => {
-                        const intersection = props.intersections.find(i => i.id === stop.intersectionId);
-                        if (intersection) {
-                            let icon = deliveryIcon; // default
+                    <div key={tour.courierId}>
+                        {tour.roadSegmentsTaken.map((segment, index) => (
+                            <Polyline
+                                key={index}
+                                positions={segment}
+                                color={tourColor}
+                                weight={5}
+                                opacity={0.85}
+                                pane="tour-pane"
+                            />
+                        ))}
+                        {tour.stops.map((stop, stopOrder) => {
+                            const intersection = props.intersections.find(
+                                i => i.id === stop.intersectionId
+                            );
+                            if (!intersection) return null;
 
+                            let icon = deliveryIcon;
                             if (stop.type === StopType.PICKUP) {
                                 icon = pickupIcon;
                             } else if (stop.type === StopType.WAREHOUSE) {
                                 icon = warehouseIcon;
                             }
-                            const stopOrder = index;
+
+                            const key = `${tour.courierId}-${stop.intersectionId}`;
+
+                            const sameIntersectionStops = tour.stops.filter(
+                                s => s.intersectionId === stop.intersectionId
+                            );
+                            const hasMultiple = sameIntersectionStops.length > 1;
+
+                            const currentIndex = currentStopIndexByKey[key] ?? 0;
+                            const safeIndex = hasMultiple
+                                ? ((currentIndex % sameIntersectionStops.length) +
+                                sameIntersectionStops.length) % sameIntersectionStops.length
+                                : 0;
+
+                            const currentStop = sameIntersectionStops[safeIndex];
+                            const currentOrder = tour.stops.indexOf(currentStop);
+
+                            const handlePrev = (e: React.MouseEvent) => {
+                                e.stopPropagation();
+                                if (!hasMultiple) return;
+                                setCurrentStopIndexByKey(prev => ({
+                                    ...prev,
+                                    [key]:
+                                        (safeIndex - 1 + sameIntersectionStops.length) %
+                                        sameIntersectionStops.length,
+                                }));
+                            };
+
+                            const handleNext = (e: React.MouseEvent) => {
+                                e.stopPropagation();
+                                if (!hasMultiple) return;
+                                setCurrentStopIndexByKey(prev => ({
+                                    ...prev,
+                                    [key]:
+                                        (safeIndex + 1) % sameIntersectionStops.length,
+                                }));
+                            };
 
                             return (
-                                <Marker key={`${tour.courierId}-${stop.intersectionId}-${index}`}
-                                        position={intersection.position}
-                                        icon={icon}
-                                        eventHandlers={{
-                                            click: () => {
-                                                if (props.onMapClick && props.stopsOnly) {
-                                                    props.onMapClick(intersection.id, stopOrder);
-                                                }
-                                            },
-                                        }}
+                                <Marker
+                                    key={`${tour.courierId}-${stop.intersectionId}-${stopOrder}`}
+                                    position={intersection.position}
+                                    icon={icon}
+                                    eventHandlers={{
+                                        click: () => {
+                                            if (props.onMapClick && props.stopsOnly) {
+                                                props.onMapClick(intersection.id, stopOrder);
+                                            }
+                                        },
+                                    }}
                                 >
                                     <Popup>
                                         <div className="map-popup-content">
-                                            Courier ID: {tour.courierId} <br />
-                                            Stop Type: {stop.type} <br />
-                                            Request ID: {stop.requestID} <br />
-                                            Intersection ID: {stop.intersectionId} <br />
-                                            Order in tour: {stopOrder} <br />
-                                            Arrival time: {props.formatDateTime(stop.arrivalTime)} <br />
-                                            Departure time: {props.formatDateTime(stop.departureTime)} <br />
-                                            {stop.type !== StopType.WAREHOUSE && stop.requestID >= 0 && (
-                                                <button className="delete-button" onClick={() => props.onDeleteRequest?.(stop.requestID, tour.courierId)}>
-                                                    Delete Request
-                                                </button>
+                                            {hasMultiple && (
+                                                <div className={"popup-multi-stop"}>
+                                                    <button onClick={handlePrev}>{`<`}</button>
+                                                    <span>
+                                                        Stop {safeIndex + 1} /{" "}
+                                                        {sameIntersectionStops.length}
+                                                    </span>
+                                                    <button onClick={handleNext}>{`>`}</button>
+                                                </div>
                                             )}
+                                            <div>
+                                                Courier ID: {tour.courierId} <br />
+                                                Stop Type: {currentStop.type} <br />
+                                                Request ID: {currentStop.requestID} <br />
+                                                Intersection ID: {currentStop.intersectionId} <br />
+                                                Order in tour: {currentOrder} <br />
+                                                Arrival time:{" "}
+                                                {props.formatDateTime(currentStop.arrivalTime)} <br />
+                                                Departure time:{" "}
+                                                {props.formatDateTime(currentStop.departureTime)} <br />
+                                                {currentStop.type !== StopType.WAREHOUSE &&
+                                                    currentStop.requestID >= 0 && (
+                                                        <button
+                                                            className="delete-button"
+                                                            onClick={() =>
+                                                                props.onDeleteRequest?.(
+                                                                    currentStop.requestID,
+                                                                    tour.courierId
+                                                                )
+                                                            }
+                                                        >
+                                                            Delete Request
+                                                        </button>
+                                                    )}
+                                            </div>
                                         </div>
                                     </Popup>
                                 </Marker>
                             );
-                        }
-                        return null;
-                    })}
-                </div>)
+                        })}
+                    </div>
+                );
             })}
             <FitBounds bounds={tourBounds} />
         </MapContainer>
