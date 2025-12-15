@@ -1,5 +1,6 @@
 import React from 'react';
 import './SearchBar.css';
+type SearchResult = { name: string; id: number };
 
 type SearchBarProps = {
     searchTerm: string;

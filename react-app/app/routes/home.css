@@ -1,7 +1,34 @@
+.home-container .home-button {
+    background-color: #D17B96;
+    color: #EADDFF;
+    padding: 5px;
+}
+
+.home-container .home-button:hover {
+    font-weight: 1000;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.home-container input {
+    width: 300px;
+    border: thin solid #A33C5D;
+    border-radius: 3px;
+    background-color: #f1f1f1;
+    color: #333333;
+    padding-left: 5px;
+    margin-left: 10px;
+}
+
+.home-container label {
+    margin-right: 8px;
+    font-size: 16px;
+    color: #A33C5D;
+}
+
 .success-message {
     color: green;
     margin-top: 10px;
-  }
+}
 
 .delete-button {
     background-color: #f44336; /* Red */
@@ -19,5 +46,79 @@
 }
 
 .map-popup-content {
-    color: black;
+    color: #D17B96;
+}
+
+.home-container {
+    display: flex;
+    height: 100vh;
+    margin-bottom: 0;
+}
+
+.side-panel-and-toggle {
+    position: absolute;
+    display: flex;
+    height: 100%;
+    z-index: 1000;
+    transition: transform 0.3s ease-in-out;
+}
+
+.side-panel-and-toggle.closed {
+    transform: translateX(-80%);
+}
+
+.side-panel-and-toggle.open {
+    transform: translateX(0);
+}
+
+.side-panel {
+    width: 380px;
+    max-height: calc(100% - 2%);
+    overflow-y: auto;
+    background-color: #EDC7B7;
+    padding: 16px;
+    padding-top: 60px;
+    display: flex;
+    margin: 2% 0;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+}
+
+.side-panel-toggle {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    left: -30px;
+    margin-top: 2%;
+    border-radius: 50%;
+    background-color: #EDC7B7;
+    cursor: pointer;
+}
+
+.side-panel-and-toggle .search-container {
+    position: absolute;
+    margin-top: 4%;
+}
+
+.side-panel-and-toggle.open .search-container {
+    padding-left: 5px;
+    margin-left: 10px;
+}
+
+.side-panel-and-toggle.closed .search-container {
+    left: 450px;
+    transition: left 0.3s ease-in-out;
+}
+
+.map-container {
+    flex: 1;
+}
+
+.courier-options {
+    border: thin solid #A33C5D;
+    border-radius: 6px;
+    padding: 6px;
 }

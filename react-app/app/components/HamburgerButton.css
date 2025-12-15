@@ -1,0 +1,49 @@
+.hamburger-btn {
+    position: relative;
+    width: 30px;
+    height: 30px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: 0;
+    left: -15px;
+}
+
+.hamburger-btn .bar {
+    position: absolute;
+    width: 30px;
+    height: 5px;
+    background-color: #A33C5D;
+    border-radius: 4px;
+    transition: all 0.3s ease-in-out;
+}
+
+.hamburger-btn .bar1 {
+    top: 0;
+}
+
+.hamburger-btn .bar2 {
+    top: 13px;
+}
+
+.hamburger-btn .bar3 {
+    bottom: 0;
+}
+
+/* active (menu open) state */
+.hamburger-btn.active .bar1 {
+    transform: rotate(45deg);
+    transform-origin: 5%;
+    width: 40px;
+}
+
+.hamburger-btn.active .bar2 {
+    transform: translateX(-40px);
+    background-color: transparent;
+}
+
+.hamburger-btn.active .bar3 {
+    transform-origin: 5%;
+    transform: rotate(-45deg);
+    width: 40px;
+}

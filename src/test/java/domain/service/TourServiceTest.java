@@ -59,7 +59,7 @@ class TourServiceTest {
 
         LocalDateTime startTime = LocalDate.now().atTime(8, 0).plusDays(1L);
         Integer[] solution = {0, 1, 2, 3, 4};
-        Long[] vertices = {0L, 2L, 3L, 4L, 5L};
+        List<String> vertices = List.of("-1/0/w", request1.getId() + "/2/p", request1.getId()+"/3/d", request2.getId()+"/4/p", request2.getId()+"/5/d");
         double[][] costs = {
                 {0.0, 12.0, 20.0, 25.0, 30.0},
                 {12.0, 0.0, 15.0, 22.0, 27.0},
@@ -344,5 +344,85 @@ class TourServiceTest {
 
         // Clean up
         outFile.delete();
+    }
+
+    /**
+     * Verifies that extractRequestId correctly extracts the request ID from a valid vertex string.
+     */
+    @Test
+    void extractRequestIdReturnsCorrectId() {
+        TourService service = new TourService();
+        String vertex = "123/456/p";
+        assertEquals(123L, service.extractRequestId(vertex));
+    }
+
+    /**
+     * Verifies that extractRequestId throws an exception for an invalid vertex string.
+     */
+    @Test
+    void extractRequestIdThrowsExceptionForInvalidVertex() {
+        TourService service = new TourService();
+        String vertex = "invalid_vertex";
+        assertThrows(NumberFormatException.class, () -> service.extractRequestId(vertex));
+    }
+
+    /**
+     * Verifies that extractIntersectionId correctly extracts the intersection ID from a valid vertex string.
+     */
+    @Test
+    void extractIntersectionIdReturnsCorrectId() {
+        TourService service = new TourService();
+        String vertex = "123/456/p";
+        assertEquals(456L, service.extractIntersectionId(vertex));
+    }
+
+    /**
+     * Verifies that extractIntersectionId throws an exception for an invalid vertex string.
+     */
+    @Test
+    void extractIntersectionIdThrowsExceptionForInvalidVertex() {
+        TourService service = new TourService();
+        String vertex = "123/invalid";
+        assertThrows(NumberFormatException.class, () -> service.extractIntersectionId(vertex));
+    }
+
+    /**
+     * Verifies that extractStopType correctly identifies the stop type as PICKUP.
+     */
+    @Test
+    void extractStopTypeReturnsPickupForPickupVertex() {
+        TourService service = new TourService();
+        String vertex = "123/456/p";
+        assertEquals(StopType.PICKUP, service.extractStopType(vertex));
+    }
+
+    /**
+     * Verifies that extractStopType correctly identifies the stop type as DELIVERY.
+     */
+    @Test
+    void extractStopTypeReturnsDeliveryForDeliveryVertex() {
+        TourService service = new TourService();
+        String vertex = "123/456/d";
+        assertEquals(StopType.DELIVERY, service.extractStopType(vertex));
+    }
+
+    /**
+     * Verifies that extractStopType correctly identifies the stop type as WAREHOUSE.
+     */
+    @Test
+    void extractStopTypeReturnsWarehouseForWarehouseVertex() {
+        TourService service = new TourService();
+        String vertex = "123/456/w";
+        assertEquals(StopType.WAREHOUSE, service.extractStopType(vertex));
+    }
+
+    /**
+     * Verifies that extractStopType throws an exception for an invalid stop type.
+     */
+    @Test
+    void extractStopTypeThrowsExceptionForInvalidStopType() {
+        TourService service = new TourService();
+        String vertex = "123/456/x";
+        assertThrows(IllegalArgumentException.class, () -> service.extractStopType(vertex));
     }
 }

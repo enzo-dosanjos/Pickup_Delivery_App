@@ -6,7 +6,11 @@ import { ModificationPanel, type Courier as PanelCourier } from "../components/M
 import { CourierSelectionPanel } from "~/components/CourierSelectionPanel";
 import "../components/ModificationPanel.css";
 import Modal from "../components/Modal";
+import { AnimatedHamburgerButton } from "~/components/HamburgerButton";
+import { SearchBar } from "~/components/SearchBar";
 import "./home.css";
+import {UpdateOrderPanel} from "~/components/UpdateOrderPanel";
+import {useMap} from "react-leaflet";
 
 // Define the types for the data we expect from the API
 type ApiIntersection = {
@@ -64,25 +68,38 @@ export function meta({}: Route.MetaArgs) {
 }
 
 export default function Home() {
+    // Map variables
     const [intersections, setIntersections] = useState<MapIntersection[]>([]);
     const [roadSegments, setRoadSegments] = useState<L.LatLngExpression[][]>([]);
     const [intersectionIdToRoadName, setIntersectionIdToRoadName] = useState<Map<number, string>>(new Map());
+    const [warehouseIds, setWarehouseIds] = useState<Map<string, number>>(() => new Map());
     const [bounds, setBounds] = useState<L.LatLngExpression[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [selectionMode, setSelectionMode] = useState<'pickup' | 'delivery' | 'warehouse' | null>(null);
+
+    // Modal variables
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [modalMessage, setModalMessage] = useState("");
     const [modalActions, setModalActions] = useState<{ label: string, onClick: () => void }[]>([]);
-    const [isAddingRequest, setIsAddingRequest] = useState(false);
+
+    // Loading state variables
+    const [loading, setLoading] = useState(true);
     const [isLoadingCouriers, setIsLoadingCouriers] = useState(false);
     const [isLoadingRequests, setIsLoadingRequests] = useState(false);
     const [isSavingRequests, setIsSavingRequests] = useState(false);
-    const [isDeletingRequest, setIsDeletingRequest] = useState(false);
-    const [tours, setTours] = useState<MapTour[]>([]);
     const [loadingTours, setLoadingTours] = useState(true);
     const [isExportingTour, setIsExportingTour] = useState(false);
+    const [isAddingRequest, setIsAddingRequest] = useState(false);
+    const [isUpdatingOrder, setIsUpdatingOrder] = useState(false);
 
-    const [isPanelOpen, setIsPanelOpen] = useState(false);
-    const [selectionMode, setSelectionMode] = useState<'pickup' | 'delivery' | 'warehouse' | null>(null);
+    // Tour variables
+    const [tours, setTours] = useState<MapTour[]>([]);
+
+    // Side panel variables
+    const [isSidePanelOpen, setIsSidePanelOpen] = useState<boolean>(true);
+    const [selectedCourier, setSelectedCourier] = useState<string>("0");
+
+    // Modification panel variables
+    const [isModificationPanelOpen, setIsModificationPanelOpen] = useState(false);
     const [pickupId, setPickupId] = useState<number | null>(null);
     const [deliveryId, setDeliveryId] = useState<number | null>(null);
     const [pickupName, setPickupName] = useState<string | null>(null);
@@ -90,25 +107,34 @@ export default function Home() {
     const defaultDuration = 120;
     const [pickupDuration, setPickupDuration] = useState<number>(defaultDuration);
     const [deliveryDuration, setDeliveryDuration] = useState<number>(defaultDuration);
+
+    // Update panel variables
+    const [isUpdatePanelOpen, setIsUpdatePanelOpen] = useState(false);
+    const [stopsOnly, setStopsOnly] = useState<boolean>(false);
+    const [prevStopIndex, setPrevStopIndex] = useState<number>(-1);
+    const [nextStopIndex, setNextStopIndex] = useState<number>(-1);
+
+    // Courier selection panel variables
     const [couriersList, setCouriersList] = useState<PanelCourier[]>([]);
-    const [selectedCourier, setSelectedCourier] = useState<string>("0");
-    const [warehouseIds, setWarehouseIds] = useState<Map<string, number>>(() => new Map());
-    const [selectionHint, setSelectionHint] = useState<string | null>(null);
     const [displayedCouriers, setDisplayedCouriers] = useState<string>("All");
     const [displayedTours, setDisplayedTours] = useState<MapTour[]>([]);
     const [displayedWarehouses, setDisplayedWarehouses] = useState<number[]>([]);
-    const [prevStopIndex, setPrevStopIndex] = useState("");
-    const [nextStopIndex, setNextStopIndex] = useState("");
 
-    // file paths
+    // File path variables
     const [requestFilePath, setRequestFilePath] = useState<string>("src/main/resources/requests.xml");
     const [courierFilePath, setCourierFilePath] = useState<string>("src/main/resources/couriers.xml");
-    const [exportFilePath, setExportFilePath] = useState<string>("src/main/resources/exported_tour.xml");
+    const [exportTourFilePath, setExportTourFilePath] = useState<string>("src/main/resources/exported_tour.xml");
+    const [exportRequestsFilePath, setExportRequestsFilePath] = useState<string>("src/main/resources/exported_requests.xml");
 
     const fetchInitiated = useRef(false);
 
     // store intersectionMap globally for this component
     const intersectionMapRef = useRef<Map<number, ApiIntersection> | null>(null);
+
+    // Search bar
+    const [searchTerm, setSearchTerm] = useState("");
+    const [searchResults, setSearchResults] = useState<{ name: string; id: number }[]>([]);
+    const mapRef = useRef<L.Map | null>(null);
 
     const closeModal = () => {
         setIsModalOpen(false);
@@ -214,7 +240,7 @@ export default function Home() {
     }, []);
 
     useEffect(() => {
-        if (couriersList && couriersList.length > 0) {
+        if (couriersList && couriersList.length > 0 && !couriersList.find((courier) => courier.id.toString() === selectedCourier)) {
             setSelectedCourier(couriersList[0].id.toString());
         }
     }, [couriersList]);
@@ -230,24 +256,103 @@ export default function Home() {
 
     }, [tours, displayedCouriers]);
 
-    const handleMapClick = (intersectionId: number) => {
+    useEffect(() => {
+        if (displayedCouriers !== 'All') {
+            setDisplayedCouriers(selectedCourier);
+        }
+    }, [selectedCourier]);
+
+    useEffect(() => {
+        if (prevStopIndex === -1) {
+            setPickupName(null);
+        }
+    }, [prevStopIndex]);
+
+    useEffect(() => {
+        if (nextStopIndex === -1) {
+            setDeliveryName(null);
+        }
+    }, [nextStopIndex]);
+
+    useEffect(() => {
+        const fetchSearchResults = async () => {
+            if (!searchTerm.trim()) {
+                setSearchResults([]);
+                return;
+            }
+            try {
+                const response = await fetch(
+                    `http://localhost:8080/search?name=${encodeURIComponent(searchTerm)}`
+                );
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const segments: { name: string; startId: number; endId: number }[] = await response.json();
+
+                // Map to unique names with a representative intersection id (use startId)
+                const unique: { [key: string]: number } = {};
+                segments.forEach((s) => {
+                    if (!unique[s.name]) {
+                        unique[s.name] = s.startId;
+                    }
+                });
+
+                const results = Object.entries(unique).map(([name, id]) => ({
+                    name,
+                    id,
+                }));
+                setSearchResults(results);
+            } catch (e) {
+                console.error("Failed to search road segments:", e);
+                setSearchResults([]);
+            }
+        };
+
+        fetchSearchResults();
+    }, [searchTerm]);
+
+    const handleSearchSelect = (intersectionId: number) => {
+        const found = intersections.find((i) => i.id === intersectionId);
+        if (found && mapRef.current) {
+            const [lat, lng] = found.position as [number, number];
+            mapRef.current.flyTo([lat, lng], 18, { duration: 0.7 });
+        }
+
+        // Center map on selected intersection
+        if (found && mapRef.current) {
+            const [lat, lng] = found.position as [number, number];
+            mapRef.current.flyTo([lat, lng], 19, { duration: 0.7 });
+        }
+
+        setSearchTerm("");
+        setSearchResults([]);
+    };
+
+    const handleMapClick = (intersectionId: number, index: number | null) => {
         const roadName = intersectionIdToRoadName.get(intersectionId) || `Intersection ${intersectionId}`;
-        if (selectionMode === 'pickup') {
-            setPickupId(intersectionId);
+        if (stopsOnly && selectionMode === 'pickup' && index !== null) {
+            setPrevStopIndex(index);
             setPickupName(roadName);
             setSelectionMode(null); // Deactivate selection mode after a point is chosen
-            setSelectionHint(null);
+        } else if (stopsOnly && selectionMode === 'delivery' && index !== null) {
+            setNextStopIndex(index);
+            setDeliveryName(roadName);
+            setSelectionMode(null); // Deactivate selection mode
+        } else if (selectionMode === 'pickup') {
+            setPickupId(intersectionId);
+            setPickupName(roadName);
+            setSelectionMode(null); // Deactivate selection mode
         } else if (selectionMode === 'delivery') {
             setDeliveryId(intersectionId);
             setDeliveryName(roadName);
             setSelectionMode(null); // Deactivate selection mode
-            setSelectionHint(null);
         } else if (selectionMode === 'warehouse') {
             setSelectionMode(null);
-            setSelectionHint(null);
+
             const params = new URLSearchParams();
             params.append('warehouseId', intersectionId.toString());
             params.append('courierId', selectedCourier);
+
             fetch('http://localhost:8080/api/request/addWarehouse', {
                 method: 'POST',
                 headers: {
@@ -258,11 +363,17 @@ export default function Home() {
                 if (!res.ok) {
                     throw new Error(`HTTP error! status: ${res.status}`);
                 }
-                setModalMessage("Warehouse set successfully. You can now add a request.");
-                setModalActions([]);
-                setIsModalOpen(true);
-                // Update warehouseIds state
+                // refresh warehouse ids
                 fetchTours();
+
+                // if a pickup and delivery are already chosen, finish the original add\-request flow
+                if (pickupId !== null && deliveryId !== null) {
+                    handleAddRequest();
+                } else {
+                    setModalMessage("Warehouse set successfully.");
+                    setModalActions([]);
+                    setIsModalOpen(true);
+                }
             }).catch(e => {
                 setModalMessage(`Failed to set warehouse: ${e.message}`);
                 setModalActions([]);
@@ -420,29 +531,37 @@ export default function Home() {
 
     const handleAddRequest = async () => {
         if (pickupId === null || deliveryId === null) {
+            setModalMessage("Please select both pickup and delivery locations on the map.");
+            setModalActions([]);
+            setIsModalOpen(true);
             return;
         }
 
         setIsAddingRequest(true);
+        let hasWarehouse = true;
         try {
             // First, get the warehouse ID from the backend
             const warehouseResponse = await fetch('http://localhost:8080/api/request/warehouse');
             if (!warehouseResponse.ok) {
                 throw new Error(`HTTP error! status: ${warehouseResponse.status}`);
             }
+
             const data = await warehouseResponse.json();
             const fetchedWarehouseIds = new Map<string, number>(Object.entries(data));
             setWarehouseIds(fetchedWarehouseIds);
 
+            const courierWarehouseId = fetchedWarehouseIds.get(selectedCourier);
+
+
             // If warehouse not set yet, prompt user to add it before proceeding
-            if (warehouseIds?.get(selectedCourier) === -1) {
+            if (courierWarehouseId === undefined || courierWarehouseId === -1) {
+                hasWarehouse = false;
                 setModalMessage("Warehouse is not set. Click 'Add warehouse' then select a point on the map.");
                 setModalActions([{
                     label: "Add warehouse",
                     onClick: () => {
                         closeModal();
                         setSelectionMode('warehouse');
-                        setSelectionHint("Click a point on the map to set the warehouse.");
                     }
                 }]);
                 setIsModalOpen(true);
@@ -481,7 +600,6 @@ export default function Home() {
             // Finally, fetch and display tours
             await fetchTours();
             setDisplayedCouriers(selectedCourier);
-
         } catch (e: any) {
             console.error("Failed to add request:", e);
             if (e.message && e.message.includes("TSP algorithm did not find a solution")) {
@@ -491,8 +609,41 @@ export default function Home() {
             }
             setIsModalOpen(true);
         } finally {
-            setIsAddingRequest(false);
-            handleClosePanel();
+            if (hasWarehouse) {
+                setIsAddingRequest(false);
+                handleCloseModificationPanel();
+            }
+        }
+    };
+
+    const handleUpdateOrderClick = async () => {
+        if (!selectedCourier) {
+            setModalMessage("Please select a specific courier to update stop order.");
+            setModalActions([]);
+            setIsModalOpen(true);
+            return;
+        }
+
+        if (prevStopIndex === -1 || nextStopIndex === -1) {
+            setModalMessage("Please select both vertices to update stop order.");
+            setModalActions([]);
+            setIsModalOpen(true);
+            return;
+        }
+
+        const t = tours.find(t => t.courierId.toString() === displayedCouriers);
+        if (!t) {
+            setModalMessage("No tour available.");
+            setModalActions([]);
+            setIsModalOpen(true);
+            return;
+        }
+
+        setIsUpdatingOrder(true);
+        try {
+            await handleUpdateStopOrder(t.courierId, prevStopIndex, nextStopIndex);
+        } finally {
+            setIsUpdatingOrder(false);
         }
     };
 
@@ -538,8 +689,8 @@ export default function Home() {
         }
     };
 
-    const handleClosePanel = () => {
-        setIsPanelOpen(false);
+    const handleCloseModificationPanel = () => {
+        setIsModificationPanelOpen(false);
         setSelectionMode(null);
         setPickupId(null);
         setDeliveryId(null);
@@ -549,9 +700,23 @@ export default function Home() {
         setDeliveryDuration(defaultDuration);
     };
 
+    const handleCloseUpdatePanel = () => {
+        setIsUpdatePanelOpen(false);
+        setSelectionMode(null);
+        setStopsOnly(false);
+        // À compléter !!
+    }
+
     const openModificationPanel = () => {
         fetchAvailableCouriers();
-        setIsPanelOpen(true);
+        setIsModificationPanelOpen(true);
+        setIsUpdatePanelOpen(false);
+    };
+
+    const openUpdatePanel = () => {
+        fetchAvailableCouriers();
+        setIsUpdatePanelOpen(true);
+        setIsModificationPanelOpen(false);
     };
 
     const handleSaveRequests = async () => {
@@ -585,7 +750,6 @@ export default function Home() {
     };
 
     const handleDeleteRequest = async (requestId: number, courierId: number) => {
-        setIsDeletingRequest(true);
         try {
             const params = new URLSearchParams();
             params.append('requestId', requestId.toString());
@@ -620,8 +784,6 @@ export default function Home() {
                 setModalMessage(`Failed to delete request: ${e.message}`);
             }
             setIsModalOpen(true);
-        } finally {
-            setIsDeletingRequest(false);
         }
     };
 
@@ -645,7 +807,7 @@ export default function Home() {
         try {
             const params = new URLSearchParams();
             params.append('courierId', selectedCourier);
-            params.append('filepath', exportFilePath);
+            params.append('filepath', exportTourFilePath);
 
             const response = await fetch('http://localhost:8080/api/tour/save', {
                 method: 'POST',
@@ -660,7 +822,7 @@ export default function Home() {
                 throw new Error(errorText || `HTTP error! status: ${response.status}`);
             }
 
-            setModalMessage(`Tour exported successfully to ${exportFilePath}`);
+            setModalMessage(`Tour exported successfully to ${exportTourFilePath}`);
             setIsModalOpen(true);
         } catch (e: any) {
             setModalMessage(`Failed to export tour: ${e.message}`);
@@ -675,147 +837,147 @@ export default function Home() {
     }
 
     return (
-        <div>
+        <div className="home-container">
             {isModalOpen && (
-                <Modal message={modalMessage} onClose={closeModal} actions={modalActions}/>
+                <Modal message={modalMessage} onClose={closeModal} actions={modalActions} />
             )}
-            <h1>Welcome to our brand new pick-up & delivery app !</h1>
-            <div>
-                <button onClick={openModificationPanel} style={{ marginBottom: '10px', padding: '10px', marginRight: '10px' }}>
-                    Add a Request
-                </button>
-                <button onClick={handleSaveRequests} style={{ marginBottom: '10px', padding: '10px' }} disabled={isSavingRequests}>
-                    {isSavingRequests ? "Saving..." : "Save Requests"}
-                </button>
-                <label>
-                    First stop index (must come BEFORE):
-                    <input
-                        type="number"
-                        value={prevStopIndex}
-                        onChange={(e) => setPrevStopIndex(e.target.value)}
 
-                    />
-                </label>
+            <div className={`side-panel-and-toggle ${isSidePanelOpen ? "open" : "closed"}`}>
+                <SearchBar
+                    searchTerm={searchTerm}
+                    setSearchTerm={setSearchTerm}
+                    results={searchResults}
+                    onSelect={handleSearchSelect}
+                />
 
+                {/* Sliding side panel */}
+                <div className={`side-panel`}>
 
-                <label>
-                    Second stop index (must come AFTER):
-                    <input
-                        type="number"
-                        value={nextStopIndex}
-                        onChange={(e) => setNextStopIndex(e.target.value)}
+                    <div className="side-panel-content">
+                        <h1>Welcome to our brand new pick-up &amp; delivery app !</h1>
 
-                    />
-                </label>
+                        {/* Couriers XML + load */}
+                        <div className="side-panel-section">
+                            <label>
+                                Couriers XML path:
+                                <input
+                                    type="text"
+                                    value={courierFilePath}
+                                    onChange={(e) => setCourierFilePath(e.target.value)}
+                                />
+                            </label>
+                            <button
+                                onClick={handleLoadCouriers}
+                                className={"home-button"}
+                                disabled={isLoadingCouriers}
+                            >
+                                {isLoadingCouriers ? "Loading..." : "Load Couriers"}
+                            </button>
+                        </div>
 
+                        {/* Selected courier */}
+                        <span className="info-label">
+                            Selected courier:
+                        </span>
+                            <select
+                                id={"courier"}
+                                value={selectedCourier}
+                                onFocus={fetchAvailableCouriers}
+                                onChange={(e) => setSelectedCourier(e.target.value)}
+                            >
+                                {couriersList?.map((courier) => (
+                                    <option key={courier.id.toString()} value={courier.id.toString()}>
+                                        {courier.name}
+                                    </option>
+                                ))}
+                            </select>
 
-                <button
-                    onClick={() => {
-                        if (displayedCouriers === "All") {
-                            setModalMessage("Please select a specific courier to update stop order.");
-                            setModalActions([]);
-                            setIsModalOpen(true);
-                            return;
-                        }
+                        {/* Requests / export paths */}
+                        <div className="side-panel-section courier-options">
+                            <div>
+                                <label>
+                                    Load requests path:
+                                    <input
+                                        type="text"
+                                        value={requestFilePath}
+                                        onChange={(e) => setRequestFilePath(e.target.value)}
+                                    />
+                                </label>
+                                <button
+                                    onClick={handleLoadRequests}
+                                    className={"home-button"}
+                                    disabled={isLoadingRequests}
+                                >
+                                    {isLoadingRequests ? "Loading..." : "Load Requests"}
+                                </button>
+                            </div>
 
-                        const t = tours.find(t => t.courierId.toString() === displayedCouriers);
-                        if (!t) {
-                            setModalMessage("No tour available.");
-                            setModalActions([]);
-                            setIsModalOpen(true);
-                            return;
-                        }
+                            <div>
+                                <label>
+                                    Export tour path:
+                                    <input
+                                        type="text"
+                                        value={exportTourFilePath}
+                                        onChange={(e) => setExportTourFilePath(e.target.value)}
+                                    />
+                                </label>
+                                <button
+                                    onClick={handleExportTour}
+                                    className={"home-button"}
+                                    disabled={isExportingTour}
+                                >
+                                    {isExportingTour ? "Exporting..." : "Export Tour"}
+                                </button>
+                            </div>
 
-                        const prevIndex = parseInt(prevStopIndex, 10);
-                        const nextIndex = parseInt(nextStopIndex, 10);
+                            <div style={{margin: "3px"}}>
+                                <label>
+                                    Export requests path:
+                                    <input
+                                        type="text"
+                                        value={exportRequestsFilePath}
+                                        onChange={(e) => setExportRequestsFilePath(e.target.value)}
+                                    />
+                                </label>
+                                <button
+                                    onClick={handleSaveRequests}
+                                    className={"home-button"}
+                                    disabled={isSavingRequests}
+                                >
+                                    {isSavingRequests ? "Exporting..." : "Export Requests"}
+                                </button>
+                            </div>
+                        </div>
 
-                        if (isNaN(prevIndex) || isNaN(nextIndex)) {
-                            setModalMessage("Please enter valid indices.");
-                            setModalActions([]);
-                            setIsModalOpen(true);
-                            return;
-                        }
+                        {/* Add request / save requests / stop order updaptes buttons */}
+                        <div  className="side-panel-section">
+                            <div>
+                                <button onClick={openModificationPanel}
+                                        className={"home-button"}>
+                                    Add A Request
+                                </button>
+                            </div>
+                            <div>
+                                <button onClick={openUpdatePanel}
+                                        className={"home-button"}>
+                                    Update Order
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                        const confirmed = window.confirm(
-                            `Confirm update stop order?\nStop ${prevIndex} must come BEFORE stop ${nextIndex}`
-                        );
-
-                        if (!confirmed) return;
-
-                        handleUpdateStopOrder(t.courierId, prevIndex, nextIndex);
-                    }}
+                {/* Hamburger button */}
+                <div
+                    className="side-panel-toggle"
+                    onClick={() => setIsSidePanelOpen((prev) => !prev)}
                 >
-                    Apply Update
-                </button>
-            </div>
-
-            <div style={{ marginBottom: "15px" }}>
-                <div style={{ marginBottom: "8px" }}>
-                    <label style={{ marginRight: "8px" }}>
-                        Requests XML path:
-                        <input
-                            type="text"
-                            value={requestFilePath}
-                            onChange={(e) => setRequestFilePath(e.target.value)}
-                            style={{ marginLeft: "8px", width: "300px" }}
-                        />
-                    </label>
-                    <span className="info-label">Courier:</span>
-                    <select id={"courier"} value={selectedCourier} onFocus={fetchAvailableCouriers} onChange={(e) => setSelectedCourier(e.target.value)}>
-                        {couriersList?.map(courier => (
-                            <option key={courier.id.toString()} value={courier.id.toString()}>{courier.name}</option>
-                        ))}
-                    </select>
-                    <button
-                        onClick={handleLoadRequests}
-                        style={{ padding: "8px", marginLeft: "8px" }}
-                        disabled={isLoadingRequests}
-                    >
-                        {isLoadingRequests ? "Loading..." : "Load Requests"}
-                    </button>
-                </div>
-
-                <div>
-                    <label style={{ marginRight: "8px" }}>
-                        Couriers XML path:
-                        <input
-                            type="text"
-                            value={courierFilePath}
-                            onChange={(e) => setCourierFilePath(e.target.value)}
-                            style={{ marginLeft: "8px", width: "300px" }}
-                        />
-                    </label>
-                    <button
-                        onClick={handleLoadCouriers}
-                        style={{ padding: "8px", marginLeft: "8px" }}
-                        disabled={isLoadingCouriers}
-                    >
-                        {isLoadingCouriers ? "Loading..." : "Load Couriers"}
-                    </button>
-                </div>
-
-                <div style={{ marginTop: "8px" }}>
-                    <label style={{ marginRight: "8px" }}>
-                        Export tour path:
-                        <input
-                            type="text"
-                            value={exportFilePath}
-                            onChange={(e) => setExportFilePath(e.target.value)}
-                            style={{ marginLeft: "8px", width: "300px" }}
-                        />
-                    </label>
-                    <button
-                        onClick={handleExportTour}
-                        style={{ padding: "8px", marginLeft: "8px" }}
-                        disabled={isExportingTour}
-                    >
-                        {isExportingTour ? "Exporting..." : "Export Tour"}
-                    </button>
+                    <AnimatedHamburgerButton active={isSidePanelOpen} />
                 </div>
             </div>
 
-            <br />
-            {isPanelOpen && (
+            {/* Panels and map outside side panel, using new logic */}
+            {isModificationPanelOpen && (
                 <ModificationPanel
                     pickupId={pickupId}
                     deliveryId={deliveryId}
@@ -830,27 +992,47 @@ export default function Home() {
                     selectedCourier={selectedCourier}
                     setSelectedCourier={setSelectedCourier}
                     onAddRequest={handleAddRequest}
-                    onCancel={handleClosePanel}
+                    onCancel={handleCloseModificationPanel}
                     selectionMode={selectionMode}
                     setSelectionMode={setSelectionMode}
                     isAddingRequest={isAddingRequest}
                 />
             )}
-            {bounds.length > 0 && (
-                 <MapComponent
-                    intersections={intersections}
-                    roadSegments={roadSegments}
-                    bounds={bounds}
-                    tours={displayedTours}
-                    onMapClick={handleMapClick}
-                    selectionModeActive={isPanelOpen}
-                    pickupId={pickupId}
-                    deliveryId={deliveryId}
-                    onDeleteRequest={handleDeleteRequest}
-                    warehouseIds={displayedWarehouses}
-                    formatDateTime={formatDateTime}
+            {isUpdatePanelOpen && (
+                <UpdateOrderPanel
+                    firstId={prevStopIndex}
+                    secondId={nextStopIndex}
+                    firstName={pickupName}
+                    secondName={deliveryName}
+                    couriersList={couriersList}
+                    selectedCourier={selectedCourier}
+                    setSelectedCourier={setSelectedCourier}
+                    onUpdateOrder={handleUpdateOrderClick}
+                    onCancel={handleCloseUpdatePanel}
+                    selectionMode={selectionMode}
+                    setSelectionMode={(mode) => setSelectionMode(mode)}
+                    setStopsOnly={(mode) => setStopsOnly(mode)}
+                    setPrevStopIndex={(index) => setPrevStopIndex(index)}
+                    setNextStopIndex={(index) => setNextStopIndex(index)}
+                    isUpdatingOrder={isUpdatingOrder}
                 />
             )}
+            <MapComponent
+                intersections={intersections}
+                roadSegments={roadSegments}
+                bounds={bounds}
+                tours={displayedTours}
+                onMapClick={handleMapClick}
+                selectionModeActive={isModificationPanelOpen || isUpdatePanelOpen}
+                stopsOnly={stopsOnly}
+                pickupId={pickupId}
+                deliveryId={deliveryId}
+                onDeleteRequest={handleDeleteRequest}
+                warehouseIds={displayedWarehouses}
+                formatDateTime={formatDateTime}
+                mapRef={mapRef}
+            />
+
             {couriersList.length > 0 && (
                 <CourierSelectionPanel
                     couriersList={couriersList}
