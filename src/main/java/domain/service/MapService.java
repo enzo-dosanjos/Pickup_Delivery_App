@@ -5,7 +5,6 @@ import domain.model.RoadSegment;
 import org.springframework.stereotype.Service;
 import persistence.XMLParsers;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 /**

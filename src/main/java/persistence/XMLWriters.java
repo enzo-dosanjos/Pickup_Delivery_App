@@ -111,8 +111,15 @@ public class XMLWriters {
                 Element requestElement = doc.createElement("request");
                 requestElement.setAttribute("pickupAddress", String.valueOf(req.getPickupIntersectionId()));
                 requestElement.setAttribute("deliveryAddress", String.valueOf(req.getDeliveryIntersectionId()));
-                requestElement.setAttribute("pickupDuration", String.valueOf(req.getPickupDuration()));
-                requestElement.setAttribute("deliveryDuration", String.valueOf(req.getDeliveryDuration()));
+                // write durations as seconds so XMLParsers.parseRequests can read them
+                requestElement.setAttribute(
+                        "pickupDuration",
+                        String.valueOf(req.getPickupDuration().getSeconds())
+                );
+                requestElement.setAttribute(
+                        "deliveryDuration",
+                        String.valueOf(req.getDeliveryDuration().getSeconds())
+                );
                 rootElement.appendChild(requestElement);
             }
 

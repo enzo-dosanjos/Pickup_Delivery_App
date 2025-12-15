@@ -4,6 +4,7 @@ import domain.model.*;
 import domain.model.dijkstra.CellInfo;
 import domain.model.dijkstra.DijkstraTable;
 import org.junit.jupiter.api.Test;
+import persistence.XMLParsers;
 
 import java.time.Duration;
 import java.time.LocalDate;
@@ -287,6 +288,62 @@ class TourServiceTest {
 
         service.updateStopOrder(1L, 0, 1);
         assertTrue(service.getPrecedencesByCourier().get(1L).containsKey("2/3/p"));
+    }
+
+    /**
+     * Tests that the {@code loadCouriers} method correctly loads courier data.
+     */
+    @Test
+    void checkLoadCouriersLoadsCouriers() {
+        String filePath = "src/test/resources/testCouriers.xml";
+
+        TourService tourService = new TourService();
+        tourService.loadCouriers(filePath);
+
+        assertEquals(3, tourService.getNumCouriers());
+
+        ArrayList<Courier> couriers = tourService.getCouriers();
+
+        assertNotNull(couriers, "The couriers list should not be null after parsing");
+        assertEquals(3, couriers.size(), "There should be 3 couriers loaded");
+
+        assertEquals(1L, couriers.get(0).getId(), "First courier ID should match expected value");
+        assertEquals("Courier 1", couriers.get(0).getName(), "First courier name should match expected value");
+        assertEquals(Duration.ofHours(8), couriers.get(0).getShiftDuration(), "First courier shift duration should match expected value");
+
+        assertEquals(2L, couriers.get(1).getId(), "Second courier ID should match expected value");
+        assertEquals("Courier 2", couriers.get(1).getName(), "Second courier name should match expected value");
+        assertEquals(Duration.ofHours(6), couriers.get(1).getShiftDuration(), "Second courier shift duration should match expected value");
+
+        assertEquals(3L, couriers.get(2).getId(), "Third courier ID should match expected value");
+        assertEquals("Courier 3", couriers.get(2).getName(), "Third courier name should match expected value");
+        assertEquals(Duration.ofHours(7), couriers.get(2).getShiftDuration(), "Third courier shift duration should match expected value");
+    }
+
+    /**
+     * Tests that the exportTour method successfully writes the
+     * courier's tour to an XML file (no exception and file created).
+     */
+    @Test
+    void checkExportTour() throws Exception {
+        TourService tourService = new TourService();
+        long courierId = 1L;
+
+        LocalDateTime startTime = LocalDateTime.now();
+        Tour tour = new Tour(courierId, startTime);
+        TourStop tourStop1 = new TourStop(StopType.PICKUP, 1L, 2L, LocalDateTime.now(), LocalDateTime.now());
+        tour.addStop(tourStop1);
+        tourService.setTourForCourier(courierId, tour);
+
+        String filePath = "src/test/resources/outputTour.xml";
+
+        tourService.exportTour(courierId, filePath);
+
+        java.io.File outFile = new java.io.File(filePath);
+        assertTrue(outFile.exists());
+
+        // Clean up
+        outFile.delete();
     }
 
     /**
